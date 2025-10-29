@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Box, Container, Flex, ScrollArea, useScrollArea } from "@chakra-ui/react";
-import { useScrollStore } from "@/store/ui.store";
+import { useScrollStore, useSidebarStore } from "@/store/ui.store";
 
 interface LayoutProps {
     sidebar: React.ReactNode; // Left sidebar content
@@ -16,6 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
     const scrollArea = useScrollArea();
     const { setScrollArea } = useScrollStore();
     const isScrollAreaSet = useRef<boolean>(false);
+    const { isCollapsed } = useSidebarStore();
 
     useEffect(() => {
         if (!isScrollAreaSet.current) {
@@ -27,19 +28,24 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
     return (
         <Flex
             minH="vh"
+            alignItems={"stretch"}
             bg="accent.50/30"
             _dark={{ bg: "gray.900" }}
             overflow="hidden"
+            pl="2"
+            gap="6"
         >
             {/* Sidebar column */}
             <ScrollArea.Root
                 as="aside"
-                w={{ base: "full", md: "200px" }}
-                flexShrink={0}
-                height="full"
+                pos="relative"
+                zIndex={1}
+                transition={"all"}
+                transitionDuration={"slow"}
+                w={{ base: "full", md: isCollapsed ? "80px" : "200px" }}
                 maxW="lg">
                 <ScrollArea.Viewport>
-                    <ScrollArea.Content>
+                    <ScrollArea.Content h="vh" py="2">
                         {sidebar}
                     </ScrollArea.Content>
                 </ScrollArea.Viewport>
@@ -55,9 +61,11 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 h="vh"
                 as="main"
                 flex="1"
-                p={{ base: 4, md: 6 }}
+                p={{ base: 4, md: 2 }}
                 ml="-6"
                 overflowY="auto"
+                pos="relative"
+                zIndex={1}
             >
 
                 <ScrollArea.RootProvider bg="bg" value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
@@ -75,6 +83,10 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 </ScrollArea.RootProvider>
             </Box>
 
+
+            {/* blurs */}
+            <Box bg="accent.500" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" top={0} left={0} zIndex={0} />
+            <Box bg="red.500" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" bottom={0} left={20} zIndex={0} />
         </Flex>
     );
 };

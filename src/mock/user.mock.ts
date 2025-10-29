@@ -29,6 +29,6 @@ export const sampleTokens: Tokens = {
 };
 
 export const sampleLoginResponse: LoginResponse = {
-    user: sampleUser,
+    user: sampleAdminUser,
     tokens: sampleTokens
 };
