@@ -12,7 +12,7 @@ type AuthState = {
   setAuth: (data: { user: User, tokens: Tokens }) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
-  getRoles: () => User["roles"];
+  getRole: () => User["role"];
 
   // Role-based getters
   isUser: () => boolean;
@@ -39,9 +39,9 @@ export const useAuthStore = create<AuthState>()(
         set({ user, tokens });
       },
 
-      // ✅ get user roles
-      getRoles: () => {
-        return get().user?.roles as User["roles"];
+      // ✅ get user role
+      getRole: () => {
+        return get().user?.role as User["role"];
       },
 
       // ✅ Logout and clear persisted state
@@ -55,36 +55,30 @@ export const useAuthStore = create<AuthState>()(
       // ✅ Role-based getters
       isUser: () => {
         const user = get().user;
-        const roles = user?.roles;
-        // User is applicant if they have Applicant role OR if they have applicant data but no user roles
-        return !!roles && roles.some((role) =>
-          role?.name === 'User' || role.code === 'user'
-        );
+        const role = user?.role;
+        return !!role && role === 'user'
       },
 
       isAdmin: () => {
-        const roles = get().user?.roles;
-        return !!roles && roles.some((role) =>
-          role.name.toLowerCase().includes('admin') ||
-          role.code.toLowerCase().includes('admin')
-        );
+        const role = get().user?.role;
+        return !!role && role.toLowerCase().includes('admin');
       },
       // ✅ Utility role checkers
       hasRole: (roleName: string) => {
-        const roles = get().user?.roles;
-        return !!roles && roles.some(role => role.name === roleName);
+        const role = get().user?.role;
+        return !!role && role === roleName;
       },
 
       hasAnyRole: (roleNames: string[]) => {
-        const userRoles = get().user?.roles;
-        return !!userRoles && roleNames.some(roleName =>
-          userRoles.some(userRole => userRole.name === roleName)
+        const userRole = get().user?.role;
+        return !!userRole && roleNames.some(roleName =>
+          userRole === roleName
         );
       },
 
       hasRoleByCode: (roleCode: string) => {
-        const roles = get().user?.roles;
-        return !!roles && roles.some(role => role.code === roleCode);
+        const role = get().user?.role;
+        return !!role && role === roleCode;
       },
     }),
     {

@@ -11,10 +11,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedRoles,
     children,
 }) => {
-    const { getRoles, isAuthenticated } = useAuthStore();
+    const { getRole, isAuthenticated } = useAuthStore();
     const location = useLocation();
 
-    const userRoles = getRoles()?.map((r) => r.code.toLowerCase()) || [];
+    const userRole = getRole().toLowerCase() || "";
 
     // 🚫 Redirect unauthenticated users
     if (!isAuthenticated()) {
@@ -24,7 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     // 🔐 Check role access if allowedRoles is specified
     if (allowedRoles && allowedRoles.length > 0) {
         const hasAccess = allowedRoles.some((role) =>
-            userRoles.includes(role.toLowerCase())
+            userRole.includes(role.toLowerCase())
         );
 
         if (!hasAccess) {
