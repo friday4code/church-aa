@@ -65,13 +65,14 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 ml="-6"
                 overflowY="auto"
                 pos="relative"
+                backdropFilter={"blur(1px)"}
                 zIndex={1}
             >
 
-                <ScrollArea.RootProvider bg="bg" value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
+                <ScrollArea.RootProvider bg="whiteAlpha.300" value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
                     <ScrollArea.Viewport>
-                        <ScrollArea.Content bg="bg" rounded={6}>
-                            <Container pos="relative" maxW={"7xl"} p={{ md: "0" }} bg="bg">
+                        <ScrollArea.Content  rounded={6}>
+                            <Container pos="relative" maxW={"7xl"} py="6">
                                 {children}
                             </Container>
                         </ScrollArea.Content>
