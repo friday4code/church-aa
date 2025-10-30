@@ -5,16 +5,17 @@ import {
     IconButton,
     Image
 } from "@chakra-ui/react";
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { Box1, Chart1, Chart2, House, Layer, Location, Map, Map1, NoteText, Profile2User, SidebarLeft, SidebarRight, User } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
 
 
 const AdminSidebar: React.FC = () => {
     const { isCollapsed, toggle } = useSidebarStore();
+    const location = useLocation();
 
     const isLinkActive = (href: string): boolean => {
-        return location.pathname.startsWith(href);
+        return location.pathname.endsWith(href);
     };
 
     const links = [
@@ -69,7 +70,7 @@ const AdminSidebar: React.FC = () => {
                     left={0}
                     right={0}
                     px={isCollapsed ? "5" : 6}
-                    justify={isCollapsed ? "start" :"space-between"}
+                    justify={isCollapsed ? "start" : "space-between"}
                 >
                     {!isCollapsed && <Image src="/logo.png" w="10" />}
 
