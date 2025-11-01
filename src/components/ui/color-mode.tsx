@@ -2,7 +2,7 @@
 
 import type { IconButtonProps, SpanProps } from "@chakra-ui/react"
 import { ClientOnly, IconButton, Skeleton, Span } from "@chakra-ui/react"
-import { Moon, Sun } from "iconsax-reactjs"
+import { Moon, Sun1 } from "iconsax-reactjs"
 import { ThemeProvider, useTheme } from "next-themes"
 import type { ThemeProviderProps } from "next-themes"
 import * as React from "react"
@@ -43,7 +43,7 @@ export function useColorModeValue<T>(light: T, dark: T) {
 
 export function ColorModeIcon() {
   const { colorMode } = useColorMode()
-  return colorMode === "dark" ? <Moon /> : <Sun />
+  return colorMode === "dark" ? <Moon /> : <Sun1 />
 }
 
 interface ColorModeButtonProps extends Omit<IconButtonProps, "aria-label"> {}
