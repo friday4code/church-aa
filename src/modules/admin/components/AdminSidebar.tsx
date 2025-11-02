@@ -3,15 +3,11 @@ import {
     Box, HStack, Separator, Stack,
     ScrollArea,
     IconButton,
-    Image,
     Menu,
     Avatar,
-    Portal,
-    Text,
-    Icon
-} from "@chakra-ui/react";
+    Portal} from "@chakra-ui/react";
 import { NavLink, useLocation } from "react-router";
-import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, Profile2User, SidebarLeft, SidebarRight, User } from "iconsax-reactjs";
+import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
 import { ColorModeButton } from "@/components/ui/color-mode";

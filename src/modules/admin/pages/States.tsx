@@ -31,6 +31,8 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
+import PortingFile from "../components/PortingFile"
+import UploadStatesFromFile from "../components/PortingFile"
 
 
 
@@ -123,14 +125,18 @@ const Content = () => {
                 {/* Header */}
                 <Flex justify="space-between" align="center">
                     <Heading size="3xl">All States</Heading>
-                    <Button
-                        colorPalette="accent"
-                        rounded="xl"
-                        onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
-                    >
-                        <Add />
-                        Add State
-                    </Button>
+
+                    <HStack gap="4">
+                        <UploadStatesFromFile />
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
+                        >
+                            <Add />
+                            Add State
+                        </Button>
+                    </HStack>
                 </Flex>
 
                 <Card.Root bg="transparent" border={"none"}>
