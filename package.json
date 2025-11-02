@@ -19,6 +19,7 @@
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "moment": "^2.30.1",
+    "naija-state-local-government": "^1.1.2",
     "next-themes": "^0.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
