@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { utils, read } from "xlsx"
+import { utils, read, writeFile } from "xlsx" // Import writeFile from xlsx
 import {
     Box,
     VStack,
@@ -34,20 +34,47 @@ const UploadStatesFromFile = () => {
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+
     const { states, addState, updateState } = useStatesStore()
 
-    // Download template function
+    // Download template function - CORRECTED
+    const calculateColumnWidths = (data: any[]) => {
+        const headers = Object.keys(data[0])
+        const widths = headers.map(header => {
+            // Start with header length
+            let maxLength = header.length
+
+            // Check data lengths for this column
+            data.forEach(row => {
+                const value = String(row[header] || '')
+                if (value.length > maxLength) {
+                    maxLength = value.length
+                }
+            })
+
+            // Add some padding
+            return { wch: Math.min(maxLength + 2, 50) } // Cap at 50 characters
+        })
+
+        return widths
+    }
+
     const downloadTemplate = () => {
-        const templateData = [
-            { "State Name": "AKWA IBOM", "State Code": "AK", "State Leader": "EMMANUEL AMAEZE" },
-            { "State Name": "BAYELSA", "State Code": "BY", "State Leader": "MCLAWRENCE EBEREUCHE" },
-            { "State Name": "CROSS RIVER", "State Code": "CR", "State Leader": "EDISON DAMINABO" }
-        ]
+        const templateData = states.map(s => ({
+            "STATE NAME": s.stateName,
+            "STATE CODE": s.stateCode,
+            "LEADER": s.leader
+        }))
 
         const worksheet = utils.json_to_sheet(templateData)
+
+        // Auto-calculate column widths based on content
+        worksheet['!cols'] = calculateColumnWidths(templateData)
+
         const workbook = utils.book_new()
         utils.book_append_sheet(workbook, worksheet, "States Template")
-        utils.writeFile(workbook, "states_template.xlsx")
+
+        writeFile(workbook, "states_template.xlsx")
     }
 
     const processFile = async (files: File[]) => {
@@ -145,7 +172,6 @@ const UploadStatesFromFile = () => {
         <>
             {/* Trigger Button */}
             <Button
-                // colorPalette={"accent"}
                 variant="outline"
                 onClick={onOpen}
                 rounded="xl"
@@ -161,7 +187,7 @@ const UploadStatesFromFile = () => {
                     <Dialog.Positioner >
                         <Dialog.Content rounded="xl">
                             <Dialog.Header>
-                                <Dialog.Title>Upload Porting File</Dialog.Title>
+                                <Dialog.Title>Upload States From File</Dialog.Title>
                             </Dialog.Header>
 
                             <Dialog.Body>
@@ -173,6 +199,7 @@ const UploadStatesFromFile = () => {
                                                 <HStack justify="space-between" w="full">
                                                     <Text fontWeight="medium">Download Template</Text>
                                                     <Button
+                                                        rounded="xl"
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={downloadTemplate}
@@ -215,7 +242,7 @@ const UploadStatesFromFile = () => {
                                             }
                                         >
                                             <Input asChild>
-                                                <FileUpload.Trigger>
+                                                <FileUpload.Trigger rounded="xl">
                                                     <FileUpload.FileText lineClamp={1}>
                                                         {selectedFile ? selectedFile.name : "Choose Excel or CSV file"}
                                                     </FileUpload.FileText>
@@ -277,9 +304,10 @@ const UploadStatesFromFile = () => {
 
                             <Dialog.Footer>
                                 <Dialog.ActionTrigger asChild>
-                                    <Button variant="outline">Cancel</Button>
+                                    <Button rounded="xl" variant="outline">Cancel</Button>
                                 </Dialog.ActionTrigger>
                                 <Button
+                                    rounded="xl"
                                     colorPalette="blue"
                                     loading={isProcessing}
                                     disabled={!selectedFile || isProcessing}

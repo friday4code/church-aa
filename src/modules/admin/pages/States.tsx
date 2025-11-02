@@ -1,7 +1,7 @@
 // components/states/StatesPage.tsx
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useSearchParams } from "react-router"
 import {
     Box,
@@ -19,22 +19,306 @@ import {
     Card,
     Flex, Pagination,
     ButtonGroup,
-    DownloadTrigger
+    DownloadTrigger,
+    Checkbox,
+    ActionBar,
+    Tabs,
+    Text,
+    Badge
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { exportToExcel, exportToCSV, exportToPDF } from "@/utils/export.utils"
-import { Add, Copy, DocumentDownload, DocumentText, Edit, More, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
+import { Add, ArrowLeft3, ArrowRight3, Copy, DocumentDownload, DocumentText, Edit, More, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
 import { useStatesStore, type State } from "../stores/states.store"
 import { stateSchema, type StateFormData } from "../schemas/states.schemas"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import PortingFile from "../components/PortingFile"
 import UploadStatesFromFile from "../components/PortingFile"
 
+// UUID generator function
+const uuid = () => {
+    return Math.random().toString(36).substring(2, 15)
+}
 
+// Bulk Edit Dialog Component
+interface BulkEditDialogProps {
+    isOpen: boolean
+    selectedStates: number[]
+    states: State[]
+    onClose: () => void
+    onUpdate: (id: number, data: Partial<StateFormData>) => void
+}
+
+const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: BulkEditDialogProps) => {
+    const [tabs, setTabs] = useState<Array<{ id: string; state: State; title: string }>>([])
+    const [selectedTab, setSelectedTab] = useState<string | null>(null)
+
+    // Initialize tabs when dialog opens
+    useEffect(() => {
+        if (isOpen && selectedStates.length > 0) {
+            const initialTabs = selectedStates.map(stateId => {
+                const state = states.find(s => s.id === stateId)
+                return {
+                    id: uuid(),
+                    state: state!,
+                    title: state?.stateName || 'State'
+                }
+            })
+            setTabs(initialTabs)
+            setSelectedTab(initialTabs[0]?.id || null)
+        }
+    }, [isOpen, selectedStates, states])
+
+    const removeTab = (id: string) => {
+        if (tabs.length > 1) {
+            const newTabs = tabs.filter(tab => tab.id !== id)
+            setTabs(newTabs)
+
+            // If the removed tab was selected, select the first tab
+            if (selectedTab === id) {
+                setSelectedTab(newTabs[0]?.id || null)
+            }
+        } else {
+            // If it's the last tab, close the dialog
+            onClose()
+        }
+    }
+
+    const handleTabUpdate = (tabId: string, data: Partial<StateFormData>) => {
+        const tab = tabs.find(t => t.id === tabId)
+        if (tab) {
+            onUpdate(tab.state.id, data)
+            // Remove the tab after successful update
+            removeTab(tabId)
+        }
+    }
+
+    return (
+        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner>
+                    <Dialog.Content rounded="xl" maxW="4xl" w="full">
+                        <Dialog.Header>
+                            <Dialog.Title>Bulk Edit States</Dialog.Title>
+                        </Dialog.Header>
+
+                        <Dialog.Body>
+                            <Tabs.Root
+                                value={selectedTab}
+                                variant="outline"
+                                size="sm"
+                                onValueChange={(e) => setSelectedTab(e.value)}
+                            >
+                                <Tabs.List flex="1 1 auto" overflowX="auto">
+                                    {tabs.map((tab) => (
+                                        <Tabs.Trigger value={tab.id} key={tab.id}>
+                                            {tab.title}{" "}
+                                            <CloseButton
+                                                as="span"
+                                                role="button"
+                                                size="2xs"
+                                                me="-2"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    removeTab(tab.id)
+                                                }}
+                                            />
+                                        </Tabs.Trigger>
+                                    ))}
+                                </Tabs.List>
+
+                                <Tabs.ContentGroup>
+                                    {tabs.map((tab) => (
+                                        <Tabs.Content value={tab.id} key={tab.id}>
+                                            <StateEditForm
+                                                state={tab.state}
+                                                onUpdate={(data) => handleTabUpdate(tab.id, data)}
+                                                onCancel={() => removeTab(tab.id)}
+                                            />
+                                        </Tabs.Content>
+                                    ))}
+                                </Tabs.ContentGroup>
+                            </Tabs.Root>
+                        </Dialog.Body>
+
+                        <Dialog.Footer>
+                            <Dialog.ActionTrigger asChild>
+                                <Button variant="outline" rounded="xl">Close</Button>
+                            </Dialog.ActionTrigger>
+                        </Dialog.Footer>
+
+                        <Dialog.CloseTrigger asChild>
+                            <CloseButton size="sm" />
+                        </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
+        </Dialog.Root>
+    )
+}
+
+// Bulk Delete Dialog Component
+interface BulkDeleteDialogProps {
+    isOpen: boolean
+    selectedStates: number[]
+    states: State[]
+    onClose: () => void
+    onConfirm: (ids: number[]) => void
+}
+
+const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }: BulkDeleteDialogProps) => {
+    const selectedStateNames = states
+        .filter(state => selectedStates.includes(state.id))
+        .map(state => state.stateName)
+
+    const handleConfirm = () => {
+        onConfirm(selectedStates)
+        onClose()
+    }
+
+    return (
+        <Dialog.Root role="alertdialog" open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner>
+                    <Dialog.Content rounded="xl">
+                        <Dialog.Header>
+                            <Dialog.Title>Delete Multiple States</Dialog.Title>
+                        </Dialog.Header>
+                        <Dialog.Body>
+                            <VStack align="stretch" gap="3">
+                                <Text>
+                                    Are you sure you want to delete <strong>{selectedStates.length} state(s)</strong>?
+                                    This action cannot be undone and will permanently remove these states from the system.
+                                </Text>
+
+                                {selectedStateNames.length > 0 && (
+                                    <Box>
+                                        <Text fontWeight="medium" mb="2">States to be deleted:</Text>
+                                        <Box
+                                            maxH="200px"
+                                            overflowY="auto"
+                                            border="1px"
+                                            borderColor="gray.200"
+                                            rounded="md"
+                                            p="3"
+                                            bg="gray.50"
+                                        >
+                                            <VStack align="start" gap="1">
+                                                {selectedStateNames.map((name, index) => (
+                                                    <Text key={index} fontSize="sm">• {name}</Text>
+                                                ))}
+                                            </VStack>
+                                        </Box>
+                                    </Box>
+                                )}
+                            </VStack>
+                        </Dialog.Body>
+                        <Dialog.Footer>
+                            <Dialog.ActionTrigger asChild>
+                                <Button variant="outline" rounded="xl">Cancel</Button>
+                            </Dialog.ActionTrigger>
+                            <Button colorPalette="red" rounded="xl" onClick={handleConfirm}>
+                                Delete {selectedStates.length} State{selectedStates.length > 1 ? 's' : ''}
+                            </Button>
+                        </Dialog.Footer>
+                        <Dialog.CloseTrigger asChild>
+                            <CloseButton size="sm" />
+                        </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
+        </Dialog.Root>
+    )
+}
+
+// Individual State Edit Form for each tab
+interface StateEditFormProps {
+    state: State
+    onUpdate: (data: Partial<StateFormData>) => void
+    onCancel: () => void
+}
+
+const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
+    const { register, handleSubmit, formState: { errors } } = useForm<StateFormData>({
+        resolver: zodResolver(stateSchema),
+        defaultValues: {
+            stateName: state.stateName,
+            stateCode: state.stateCode,
+            leader: state.leader
+        }
+    })
+
+    const onSubmit = (data: StateFormData) => {
+        onUpdate(data)
+    }
+
+    return (
+        <VStack gap="4" align="stretch">
+            <Text fontSize="sm" color="gray.600" mb="2">
+                Editing: <strong>{state.stateName}</strong>
+            </Text>
+
+            <form id={`state-form-${state.id}`} onSubmit={handleSubmit(onSubmit)}>
+                <VStack gap="4" colorPalette={"accent"}>
+                    <Field.Root required invalid={!!errors.stateName}>
+                        <Field.Label>State Name
+                            <Field.RequiredIndicator />
+                        </Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter state name"
+                            {...register('stateName')}
+                        />
+                        <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root required invalid={!!errors.stateCode}>
+                        <Field.Label>State Code
+                            <Field.RequiredIndicator />
+                        </Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter state code"
+                            {...register('stateCode')}
+                        />
+                        <Field.ErrorText>{errors.stateCode?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root required invalid={!!errors.leader}>
+                        <Field.Label>State Leader
+                            <Field.RequiredIndicator />
+                        </Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter state leader name"
+                            {...register('leader')}
+                        />
+                        <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+                </VStack>
+            </form>
+
+            <HStack justify="flex-end" gap="2" mt="4">
+                <Button variant="outline" size="sm" onClick={onCancel}>
+                    Skip
+                </Button>
+                <Button
+                    size="sm"
+                    colorPalette="accent"
+                    type="submit"
+                    form={`state-form-${state.id}`}
+                >
+                    Update & Close
+                </Button>
+            </HStack>
+        </VStack>
+    )
+}
 
 export const States: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
@@ -66,6 +350,10 @@ const Content = () => {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
+    const [selectedStates, setSelectedStates] = useState<number[]>([])
+    const [isActionBarOpen, setIsActionBarOpen] = useState(false)
+    const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
+    const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
     const { states, addState, updateState, deleteState } = useStatesStore()
 
@@ -75,6 +363,11 @@ const Content = () => {
         state?: State
         mode: 'add' | 'edit'
     }>({ isOpen: false, mode: 'add' })
+
+    const [deleteDialogState, setDeleteDialogState] = useState<{
+        isOpen: boolean
+        state?: State
+    }>({ isOpen: false })
 
     // Filter and sort states
     const filteredAndSortedStates = useMemo(() => {
@@ -105,6 +398,42 @@ const Content = () => {
         currentPage * pageSize
     )
 
+    // Selection logic
+    const allIdsOnCurrentPage = paginatedStates.map(state => state.id)
+    const allIds = filteredAndSortedStates.map(state => state.id)
+
+    const isAllSelectedOnPage = paginatedStates.length > 0 &&
+        paginatedStates.every(state => selectedStates.includes(state.id))
+
+    const isAllSelected = filteredAndSortedStates.length > 0 &&
+        filteredAndSortedStates.every(state => selectedStates.includes(state.id))
+
+    const handleSelectAllOnPage = () => {
+        if (isAllSelectedOnPage) {
+            // Deselect all on current page
+            setSelectedStates(prev => prev.filter(id => !allIdsOnCurrentPage.includes(id)))
+        } else {
+            // Select all on current page
+            setSelectedStates(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
+        }
+    }
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedStates([])
+        } else {
+            setSelectedStates(allIds)
+        }
+    }
+
+    const handleSelectState = (stateId: number) => {
+        setSelectedStates(prev =>
+            prev.includes(stateId)
+                ? prev.filter(id => id !== stateId)
+                : [...prev, stateId]
+        )
+    }
+
     const handleSearch = (value: string) => {
         setSearchParams(s => (s.set("search", value), s))
         setCurrentPage(1)
@@ -119,12 +448,72 @@ const Content = () => {
         }
     }
 
+    const handleDeleteState = (state: State) => {
+        setDeleteDialogState({ isOpen: true, state })
+    }
+
+    const confirmDelete = () => {
+        if (deleteDialogState.state) {
+            deleteState(deleteDialogState.state.id)
+            setDeleteDialogState({ isOpen: false })
+        }
+    }
+
+    // Bulk actions
+    const handleBulkDelete = () => {
+        setIsBulkDeleteOpen(true)
+    }
+
+    const confirmBulkDelete = (ids: number[]) => {
+        ids.forEach(id => deleteState(id))
+        setSelectedStates([])
+        setIsActionBarOpen(false)
+        setIsBulkDeleteOpen(false)
+    }
+
+    const handleBulkEdit = () => {
+        setIsBulkEditOpen(true)
+    }
+
+    const handleBulkUpdate = (id: number, data: Partial<StateFormData>) => {
+        updateState(id, data)
+        // Remove from selected states after update
+        setSelectedStates(prev => prev.filter(stateId => stateId !== id))
+    }
+
+    const handleBulkEditClose = () => {
+        setIsBulkEditOpen(false)
+        // If all states have been processed, close the action bar
+        if (selectedStates.length === 0) {
+            setIsActionBarOpen(false)
+        }
+    }
+
+    // Close action bar when no items are selected
+    useEffect(() => {
+        if (selectedStates.length === 0 && isActionBarOpen) {
+            setIsActionBarOpen(false)
+        } else if (selectedStates.length > 0 && !isActionBarOpen) {
+            setIsActionBarOpen(true)
+        }
+    }, [selectedStates, isActionBarOpen])
+
     return (
-        <Box>
+        <>
             <VStack gap="6" align="stretch">
                 {/* Header */}
-                <Flex justify="space-between" align="center">
-                    <Heading size="3xl">All States</Heading>
+                <Flex
+                    justify="space-between"
+                    align="center"
+                    pos="sticky"
+                    top={6}
+                    zIndex={"sticky"}
+                    backdropFilter={"blur(20px)"}
+                >
+                    <HStack>
+                        <Heading size="3xl">All States</Heading>
+                        <Badge colorPalette={"accent"}>{states.length}</Badge>
+                    </HStack>
 
                     <HStack gap="4">
                         <UploadStatesFromFile />
@@ -212,6 +601,16 @@ const Content = () => {
                                 <Table.Root size="sm">
                                     <Table.Header>
                                         <Table.Row fontSize={"md"}>
+                                            <Table.ColumnHeader w="50px">
+                                                <Checkbox.Root
+                                                    colorPalette={"accent"}
+                                                    checked={isAllSelectedOnPage}
+                                                    onCheckedChange={handleSelectAllOnPage}
+                                                >
+                                                    <Checkbox.HiddenInput />
+                                                    <Checkbox.Control rounded="md" cursor={"pointer"} />
+                                                </Checkbox.Root>
+                                            </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
@@ -250,6 +649,16 @@ const Content = () => {
                                     <Table.Body>
                                         {paginatedStates.map((state) => (
                                             <Table.Row key={state.id} bg="whiteAlpha.500">
+                                                <Table.Cell>
+                                                    <Checkbox.Root
+                                                        colorPalette={"accent"}
+                                                        checked={selectedStates.includes(state.id)}
+                                                        onCheckedChange={() => handleSelectState(state.id)}
+                                                    >
+                                                        <Checkbox.HiddenInput />
+                                                        <Checkbox.Control cursor="pointer" rounded="md" />
+                                                    </Checkbox.Root>
+                                                </Table.Cell>
                                                 <Table.Cell>{state.id}</Table.Cell>
                                                 <Table.Cell fontWeight="medium">{state.stateName}</Table.Cell>
                                                 <Table.Cell>{state.stateCode}</Table.Cell>
@@ -257,7 +666,7 @@ const Content = () => {
                                                 <Table.Cell textAlign="center">
                                                     <Menu.Root>
                                                         <Menu.Trigger asChild>
-                                                            <IconButton variant="ghost" size="sm">
+                                                            <IconButton rounded="xl" variant="ghost" size="sm">
                                                                 <More />
                                                             </IconButton>
                                                         </Menu.Trigger>
@@ -278,11 +687,7 @@ const Content = () => {
                                                                         color="red"
                                                                         value="delete"
                                                                         colorPalette="red"
-                                                                        onClick={() => {
-                                                                            if (confirm('Are you sure you want to delete this state?')) {
-                                                                                deleteState(state.id)
-                                                                            }
-                                                                        }}
+                                                                        onClick={() => handleDeleteState(state)}
                                                                     >
                                                                         <Trash /> Delete
                                                                     </Menu.Item>
@@ -300,6 +705,7 @@ const Content = () => {
                             {/* Pagination */}
                             {totalPages > 1 && (
                                 <Pagination.Root
+                                    colorPalette={"accent"}
                                     count={totalPages}
                                     pageSize={1}
                                     page={currentPage}
@@ -307,22 +713,22 @@ const Content = () => {
                                 >
                                     <ButtonGroup variant="outline" size="sm">
                                         <Pagination.PrevTrigger asChild>
-                                            <IconButton>
-                                                ←
+                                            <IconButton rounded="xl">
+                                                <ArrowLeft3 />
                                             </IconButton>
                                         </Pagination.PrevTrigger>
 
                                         <Pagination.Items
                                             render={(page) => (
-                                                <IconButton variant={{ base: "outline", _selected: "solid" }}>
+                                                <IconButton rounded="xl" variant={{ base: "outline", _selected: "solid" }}>
                                                     {page.value}
                                                 </IconButton>
                                             )}
                                         />
 
                                         <Pagination.NextTrigger asChild>
-                                            <IconButton>
-                                                →
+                                            <IconButton rounded="xl">
+                                                <ArrowRight3 />
                                             </IconButton>
                                         </Pagination.NextTrigger>
                                     </ButtonGroup>
@@ -333,20 +739,141 @@ const Content = () => {
                 </Card.Root>
             </VStack>
 
-            {/* Add/Edit Dialog */}
-            <StateDialog
-                {...dialogState}
-                onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
-                onSave={(data) => {
-                    if (dialogState.mode === 'add') {
-                        addState(data)
-                    } else if (dialogState.state) {
-                        updateState(dialogState.state.id, data)
+            {/* Action Bar for selected items */}
+            <ActionBar.Root
+                open={isActionBarOpen}
+                onOpenChange={(s) => {
+                    setIsActionBarOpen(s.open)
+                    if (!s.open) {
+                        setSelectedStates([]);
                     }
-                    setDialogState({ isOpen: false, mode: 'add' })
                 }}
-            />
-        </Box>
+                closeOnInteractOutside={false}
+            >
+                <ActionBar.Positioner>
+                    <ActionBar.Content rounded="xl" shadow="2xl">
+                        <ActionBar.SelectionTrigger>
+                            {selectedStates.length} selected
+                        </ActionBar.SelectionTrigger>
+                        <ActionBar.Separator />
+                        <Button
+                            rounded="xl"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSelectAll}
+                        >
+                            {isAllSelected ? 'Deselect All' : 'Select All'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            rounded="xl"
+                            size="sm"
+                            onClick={handleBulkEdit}
+                        >
+                            <Edit />
+                            Edit
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            rounded="xl"
+                            colorPalette="red"
+                            onClick={handleBulkDelete}
+                        >
+                            <Trash />
+                            Delete
+                        </Button>
+                        <ActionBar.CloseTrigger asChild>
+                            <CloseButton size="sm" rounded="xl" />
+                        </ActionBar.CloseTrigger>
+                    </ActionBar.Content>
+                </ActionBar.Positioner>
+            </ActionBar.Root>
+
+            <Box>
+                {/* Add/Edit Dialog */}
+                <StateDialog
+                    {...dialogState}
+                    onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
+                    onSave={(data) => {
+                        if (dialogState.mode === 'add') {
+                            addState(data)
+                        } else if (dialogState.state) {
+                            updateState(dialogState.state.id, data)
+                        }
+                        setDialogState({ isOpen: false, mode: 'add' })
+                    }}
+                />
+
+                {/* Single Delete Confirmation Dialog */}
+                <DeleteConfirmationDialog
+                    isOpen={deleteDialogState.isOpen}
+                    state={deleteDialogState.state}
+                    onClose={() => setDeleteDialogState({ isOpen: false })}
+                    onConfirm={confirmDelete}
+                />
+
+                {/* Bulk Delete Dialog */}
+                <BulkDeleteDialog
+                    isOpen={isBulkDeleteOpen}
+                    selectedStates={selectedStates}
+                    states={states}
+                    onClose={() => setIsBulkDeleteOpen(false)}
+                    onConfirm={confirmBulkDelete}
+                />
+
+                {/* Bulk Edit Dialog */}
+                <BulkEditDialog
+                    isOpen={isBulkEditOpen}
+                    selectedStates={selectedStates}
+                    states={states}
+                    onClose={handleBulkEditClose}
+                    onUpdate={handleBulkUpdate}
+                />
+            </Box >
+        </>
+    )
+}
+
+// Delete Confirmation Dialog Component (for single delete)
+interface DeleteConfirmationDialogProps {
+    isOpen: boolean
+    state?: State
+    onClose: () => void
+    onConfirm: () => void
+}
+
+const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
+    return (
+        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+            <Portal>
+                <Dialog.Backdrop />
+                <Dialog.Positioner>
+                    <Dialog.Content rounded="xl">
+                        <Dialog.Header>
+                            <Dialog.Title>Delete State</Dialog.Title>
+                        </Dialog.Header>
+                        <Dialog.Body>
+                            <p>
+                                Are you sure you want to delete <strong>{state?.stateName}</strong>?
+                                This action cannot be undone and will permanently remove this state from the system.
+                            </p>
+                        </Dialog.Body>
+                        <Dialog.Footer>
+                            <Dialog.ActionTrigger asChild>
+                                <Button variant="outline" rounded="xl">Cancel</Button>
+                            </Dialog.ActionTrigger>
+                            <Button colorPalette="red" rounded="xl" onClick={onConfirm}>
+                                Delete
+                            </Button>
+                        </Dialog.Footer>
+                        <Dialog.CloseTrigger asChild>
+                            <CloseButton size="sm" />
+                        </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                </Dialog.Positioner>
+            </Portal>
+        </Dialog.Root>
     )
 }
 
@@ -360,8 +887,6 @@ interface StateDialogProps {
 }
 
 const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps) => {
-    console.log("state", state);
-
     const { register, handleSubmit, formState: { errors }, reset } = useForm<StateFormData>({
         resolver: zodResolver(stateSchema)
     })
@@ -407,7 +932,7 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                                     </Field.Root>
 
                                     <Field.Root required invalid={!!errors.stateCode}>
-                                        <Field.Label>State
+                                        <Field.Label>State Code
                                             <Field.RequiredIndicator />
                                         </Field.Label>
                                         <Input
