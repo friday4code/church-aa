@@ -13,7 +13,7 @@ export const exportToExcel = (data: State[], filename: string = 'states') => {
     })))
     const workbook = utils.book_new()
     utils.book_append_sheet(workbook, worksheet, 'States')
-    writeFile(workbook, `${filename}.xlsx`)
+    writeFile(workbook, `${filename}_${new Date().toISOString().replaceAll("/", "_")}.xlsx`)
 }
 
 export const exportToCSV = (data: State[], filename: string = 'states') => {
@@ -28,7 +28,7 @@ export const exportToCSV = (data: State[], filename: string = 'states') => {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${filename}.csv`
+    link.download = `${filename})_${new Date().toISOString().replaceAll("/", "_")}.csv`
     link.click()
     URL.revokeObjectURL(url)
 }
@@ -44,7 +44,7 @@ export const exportToPDF = (data: State[], filename: string = 'states') => {
         startY: 20,
     })
 
-    doc.save(`${filename}.pdf`)
+    doc.save(`${filename}_${new Date().toISOString().replaceAll("/", "_")}.pdf`)
 }
 
 export const copyToClipboard = async (data: State[]) => {

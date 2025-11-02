@@ -1,4 +1,4 @@
-// components/states/StatesPage.tsx
+// components/regions/RegionsPage.tsx
 "use client"
 
 import { useState, useMemo, useCallback, useEffect } from "react"
@@ -24,19 +24,20 @@ import {
     ActionBar,
     Tabs,
     Text,
-    Badge
+    Badge,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { exportToExcel, exportToCSV, exportToPDF } from "@/utils/export.utils"
 import { Add, ArrowLeft3, ArrowRight3, Copy, DocumentDownload, DocumentText, Edit, More, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
-import { useStatesStore, type State } from "../stores/states.store"
-import { stateSchema, type StateFormData } from "../schemas/states.schemas"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import UploadStatesFromFile from "../components/PortingFile"
+import { useRegionsStore, type Region } from "../stores/region.store"
+import { regionSchema, type RegionFormData } from "../schemas/region.schema"
+import UploadRegionsFromFile from "../components/UploadRegions"
+import { exportRegionsToCSV, exportRegionsToExcel, exportRegionsToPDF } from "@/utils/export.regions.util"
+
 
 // UUID generator function
 const uuid = () => {
@@ -46,31 +47,31 @@ const uuid = () => {
 // Bulk Edit Dialog Component
 interface BulkEditDialogProps {
     isOpen: boolean
-    selectedStates: number[]
-    states: State[]
+    selectedRegions: number[]
+    regions: Region[]
     onClose: () => void
-    onUpdate: (id: number, data: Partial<StateFormData>) => void
+    onUpdate: (id: number, data: Partial<RegionFormData>) => void
 }
 
-const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: BulkEditDialogProps) => {
-    const [tabs, setTabs] = useState<Array<{ id: string; state: State; title: string }>>([])
+const BulkEditDialog = ({ isOpen, selectedRegions, regions, onClose, onUpdate }: BulkEditDialogProps) => {
+    const [tabs, setTabs] = useState<Array<{ id: string; region: Region; title: string }>>([])
     const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
     // Initialize tabs when dialog opens
     useEffect(() => {
-        if (isOpen && selectedStates.length > 0) {
-            const initialTabs = selectedStates.map(stateId => {
-                const state = states.find(s => s.id === stateId)
+        if (isOpen && selectedRegions.length > 0) {
+            const initialTabs = selectedRegions.map(regionId => {
+                const region = regions.find(r => r.id === regionId)
                 return {
                     id: uuid(),
-                    state: state!,
-                    title: state?.stateName || 'State'
+                    region: region!,
+                    title: region?.regionName || 'Region'
                 }
             })
             setTabs(initialTabs)
             setSelectedTab(initialTabs[0]?.id || null)
         }
-    }, [isOpen, selectedStates, states])
+    }, [isOpen, selectedRegions, regions])
 
     const removeTab = (id: string) => {
         if (tabs.length > 1) {
@@ -87,10 +88,10 @@ const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: B
         }
     }
 
-    const handleTabUpdate = (tabId: string, data: Partial<StateFormData>) => {
+    const handleTabUpdate = (tabId: string, data: Partial<RegionFormData>) => {
         const tab = tabs.find(t => t.id === tabId)
         if (tab) {
-            onUpdate(tab.state.id, data)
+            onUpdate(tab.region.id, data)
             // Remove the tab after successful update
             removeTab(tabId)
         }
@@ -103,7 +104,7 @@ const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: B
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl" maxW="4xl" w="full">
                         <Dialog.Header>
-                            <Dialog.Title>Bulk Edit States</Dialog.Title>
+                            <Dialog.Title>Bulk Edit Regions</Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
@@ -134,8 +135,8 @@ const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: B
                                 <Tabs.ContentGroup>
                                     {tabs.map((tab) => (
                                         <Tabs.Content value={tab.id} key={tab.id}>
-                                            <StateEditForm
-                                                state={tab.state}
+                                            <RegionEditForm
+                                                region={tab.region}
                                                 onUpdate={(data) => handleTabUpdate(tab.id, data)}
                                                 onCancel={() => removeTab(tab.id)}
                                             />
@@ -164,19 +165,19 @@ const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: B
 // Bulk Delete Dialog Component
 interface BulkDeleteDialogProps {
     isOpen: boolean
-    selectedStates: number[]
-    states: State[]
+    selectedRegions: number[]
+    regions: Region[]
     onClose: () => void
     onConfirm: (ids: number[]) => void
 }
 
-const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }: BulkDeleteDialogProps) => {
-    const selectedStateNames = states
-        .filter(state => selectedStates.includes(state.id))
-        .map(state => state.stateName)
+const BulkDeleteDialog = ({ isOpen, selectedRegions, regions, onClose, onConfirm }: BulkDeleteDialogProps) => {
+    const selectedRegionNames = regions
+        .filter(region => selectedRegions.includes(region.id))
+        .map(region => region.regionName)
 
     const handleConfirm = () => {
-        onConfirm(selectedStates)
+        onConfirm(selectedRegions)
         onClose()
     }
 
@@ -187,18 +188,18 @@ const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
-                            <Dialog.Title>Delete Multiple States</Dialog.Title>
+                            <Dialog.Title>Delete Multiple Regions</Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
                             <VStack align="stretch" gap="3">
                                 <Text>
-                                    Are you sure you want to delete <strong>{selectedStates.length} state(s)</strong>?
-                                    This action cannot be undone and will permanently remove these states from the system.
+                                    Are you sure you want to delete <strong>{selectedRegions.length} region(s)</strong>?
+                                    This action cannot be undone and will permanently remove these regions from the system.
                                 </Text>
 
-                                {selectedStateNames.length > 0 && (
+                                {selectedRegionNames.length > 0 && (
                                     <Box>
-                                        <Text fontWeight="medium" mb="2">States to be deleted:</Text>
+                                        <Text fontWeight="medium" mb="2">Regions to be deleted:</Text>
                                         <Box
                                             maxH="200px"
                                             overflowY="auto"
@@ -209,7 +210,7 @@ const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }
                                             bg="gray.50"
                                         >
                                             <VStack align="start" gap="1">
-                                                {selectedStateNames.map((name, index) => (
+                                                {selectedRegionNames.map((name, index) => (
                                                     <Text key={index} fontSize="sm">• {name}</Text>
                                                 ))}
                                             </VStack>
@@ -223,7 +224,7 @@ const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }
                                 <Button variant="outline" rounded="xl">Cancel</Button>
                             </Dialog.ActionTrigger>
                             <Button colorPalette="red" rounded="xl" onClick={handleConfirm}>
-                                Delete {selectedStates.length} State{selectedStates.length > 1 ? 's' : ''}
+                                Delete {selectedRegions.length} Region{selectedRegions.length > 1 ? 's' : ''}
                             </Button>
                         </Dialog.Footer>
                         <Dialog.CloseTrigger asChild>
@@ -236,34 +237,34 @@ const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }
     )
 }
 
-// Individual State Edit Form for each tab
-interface StateEditFormProps {
-    state: State
-    onUpdate: (data: Partial<StateFormData>) => void
+// Individual Region Edit Form for each tab
+interface RegionEditFormProps {
+    region: Region
+    onUpdate: (data: Partial<RegionFormData>) => void
     onCancel: () => void
 }
 
-const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
-    const { register, handleSubmit, formState: { errors } } = useForm<StateFormData>({
-        resolver: zodResolver(stateSchema),
+const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => {
+    const { register, handleSubmit, formState: { errors } } = useForm<RegionFormData>({
+        resolver: zodResolver(regionSchema),
         defaultValues: {
-            stateName: state.stateName,
-            stateCode: state.stateCode,
-            leader: state.leader
+            regionName: region.regionName,
+            stateName: region.stateName,
+            leader: region.leader
         }
     })
 
-    const onSubmit = (data: StateFormData) => {
+    const onSubmit = (data: RegionFormData) => {
         onUpdate(data)
     }
 
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{state.stateName}</strong>
+                Editing: <strong>{region.regionName}</strong>
             </Text>
 
-            <form id={`state-form-${state.id}`} onSubmit={handleSubmit(onSubmit)}>
+            <form id={`region-form-${region.id}`} onSubmit={handleSubmit(onSubmit)}>
                 <VStack gap="4" colorPalette={"accent"}>
                     <Field.Root required invalid={!!errors.stateName}>
                         <Field.Label>State Name
@@ -277,25 +278,25 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
                         <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root required invalid={!!errors.stateCode}>
-                        <Field.Label>State Code
+                    <Field.Root required invalid={!!errors.regionName}>
+                        <Field.Label>Region Name
                             <Field.RequiredIndicator />
                         </Field.Label>
                         <Input
                             rounded="lg"
-                            placeholder="Enter state code"
-                            {...register('stateCode')}
+                            placeholder="Enter region name"
+                            {...register('regionName')}
                         />
-                        <Field.ErrorText>{errors.stateCode?.message}</Field.ErrorText>
+                        <Field.ErrorText>{errors.regionName?.message}</Field.ErrorText>
                     </Field.Root>
 
                     <Field.Root required invalid={!!errors.leader}>
-                        <Field.Label>State Leader
+                        <Field.Label>Region Leader
                             <Field.RequiredIndicator />
                         </Field.Label>
                         <Input
                             rounded="lg"
-                            placeholder="Enter state leader name"
+                            placeholder="Enter region leader name"
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
@@ -304,14 +305,15 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
             </form>
 
             <HStack justify="flex-end" gap="2" mt="4">
-                <Button variant="outline" size="sm" onClick={onCancel}>
+                <Button rounded="xl" variant="outline" size="sm" onClick={onCancel}>
                     Skip
                 </Button>
                 <Button
                     size="sm"
+                    rounded='xl'
                     colorPalette="accent"
                     type="submit"
-                    form={`state-form-${state.id}`}
+                    form={`region-form-${region.id}`}
                 >
                     Update & Close
                 </Button>
@@ -320,15 +322,15 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
     )
 }
 
-export const States: React.FC = () => {
+export const Regions: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
 
     return (
         <>
-            <title>States | {ENV.APP_NAME}</title>
+            <title>Regions | {ENV.APP_NAME}</title>
             <meta
                 name="description"
-                content="track your States"
+                content="track your Regions"
             />
             <ErrorBoundary
                 onReset={reset}
@@ -342,39 +344,39 @@ export const States: React.FC = () => {
     );
 };
 
-export default States;
+export default Regions;
 
 const Content = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const [sortField, setSortField] = useState<keyof State>('stateName')
+    const [sortField, setSortField] = useState<keyof Region>('regionName')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
-    const [selectedStates, setSelectedStates] = useState<number[]>([])
+    const [selectedRegions, setSelectedRegions] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
-    const { states, addState, updateState, deleteState } = useStatesStore()
+    const { regions, addRegion, updateRegion, deleteRegion } = useRegionsStore()
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean
-        state?: State
+        region?: Region
         mode: 'add' | 'edit'
     }>({ isOpen: false, mode: 'add' })
 
     const [deleteDialogState, setDeleteDialogState] = useState<{
         isOpen: boolean
-        state?: State
+        region?: Region
     }>({ isOpen: false })
 
-    // Filter and sort states
-    const filteredAndSortedStates = useMemo(() => {
-        let filtered = states.filter(state =>
-            state.stateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            state.stateCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            state.leader.toLowerCase().includes(searchQuery.toLowerCase())
+    // Filter and sort regions
+    const filteredAndSortedRegions = useMemo(() => {
+        let filtered = regions.filter(region =>
+            region.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            region.stateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            region.leader.toLowerCase().includes(searchQuery.toLowerCase())
         )
 
         // Sorting
@@ -389,48 +391,48 @@ const Content = () => {
         })
 
         return filtered
-    }, [states, searchQuery, sortField, sortOrder])
+    }, [regions, searchQuery, sortField, sortOrder])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedStates.length / pageSize)
-    const paginatedStates = filteredAndSortedStates.slice(
+    const totalPages = Math.ceil(filteredAndSortedRegions.length / pageSize)
+    const paginatedRegions = filteredAndSortedRegions.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedStates.map(state => state.id)
-    const allIds = filteredAndSortedStates.map(state => state.id)
+    const allIdsOnCurrentPage = paginatedRegions.map(region => region.id)
+    const allIds = filteredAndSortedRegions.map(region => region.id)
 
-    const isAllSelectedOnPage = paginatedStates.length > 0 &&
-        paginatedStates.every(state => selectedStates.includes(state.id))
+    const isAllSelectedOnPage = paginatedRegions.length > 0 &&
+        paginatedRegions.every(region => selectedRegions.includes(region.id))
 
-    const isAllSelected = filteredAndSortedStates.length > 0 &&
-        filteredAndSortedStates.every(state => selectedStates.includes(state.id))
+    const isAllSelected = filteredAndSortedRegions.length > 0 &&
+        filteredAndSortedRegions.every(region => selectedRegions.includes(region.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
-            // Deselect all on current pagep
-            setSelectedStates(prev => prev.filter(id => !allIdsOnCurrentPage.includes(id)))
+            // Deselect all on current page
+            setSelectedRegions(prev => prev.filter(id => !allIdsOnCurrentPage.includes(id)))
         } else {
             // Select all on current page
-            setSelectedStates(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
+            setSelectedRegions(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
         }
     }
 
     const handleSelectAll = () => {
         if (isAllSelected) {
-            setSelectedStates([])
+            setSelectedRegions([])
         } else {
-            setSelectedStates(allIds)
+            setSelectedRegions(allIds)
         }
     }
 
-    const handleSelectState = (stateId: number) => {
-        setSelectedStates(prev =>
-            prev.includes(stateId)
-                ? prev.filter(id => id !== stateId)
-                : [...prev, stateId]
+    const handleSelectRegion = (regionId: number) => {
+        setSelectedRegions(prev =>
+            prev.includes(regionId)
+                ? prev.filter(id => id !== regionId)
+                : [...prev, regionId]
         )
     }
 
@@ -439,7 +441,7 @@ const Content = () => {
         setCurrentPage(1)
     }
 
-    const handleSort = (field: keyof State) => {
+    const handleSort = (field: keyof Region) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
@@ -448,13 +450,13 @@ const Content = () => {
         }
     }
 
-    const handleDeleteState = (state: State) => {
-        setDeleteDialogState({ isOpen: true, state })
+    const handleDeleteRegion = (region: Region) => {
+        setDeleteDialogState({ isOpen: true, region })
     }
 
     const confirmDelete = () => {
-        if (deleteDialogState.state) {
-            deleteState(deleteDialogState.state.id)
+        if (deleteDialogState.region) {
+            deleteRegion(deleteDialogState.region.id)
             setDeleteDialogState({ isOpen: false })
         }
     }
@@ -465,8 +467,8 @@ const Content = () => {
     }
 
     const confirmBulkDelete = (ids: number[]) => {
-        ids.forEach(id => deleteState(id))
-        setSelectedStates([])
+        ids.forEach(id => deleteRegion(id))
+        setSelectedRegions([])
         setIsActionBarOpen(false)
         setIsBulkDeleteOpen(false)
     }
@@ -475,28 +477,28 @@ const Content = () => {
         setIsBulkEditOpen(true)
     }
 
-    const handleBulkUpdate = (id: number, data: Partial<StateFormData>) => {
-        updateState(id, data)
-        // Remove from selected states after update
-        setSelectedStates(prev => prev.filter(stateId => stateId !== id))
+    const handleBulkUpdate = (id: number, data: Partial<RegionFormData>) => {
+        updateRegion(id, data)
+        // Remove from selected regions after update
+        setSelectedRegions(prev => prev.filter(regionId => regionId !== id))
     }
 
     const handleBulkEditClose = () => {
         setIsBulkEditOpen(false)
-        // If all states have been processed, close the action bar
-        if (selectedStates.length === 0) {
+        // If all regions have been processed, close the action bar
+        if (selectedRegions.length === 0) {
             setIsActionBarOpen(false)
         }
     }
 
     // Close action bar when no items are selected
     useEffect(() => {
-        if (selectedStates.length === 0 && isActionBarOpen) {
+        if (selectedRegions.length === 0 && isActionBarOpen) {
             setIsActionBarOpen(false)
-        } else if (selectedStates.length > 0 && !isActionBarOpen) {
+        } else if (selectedRegions.length > 0 && !isActionBarOpen) {
             setIsActionBarOpen(true)
         }
-    }, [selectedStates, isActionBarOpen])
+    }, [selectedRegions, isActionBarOpen])
 
     return (
         <>
@@ -511,19 +513,19 @@ const Content = () => {
                     backdropFilter={"blur(20px)"}
                 >
                     <HStack>
-                        <Heading size="3xl">All States</Heading>
-                        <Badge colorPalette={"accent"}>{states.length}</Badge>
+                        <Heading size="3xl">All Regions</Heading>
+                        <Badge colorPalette={"accent"}>{regions.length}</Badge>
                     </HStack>
 
                     <HStack gap="4">
-                        <UploadStatesFromFile />
+                        <UploadRegionsFromFile />
                         <Button
                             colorPalette="accent"
                             rounded="xl"
                             onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
                         >
                             <Add />
-                            Add State
+                            Add Region
                         </Button>
                     </HStack>
                 </Flex>
@@ -535,8 +537,8 @@ const Content = () => {
                             <HStack justify="space-between" w="full">
                                 <HStack>
                                     <DownloadTrigger
-                                        data={JSON.stringify(states)}
-                                        fileName="states"
+                                        data={JSON.stringify(regions)}
+                                        fileName="regions"
                                         mimeType="application/json"
                                         asChild
                                     >
@@ -555,7 +557,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportToExcel(states)}
+                                        onClick={() => exportRegionsToExcel(regions)}
                                     >
                                         <DocumentDownload />
                                         Excel
@@ -567,7 +569,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportToCSV(states)}
+                                        onClick={() => exportRegionsToCSV(regions)}
                                     >
                                         <DocumentText />
                                         CSV
@@ -579,7 +581,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportToPDF(states)}
+                                        onClick={() => exportRegionsToPDF(regions)}
                                     >
                                         <ReceiptText />
                                         PDF
@@ -590,7 +592,7 @@ const Content = () => {
                                 <InputGroup bg="whiteAlpha.600" maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
                                     <Input
                                         rounded="xl"
-                                        placeholder="Search states..."
+                                        placeholder="Search regions..."
                                         onChange={(e) => handleSearch(e.target.value)}
                                     />
                                 </InputGroup>
@@ -628,16 +630,16 @@ const Content = () => {
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
-                                                onClick={() => handleSort('stateCode')}
+                                                onClick={() => handleSort('regionName')}
                                             >
-                                                State Code {sortField === 'stateCode' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                                Region Name {sortField === 'regionName' && (sortOrder === 'asc' ? '↑' : '↓')}
                                             </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
                                                 onClick={() => handleSort('leader')}
                                             >
-                                                State Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                                Region Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                                             </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
@@ -647,22 +649,22 @@ const Content = () => {
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
-                                        {paginatedStates.map((state) => (
-                                            <Table.Row key={state.id} bg="whiteAlpha.500">
+                                        {paginatedRegions.map((region) => (
+                                            <Table.Row key={region.id} bg="whiteAlpha.500">
                                                 <Table.Cell>
                                                     <Checkbox.Root
                                                         colorPalette={"accent"}
-                                                        checked={selectedStates.includes(state.id)}
-                                                        onCheckedChange={() => handleSelectState(state.id)}
+                                                        checked={selectedRegions.includes(region.id)}
+                                                        onCheckedChange={() => handleSelectRegion(region.id)}
                                                     >
                                                         <Checkbox.HiddenInput />
                                                         <Checkbox.Control cursor="pointer" rounded="md" />
                                                     </Checkbox.Root>
                                                 </Table.Cell>
-                                                <Table.Cell>{state.id}</Table.Cell>
-                                                <Table.Cell fontWeight="medium">{state.stateName}</Table.Cell>
-                                                <Table.Cell>{state.stateCode}</Table.Cell>
-                                                <Table.Cell>{state.leader}</Table.Cell>
+                                                <Table.Cell>{region.id}</Table.Cell>
+                                                <Table.Cell fontWeight="medium">{region.stateName}</Table.Cell>
+                                                <Table.Cell fontWeight="medium">{region.regionName}</Table.Cell>
+                                                <Table.Cell>{region.leader}</Table.Cell>
                                                 <Table.Cell textAlign="center">
                                                     <Menu.Root>
                                                         <Menu.Trigger asChild>
@@ -677,7 +679,7 @@ const Content = () => {
                                                                         value="edit"
                                                                         onClick={() => setDialogState({
                                                                             isOpen: true,
-                                                                            state,
+                                                                            region,
                                                                             mode: 'edit'
                                                                         })}
                                                                     >
@@ -687,7 +689,7 @@ const Content = () => {
                                                                         color="red"
                                                                         value="delete"
                                                                         colorPalette="red"
-                                                                        onClick={() => handleDeleteState(state)}
+                                                                        onClick={() => handleDeleteRegion(region)}
                                                                     >
                                                                         <Trash /> Delete
                                                                     </Menu.Item>
@@ -745,7 +747,7 @@ const Content = () => {
                 onOpenChange={(s) => {
                     setIsActionBarOpen(s.open)
                     if (!s.open) {
-                        setSelectedStates([]);
+                        setSelectedRegions([]);
                     }
                 }}
                 closeOnInteractOutside={false}
@@ -753,7 +755,7 @@ const Content = () => {
                 <ActionBar.Positioner>
                     <ActionBar.Content rounded="xl" shadow="2xl">
                         <ActionBar.SelectionTrigger>
-                            {selectedStates.length} selected
+                            {selectedRegions.length} selected
                         </ActionBar.SelectionTrigger>
                         <ActionBar.Separator />
                         <Button
@@ -792,14 +794,14 @@ const Content = () => {
 
             <Box>
                 {/* Add/Edit Dialog */}
-                <StateDialog
+                <RegionDialog
                     {...dialogState}
                     onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
                     onSave={(data) => {
                         if (dialogState.mode === 'add') {
-                            addState(data)
-                        } else if (dialogState.state) {
-                            updateState(dialogState.state.id, data)
+                            addRegion(data)
+                        } else if (dialogState.region) {
+                            updateRegion(dialogState.region.id, data)
                         }
                         setDialogState({ isOpen: false, mode: 'add' })
                     }}
@@ -808,7 +810,7 @@ const Content = () => {
                 {/* Single Delete Confirmation Dialog */}
                 <DeleteConfirmationDialog
                     isOpen={deleteDialogState.isOpen}
-                    state={deleteDialogState.state}
+                    region={deleteDialogState.region}
                     onClose={() => setDeleteDialogState({ isOpen: false })}
                     onConfirm={confirmDelete}
                 />
@@ -816,8 +818,8 @@ const Content = () => {
                 {/* Bulk Delete Dialog */}
                 <BulkDeleteDialog
                     isOpen={isBulkDeleteOpen}
-                    selectedStates={selectedStates}
-                    states={states}
+                    selectedRegions={selectedRegions}
+                    regions={regions}
                     onClose={() => setIsBulkDeleteOpen(false)}
                     onConfirm={confirmBulkDelete}
                 />
@@ -825,8 +827,8 @@ const Content = () => {
                 {/* Bulk Edit Dialog */}
                 <BulkEditDialog
                     isOpen={isBulkEditOpen}
-                    selectedStates={selectedStates}
-                    states={states}
+                    selectedRegions={selectedRegions}
+                    regions={regions}
                     onClose={handleBulkEditClose}
                     onUpdate={handleBulkUpdate}
                 />
@@ -838,12 +840,12 @@ const Content = () => {
 // Delete Confirmation Dialog Component (for single delete)
 interface DeleteConfirmationDialogProps {
     isOpen: boolean
-    state?: State
+    region?: Region
     onClose: () => void
     onConfirm: () => void
 }
 
-const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
+const DeleteConfirmationDialog = ({ isOpen, region, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
     return (
         <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
@@ -851,12 +853,12 @@ const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteC
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
-                            <Dialog.Title>Delete State</Dialog.Title>
+                            <Dialog.Title>Delete Region</Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
                             <p>
-                                Are you sure you want to delete <strong>{state?.stateName}</strong>?
-                                This action cannot be undone and will permanently remove this state from the system.
+                                Are you sure you want to delete <strong>{region?.regionName}</strong>?
+                                This action cannot be undone and will permanently remove this region from the system.
                             </p>
                         </Dialog.Body>
                         <Dialog.Footer>
@@ -877,25 +879,27 @@ const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteC
     )
 }
 
-// State Form Dialog Component
-interface StateDialogProps {
+// Region Form Dialog Component
+interface RegionDialogProps {
     isOpen: boolean
-    state?: State
+    region?: Region
     mode: 'add' | 'edit'
     onClose: () => void
-    onSave: (data: StateFormData) => void
+    onSave: (data: RegionFormData) => void
 }
 
-const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps) => {
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<StateFormData>({
-        resolver: zodResolver(stateSchema)
+const RegionDialog = ({ isOpen, region, mode, onClose, onSave }: RegionDialogProps) => {
+    const { register, handleSubmit, formState: { errors }, reset } = useForm<RegionFormData>({
+        resolver: zodResolver(regionSchema),
+        mode: "onChange"
     })
 
-    const onSubmit = (data: StateFormData) => {
+    const onSubmit = (data: RegionFormData) => {
         onSave(data)
         reset()
     }
-    const StateDialogForm = useCallback(() => {
+
+    const RegionDialogForm = useCallback(() => {
         return <Dialog.Root
             open={isOpen}
             onOpenChange={(e) => {
@@ -911,12 +915,12 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>
-                                {mode === 'add' ? 'Add New State' : 'Update State'}
+                                {mode === 'add' ? 'Add New Region' : 'Update Region'}
                             </Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
-                            <form noValidate id="state-form" onSubmit={handleSubmit(onSubmit)}>
+                            <form noValidate id="region-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4" colorPalette={"accent"}>
                                     <Field.Root required invalid={!!errors.stateName}>
                                         <Field.Label>State Name
@@ -925,35 +929,34 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                                         <Input
                                             rounded="lg"
                                             placeholder="Enter state name"
-                                            {...register('stateName')}
-                                            defaultValue={state?.stateName}
+                                            {...register('stateName', { required: "State name is required!" })}
+                                            defaultValue={region?.stateName}
                                         />
                                         <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    <Field.Root required invalid={!!errors.stateCode}>
-                                        <Field.Label>State Code
+                                    <Field.Root required invalid={!!errors.regionName}>
+                                        <Field.Label>Region Name
                                             <Field.RequiredIndicator />
                                         </Field.Label>
                                         <Input
                                             rounded="lg"
-                                            placeholder="Enter state code"
-                                            {...register('stateCode')}
-                                            defaultValue={state?.stateCode}
-
+                                            placeholder="Enter region name"
+                                            {...register('regionName')}
+                                            defaultValue={region?.regionName}
                                         />
-                                        <Field.ErrorText>{errors.stateCode?.message}</Field.ErrorText>
+                                        <Field.ErrorText>{errors.regionName?.message}</Field.ErrorText>
                                     </Field.Root>
 
                                     <Field.Root required invalid={!!errors.leader}>
-                                        <Field.Label>State Leader
+                                        <Field.Label>Region Leader
                                             <Field.RequiredIndicator />
                                         </Field.Label>
                                         <Input
                                             rounded="lg"
-                                            placeholder="Enter state leader name"
+                                            placeholder="Enter region leader name"
                                             {...register('leader')}
-                                            defaultValue={state?.leader}
+                                            defaultValue={region?.leader}
                                         />
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
@@ -965,8 +968,8 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                             <Dialog.ActionTrigger asChild>
                                 <Button rounded="xl" variant="outline">Cancel</Button>
                             </Dialog.ActionTrigger>
-                            <Button rounded="xl" type="submit" form="state-form" colorPalette="accent">
-                                {mode === 'add' ? 'Add State' : 'Update State'}
+                            <Button rounded="xl" type="submit" form="region-form" colorPalette="accent">
+                                {mode === 'add' ? 'Add Region' : 'Update Region'}
                             </Button>
                         </Dialog.Footer>
 
@@ -977,7 +980,7 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                 </Dialog.Positioner>
             </Portal>
         </Dialog.Root>
-    }, [state, mode, isOpen]);
+    }, [region, mode, isOpen]);
 
-    return <StateDialogForm />
+    return <RegionDialogForm />
 }
