@@ -6,6 +6,7 @@ import States from "@/modules/admin/pages/States";
 import Regions from "@/modules/admin/pages/Regions";
 import OldGroups from "@/modules/admin/pages/OldGroups";
 import Groups from "@/modules/admin/pages/Group";
+import Districts from "@/modules/admin/pages/Districts";
 
 
 export default function AdminRoutes() {
@@ -18,6 +19,7 @@ export default function AdminRoutes() {
           <Route path="/regions" element={<Regions />} />
           <Route path="/old_groups" element={<OldGroups />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/districts" element={<Districts />} />
         </Route>
       </Routes>
     </ProtectedRoute >
