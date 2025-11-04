@@ -18,7 +18,7 @@ const AdminSidebar: React.FC = () => {
     const location = useLocation();
 
     const isLinkActive = (href: string): boolean => {
-        return location.pathname.endsWith(href);
+        return location.pathname.includes(href);
     };
 
     const links = [
@@ -28,7 +28,7 @@ const AdminSidebar: React.FC = () => {
         { name: "Old Groups", href: "/admin/old_groups", icon: <Box1 variant="Bulk" /> },
         { name: "Groups", href: "/admin/groups", icon: <Layer variant="Bulk" /> },
         { name: "Districts", href: "/admin/districts", icon: <Map1 variant="Bulk" /> },
-        { name: "Users and Rights", href: "/admin/users_and_rights", icon: <People variant="Bulk" /> },
+        { name: "Users and Rights", href: "/admin/users", icon: <People variant="Bulk" /> },
         { name: "Attendance", href: "/admin/attendance", icon: <NoteText variant="Bulk" /> },
         { name: "Youth Ministry", href: "/admin/youth_ministry", icon: <House variant="Bulk" /> },
         { name: "Reports", href: "/admin/reports", icon: <Chart1 variant="Bulk" /> },
