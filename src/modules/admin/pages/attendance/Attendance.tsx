@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useSearchParams } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 import {
     Box,
     Heading,
@@ -38,8 +38,8 @@ import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
 import { getMonthOptions, getWeekOptions, getYearOptions, calculateTotals, copyAttendanceToClipboard, exportAttendanceToExcel, exportAttendanceToCSV, exportAttendanceToPDF } from "@/utils/attendance.utils"
-import { AttendanceSchema, type AttendanceFormData } from "../schemas/attendance.schema"
-import { type Attendance, useAttendanceStore, SERVICE_TYPES, type ServiceType } from "../stores/attendance.store"
+import { AttendanceSchema, type AttendanceFormData } from "../../schemas/attendance.schema"
+import { type Attendance, useAttendanceStore, SERVICE_TYPES, type ServiceType } from "../../stores/attendance.store"
 
 // Props for the dynamic attendance component
 interface AttendancePageProps {
@@ -495,6 +495,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.men || 0).toString()}
                                                 onValueChange={(e) => setValue('men', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('men', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.men?.message}</Field.ErrorText>
@@ -507,6 +508,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.women || 0).toString()}
                                                 onValueChange={(e) => setValue('women', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('women', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.women?.message}</Field.ErrorText>
@@ -521,6 +523,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.youthBoys || 0).toString()}
                                                 onValueChange={(e) => setValue('youthBoys', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('youthBoys', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.youthBoys?.message}</Field.ErrorText>
@@ -533,6 +536,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.youthGirls || 0).toString()}
                                                 onValueChange={(e) => setValue('youthGirls', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('youthGirls', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.youthGirls?.message}</Field.ErrorText>
@@ -547,6 +551,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.childrenBoys || 0).toString()}
                                                 onValueChange={(e) => setValue('childrenBoys', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('childrenBoys', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.childrenBoys?.message}</Field.ErrorText>
@@ -559,11 +564,12 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 defaultValue={(attendance?.childrenGirls || 0).toString()}
                                                 onValueChange={(e) => setValue('childrenGirls', e.valueAsNumber)}
                                             >
+                                                <NumberInput.Control />
                                                 <NumberInput.Input rounded="lg" {...register('childrenGirls', { valueAsNumber: true })} />
                                             </NumberInput.Root>
                                             <Field.ErrorText>{errors.childrenGirls?.message}</Field.ErrorText>
                                         </Field.Root>
-                                    </HStack>f
+                                    </HStack>
                                 </VStack>
                             </form>
                         </Dialog.Body>
@@ -590,7 +596,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 // Main Dynamic Attendance Component
 export const AttendancePage: React.FC<AttendancePageProps> = ({ serviceType }) => {
     const { reset } = useQueryErrorResetBoundary();
-    const serviceName = SERVICE_TYPES[serviceType].name;
+    const serviceName = SERVICE_TYPES[serviceType]?.name;
 
     return (
         <>
@@ -627,6 +633,7 @@ const Content = ({ serviceType, serviceName }: ContentProps) => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
+    const navigate = useNavigate();
 
     const { attendances, addAttendance, updateAttendance, deleteAttendance, getAttendancesByServiceType } = useAttendanceStore()
 
@@ -787,6 +794,12 @@ const Content = ({ serviceType, serviceName }: ContentProps) => {
         <>
             <VStack gap="6" align="stretch">
                 {/* Header */}
+                <HStack>
+                    <IconButton size="sm" rounded="xl" colorPalette={"accent"} onClick={() => navigate(-1)}>
+                        <ArrowLeft3 />
+                    </IconButton>
+                </HStack>
+
                 <Flex
                     justify="space-between"
                     align="center"

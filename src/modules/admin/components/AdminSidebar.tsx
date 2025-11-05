@@ -5,7 +5,9 @@ import {
     IconButton,
     Menu,
     Avatar,
-    Portal} from "@chakra-ui/react";
+    Portal,
+    Center
+} from "@chakra-ui/react";
 import { NavLink, useLocation } from "react-router";
 import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
@@ -46,7 +48,7 @@ const AdminSidebar: React.FC = () => {
                                 color="white"
                                 rounded="lg"
                                 p="2"
-                                w="full"
+                                w={isCollapsed ? "fit" : "full"}
                                 fontSize={"sm"}
                                 fontWeight={"semibold"}
                                 bg={{
@@ -60,7 +62,9 @@ const AdminSidebar: React.FC = () => {
                                     }
                                 }}
                             >
-                                {link.icon}
+                                <Center>
+                                    {link.icon}
+                                </Center>
 
                                 {!isCollapsed && <Box lineClamp={1}>
                                     {link.name}

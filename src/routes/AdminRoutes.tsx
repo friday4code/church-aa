@@ -10,7 +10,8 @@ import Districts from "@/modules/admin/pages/Districts";
 import Users from "@/modules/admin/pages/users/Users";
 import UserRights from "@/modules/admin/pages/users/UserRights";
 import Index from "@/modules/admin/pages/users/Index";
-import SundayWorship from "@/modules/admin/pages/Attendance";
+import AttendanceType from "@/modules/admin/components/AttendanceType";
+import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
 
 
 export default function AdminRoutes() {
@@ -34,9 +35,8 @@ export default function AdminRoutes() {
 
           {/* Attendance */}
           <Route path="/attendance">
-            <Route element={<Index />} index />
-            <Route path="sunday_worship_service" element={<SundayWorship />} />
-            <Route path="rights" element={<UserRights />} />
+            <Route element={<AttendanceDashboard />} index />
+            <Route path=":type" element={<AttendanceType />} />
           </Route>
         </Route>
       </Routes>
