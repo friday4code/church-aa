@@ -12,6 +12,10 @@ import UserRights from "@/modules/admin/pages/users/UserRights";
 import Index from "@/modules/admin/pages/users/Index";
 import AttendanceType from "@/modules/admin/components/AttendanceType";
 import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
+import YouthAttendanceDashboard from "@/modules/admin/pages/attendance/youthAttendance/Index";
+import YouthAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthAttendance";
+import YouthRevivalAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthRevivalAttendance";
+import YouthWeeklyAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthWeeklyAttendance";
 
 
 export default function AdminRoutes() {
@@ -37,6 +41,13 @@ export default function AdminRoutes() {
           <Route path="/attendance">
             <Route element={<AttendanceDashboard />} index />
             <Route path=":type" element={<AttendanceType />} />
+          </Route>
+
+          <Route path="/youth_ministry">
+            <Route element={<YouthAttendanceDashboard />} index />
+            <Route path="attendance" element={<YouthAttendancePage />} />
+            <Route path="weekly_attendance" element={<YouthWeeklyAttendancePage />} />
+            <Route path="revival_attendance" element={<YouthRevivalAttendancePage />} />
           </Route>
         </Route>
       </Routes>
