@@ -16,7 +16,6 @@ import {
     Span,
     Image,
     Container,
-    Switch,
     ScrollArea
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
@@ -31,7 +30,6 @@ import { authApi } from "@/api/auth.api";
 const loginSchema = z.object({
     email: z.email("Invalid email address").min(1, "Email is required"),
     password: z.string().min(5, "Password is required"),
-    rememberMe: z.any()
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -208,12 +206,6 @@ const Login = () => {
                                                     {errors.password?.message}
                                                 </Field.ErrorText>
                                             </Field.Root>
-
-                                            <Switch.Root>
-                                                <Switch.HiddenInput {...register("rememberMe")} />
-                                                <Switch.Control />
-                                                <Switch.Label>Remember me</Switch.Label>
-                                            </Switch.Root>
 
                                             <Button rounded="lg"
                                                 type="submit"

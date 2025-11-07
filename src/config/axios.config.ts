@@ -3,7 +3,7 @@ import { toaster } from "@/components/ui/toaster"
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { ENV } from "./env"
 import { useAuthStore } from "@/store/auth.store"
-import type { Tokens } from "@/types/api"
+import type { Tokens } from "@/types/auth.type"
 
 export const axiosClient = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -16,8 +16,6 @@ export const axiosClient = axios.create({
 // List of public endpoints that don't require auth token
 const PUBLIC_ENDPOINTS = [
   '/auth/login',
-  '/users',
-  '/auth/signup',
   '/auth/forgot-password',
   '/auth/refresh-token',
   // Add any other public endpoints here

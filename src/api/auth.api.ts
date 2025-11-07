@@ -8,9 +8,9 @@ import { delay } from "@/utils/helpers"
 
 export const authApi = {
     login: async (credentials: LoginFormData): Promise<LoginResponse> => {
-        await delay(2000);
-        // const { data } = await axiosClient.post<LoginResponse>("/auth/login", credentials);
-        return sampleLoginResponse;
+        // await delay(2000);
+        const { data } = await axiosClient.post<LoginResponse>("/auth/login", credentials);
+        return data;
     },
 
     register: async (registerData: Record<string, string | Record<string, string>>): Promise<LoginResponse> => {
