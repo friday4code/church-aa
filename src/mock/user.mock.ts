@@ -9,6 +9,7 @@ export const sampleUser: User = {
     middle_name: "Michael",
     phone_number: "+1-555-0123",
     full_name: "John Michael Doe",
+    avatar_url: "https://bit.ly/sage-adebayo",
     role: "user"
 };
 
@@ -20,6 +21,7 @@ export const sampleAdminUser: User = {
     middle_name: null,
     phone_number: "+1-555-0124",
     full_name: "Jane Smith",
+    avatar_url: "https://bit.ly/sage-adebayo",
     role: "admin"
 };
 
@@ -29,6 +31,6 @@ export const sampleTokens: Tokens = {
 };
 
 export const sampleLoginResponse: LoginResponse = {
-    user: sampleUser,
+    user: sampleAdminUser,
     tokens: sampleTokens
 };

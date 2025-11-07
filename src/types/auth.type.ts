@@ -6,6 +6,7 @@ export interface User {
     middle_name: string | null;
     phone_number: string;
     full_name: string;
+    avatar_url:string;
     role: "user" | "admin"
 }
 
