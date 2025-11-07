@@ -43,8 +43,8 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
             'District Leader': district.leader || '',
             'Region': district.regionName,
             'State': district.stateName,
-            'Created Date': district.createdAt.toLocaleDateString(),
-            'Updated Date': district.updatedAt.toLocaleDateString()
+            'Created Date': new Date(district.createdAt).toLocaleDateString(),
+            'Updated Date': new Date(district.updatedAt).toLocaleDateString()
         }));
 
         // Create worksheet
@@ -94,8 +94,8 @@ export const exportDistrictsToCSV = (districts: District[]): void => {
             `"${(district.leader || '').replace(/"/g, '""')}"`,
             `"${district.regionName.replace(/"/g, '""')}"`,
             `"${district.stateName.replace(/"/g, '""')}"`,
-            district.createdAt.toLocaleDateString(),
-            district.updatedAt.toLocaleDateString()
+            new Date(district.createdAt).toLocaleDateString(),
+            new Date(district.updatedAt).toLocaleDateString()
         ]);
 
         // Combine headers and rows

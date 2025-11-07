@@ -69,13 +69,13 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 zIndex={1}
             >
 
-                <ScrollArea.RootProvider 
-                bgGradient="to-br"
-                gradientFrom={"accent.100/90"}
-                gradientTo={"red.50/90"}
-                 value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
+                <ScrollArea.RootProvider
+                    bgGradient="to-br"
+                    gradientFrom={"accent.100/90"}
+                    gradientTo={"red.50/90"}
+                    value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
                     <ScrollArea.Viewport>
-                        <ScrollArea.Content  rounded={6}>
+                        <ScrollArea.Content rounded={6}>
                             <Container pos="relative" maxW={"7xl"} py="6">
                                 {children}
                             </Container>
@@ -94,7 +94,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
             <Box bg="red.300" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" top={0} right={0} zIndex={0} />
             <Box bg="red.300" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" bottom={0} left={20} zIndex={0} />
             <Box bg="accent.300" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" bottom={"50%"} transform={"translateY(50%)"} left={"50%"} zIndex={0} />
-            
+
         </Flex>
     );
 };

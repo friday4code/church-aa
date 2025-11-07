@@ -8,7 +8,7 @@ import {
     Portal,
     Center
 } from "@chakra-ui/react";
-import { NavLink, useLocation } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
@@ -118,6 +118,8 @@ export default AdminSidebar;
 
 const ProfileAvatar = () => {
     const { user, logout } = useAuthStore();
+    const navigate = useNavigate();
+
     return (
         <Menu.Root positioning={{ placement: "right-end" }}>
             <Menu.Trigger cursor="pointer" rounded="full" focusRing="outside">
@@ -129,7 +131,7 @@ const ProfileAvatar = () => {
             <Portal>
                 <Menu.Positioner>
                     <Menu.Content>
-                        <Menu.Item value="account">
+                        <Menu.Item value="account" onClick={() => navigate("/admin/profile")}>
                             <Profile variant="Bulk" /> Profile
                         </Menu.Item>
                         <Menu.Item onSelect={logout} color="red" value="logout">
