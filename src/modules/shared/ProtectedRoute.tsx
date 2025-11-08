@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router";
 import { useAuthStore } from "@/store/auth.store";
 
 interface ProtectedRouteProps {
-    allowedRoles?: string[]; // e.g. ["student", "super_admin"]
+    allowedRoles?: string[]; // e.g. ["admin", "user"]
     children: React.ReactNode;
 }
 
@@ -11,10 +11,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedRoles,
     children,
 }) => {
-    const { getRole, isAuthenticated } = useAuthStore();
+    const { isAuthenticated, hasAnyRole } = useAuthStore();
     const location = useLocation();
-
-    const userRole = getRole()?.toLowerCase() || "";
 
     // 🚫 Redirect unauthenticated users
     if (!isAuthenticated()) {
@@ -23,9 +21,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // 🔐 Check role access if allowedRoles is specified
     if (allowedRoles && allowedRoles.length > 0) {
-        const hasAccess = allowedRoles.some((role) =>
-            userRole?.includes(role.toLowerCase())
-        );
+        const hasAccess = hasAnyRole(allowedRoles);
 
         if (!hasAccess) {
             return <Navigate to="/unauthorized" replace />;

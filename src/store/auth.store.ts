@@ -9,10 +9,10 @@ import { persist } from "zustand/middleware";
 type AuthState = {
   user: User | null;
   tokens: Tokens | null;
-  setAuth: (data: { user: User, tokens: Tokens }) => void;
+  setAuth: (data: { user: User; tokens: Tokens }) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
-  getRole: () => User["role"];
+  getRoles: () => string[];
 
   // Role-based getters
   isUser: () => boolean;
@@ -21,7 +21,6 @@ type AuthState = {
   // Utility role checkers
   hasRole: (roleName: string) => boolean;
   hasAnyRole: (roleNames: string[]) => boolean;
-  hasRoleByCode: (roleCode: string) => boolean;
 };
 
 // --------------------
@@ -39,9 +38,9 @@ export const useAuthStore = create<AuthState>()(
         set({ user, tokens });
       },
 
-      // ✅ get user role
-      getRole: () => {
-        return get().user?.role as User["role"];
+      // ✅ Get user roles array
+      getRoles: () => {
+        return get().user?.roles || [];
       },
 
       // ✅ Logout and clear persisted state
@@ -49,36 +48,29 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, tokens: null });
       },
 
-      // ✅ Derived state
-      isAuthenticated: () => !!get().tokens?.accessToken,
+      // ✅ Derived state - check if user has valid access token
+      isAuthenticated: () => !!get().tokens?.access_token,
 
       // ✅ Role-based getters
       isUser: () => {
-        const user = get().user;
-        const role = user?.role;
-        return !!role && role === 'user'
+        const roles = get().user?.roles || [];
+        return roles.includes('user') || (!roles.includes('admin') && roles.length > 0);
       },
 
       isAdmin: () => {
-        const role = get().user?.role;
-        return !!role && role.toLowerCase().includes('admin');
+        const roles = get().user?.roles || [];
+        return roles.includes('admin');
       },
+
       // ✅ Utility role checkers
       hasRole: (roleName: string) => {
-        const role = get().user?.role;
-        return !!role && role === roleName;
+        const roles = get().user?.roles || [];
+        return roles.includes(roleName);
       },
 
       hasAnyRole: (roleNames: string[]) => {
-        const userRole = get().user?.role;
-        return !!userRole && roleNames.some(roleName =>
-          userRole === roleName
-        );
-      },
-
-      hasRoleByCode: (roleCode: string) => {
-        const role = get().user?.role;
-        return !!role && role === roleCode;
+        const userRoles = get().user?.roles || [];
+        return userRoles.some(role => roleNames.includes(role));
       },
     }),
     {

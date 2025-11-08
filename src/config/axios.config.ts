@@ -3,7 +3,6 @@ import { toaster } from "@/components/ui/toaster"
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { ENV } from "./env"
 import { useAuthStore } from "@/store/auth.store"
-import type { Tokens } from "@/types/auth.type"
 
 export const axiosClient = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -101,18 +100,18 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor to add auth token - FIXED
+// Request interceptor to add auth token
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // ✅ Skip auth header for public endpoints
+    // Skip auth header for public endpoints
     const isPublic = isPublicEndpoint(config.url);
 
     if (!isPublic) {
-      // ✅ Get fresh tokens from store for each request
-      const tokens = useAuthStore.getState()?.tokens as Tokens;
+      // Get fresh tokens from store for each request
+      const tokens = useAuthStore.getState()?.tokens;
 
-      if (tokens?.accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${tokens.accessToken}`
+      if (tokens?.access_token && config.headers) {
+        config.headers.Authorization = `Bearer ${tokens.access_token}`
       }
     }
 
@@ -128,7 +127,7 @@ axiosClient.interceptors.request.use(
   },
 )
 
-// Response interceptor - FIXED
+// Response interceptor
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -144,15 +143,9 @@ axiosClient.interceptors.response.use(
       });
     }
 
-    // 🟠 Unauthorized (Token expired) - Skip for public endpoints
+    // Unauthorized (Token expired) - Skip for public endpoints
     if (error.response?.status === 401 && !originalRequest._retry && !isPublicEndpoint(originalRequest.url)) {
       console.warn("🟠 Unauthorized (Token expired):", error.config?.url);
-
-      toaster.error({
-        title: getErrorTitle(error),
-        description: getErrorMessage(error),
-        closable: true
-      });
 
       // Handle concurrent refresh requests
       if (isRefreshing) {
@@ -172,34 +165,34 @@ axiosClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // ✅ Get fresh tokens for refresh attempt
-        const currentTokens = useAuthStore.getState()?.tokens as Tokens;
+        // Get fresh tokens for refresh attempt
+        const currentTokens = useAuthStore.getState()?.tokens;
 
-        if (!currentTokens?.refreshToken) {
+        if (!currentTokens?.refresh_token) {
           throw new Error("No refresh token available");
         }
 
         const response = await axios.post(`${ENV.API_BASE_URL}/auth/refresh-token`, {
-          refreshToken: currentTokens.refreshToken,
+          refresh_token: currentTokens.refresh_token,
         });
 
-        const { accessToken, refreshToken } = response.data;
+        const { access_token, refresh_token } = response.data;
 
-        // ✅ Update store with new tokens
+        // Update store with new tokens
         useAuthStore.setState({
           tokens: {
-            accessToken: accessToken,
-            refreshToken: refreshToken || currentTokens.refreshToken
+            access_token: access_token,
+            refresh_token: refresh_token || currentTokens.refresh_token
           }
         });
 
         // Process queued requests
         isRefreshing = false;
-        processQueue(null, accessToken);
+        processQueue(null, access_token);
 
         // Retry original request
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
         }
 
         return axiosClient(originalRequest);
@@ -223,327 +216,22 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    // 🟡 Bad Request (400)
-    if (error.response?.status === 400) {
-      console.warn("⚠️ Bad Request:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: getErrorMessage(error),
-        closable: true
-      });
+    // Handle other error status codes
+    if (error.response?.status && error.response.status >= 400) {
+      console.warn(`HTTP ${error.response.status}:`, error.config?.url);
+
+      // Only show toaster for client errors (4xx) and server errors (5xx)
+      // but not for 401 which is handled above
+      if (error.response.status !== 401) {
+        toaster.error({
+          title: getErrorTitle(error),
+          description: getErrorMessage(error),
+          closable: true
+        });
+      }
     }
 
-    // 🔵 Payment Required (402)
-    if (error.response?.status === 402) {
-      console.warn("💰 Payment Required:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Payment required to access this resource.",
-        closable: true
-      });
-    }
-
-    // 🟣 Forbidden (403)
-    if (error.response?.status === 403) {
-      console.warn("🚫 Access forbidden:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "You don't have permission to access this resource.",
-        closable: true
-      });
-    }
-
-    // 🔵 Not Found (404)
-    if (error.response?.status === 404) {
-      console.warn("⚠️ Resource not found:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: getErrorMessage(error),
-        closable: true
-      });
-    }
-
-    // 🟠 Method Not Allowed (405)
-    if (error.response?.status === 405) {
-      console.warn("🚫 Method not allowed:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "This HTTP method is not allowed for the requested resource.",
-        closable: true
-      });
-    }
-
-    // 🔵 Not Acceptable (406)
-    if (error.response?.status === 406) {
-      console.warn("❌ Not acceptable:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server cannot produce a response matching the accept headers.",
-        closable: true
-      });
-    }
-
-    // 🟡 Request Timeout (408)
-    if (error.response?.status === 408) {
-      console.warn("⏰ Request timeout:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The request timed out. Please try again.",
-        closable: true
-      });
-    }
-
-    // 🔴 Conflict (409)
-    if (error.response?.status === 409) {
-      console.warn("⚡ Conflict:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: getErrorMessage(error) || "A conflict occurred with the current state of the resource.",
-        closable: true
-      });
-    }
-
-    // 🔵 Gone (410)
-    if (error.response?.status === 410) {
-      console.warn("🗑️ Resource gone:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The requested resource is no longer available.",
-        closable: true
-      });
-    }
-
-    // 🟡 Length Required (411)
-    if (error.response?.status === 411) {
-      console.warn("📏 Length required:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Content-Length header is required for this request.",
-        closable: true
-      });
-    }
-
-    // 🟡 Precondition Failed (412)
-    if (error.response?.status === 412) {
-      console.warn("🔒 Precondition failed:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Precondition given in the request failed.",
-        closable: true
-      });
-    }
-
-    // 🟡 Payload Too Large (413)
-    if (error.response?.status === 413) {
-      console.warn("📦 Payload too large:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The request payload is too large.",
-        closable: true
-      });
-    }
-
-    // 🟡 URI Too Long (414)
-    if (error.response?.status === 414) {
-      console.warn("🔗 URI too long:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The request URI is too long.",
-        closable: true
-      });
-    }
-
-    // 🟡 Unsupported Media Type (415)
-    if (error.response?.status === 415) {
-      console.warn("🎭 Unsupported media type:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The media type is not supported by the server.",
-        closable: true
-      });
-    }
-
-    // 🟡 Range Not Satisfiable (416)
-    if (error.response?.status === 416) {
-      console.warn("🎯 Range not satisfiable:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The requested range cannot be satisfied.",
-        closable: true
-      });
-    }
-
-    // 🟡 Expectation Failed (417)
-    if (error.response?.status === 417) {
-      console.warn("🎭 Expectation failed:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server cannot meet the requirements of the Expect request-header field.",
-        closable: true
-      });
-    }
-
-    // 🟠 I'm a teapot (418) - Easter egg
-    if (error.response?.status === 418) {
-      console.warn("🫖 I'm a teapot:", error.config?.url);
-      toaster.error({
-        title: "I'm a teapot",
-        description: "The server refuses to brew coffee because it is, permanently, a teapot.",
-        closable: true
-      });
-    }
-
-    // 🟡 Too Many Requests (429)
-    if (error.response?.status === 429) {
-      console.warn("🚦 Too many requests:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Too many requests. Please slow down and try again later.",
-        closable: true
-      });
-    }
-
-    // 🟠 Validation Error (422)
-    if (error.response?.status === 422) {
-      console.warn("📝 Validation error:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: getErrorMessage(error),
-        closable: true
-      });
-    }
-
-    // 🔴 Internal Server Error (500)
-    if (error.response?.status === 500) {
-      console.error("🚨 Internal server error:", error.config?.url, error.response);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Something went wrong on our server. Please try again later.",
-        closable: true
-      });
-    }
-
-    // 🔴 Not Implemented (501)
-    if (error.response?.status === 501) {
-      console.error("🔧 Not implemented:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "This feature is not implemented on the server.",
-        closable: true
-      });
-    }
-
-    // 🔴 Bad Gateway (502)
-    if (error.response?.status === 502) {
-      console.error("🌐 Bad gateway:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server received an invalid response from the upstream server.",
-        closable: true
-      });
-    }
-
-    // 🔴 Service Unavailable (503)
-    if (error.response?.status === 503) {
-      console.error("🔧 Service unavailable:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The service is temporarily unavailable. Please try again later.",
-        closable: true
-      });
-    }
-
-    // 🔴 Gateway Timeout (504)
-    if (error.response?.status === 504) {
-      console.error("⏰ Gateway timeout:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The gateway timed out. Please try again.",
-        closable: true
-      });
-    }
-
-    // 🔴 HTTP Version Not Supported (505)
-    if (error.response?.status === 505) {
-      console.error("🔌 HTTP version not supported:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The HTTP version used in the request is not supported.",
-        closable: true
-      });
-    }
-
-    // 🔴 Variant Also Negotiates (506)
-    if (error.response?.status === 506) {
-      console.error("🔄 Variant also negotiates:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server has an internal configuration error.",
-        closable: true
-      });
-    }
-
-    // 🔴 Insufficient Storage (507)
-    if (error.response?.status === 507) {
-      console.error("💾 Insufficient storage:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server is out of storage space.",
-        closable: true
-      });
-    }
-
-    // 🔴 Loop Detected (508)
-    if (error.response?.status === 508) {
-      console.error("🔄 Loop detected:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server detected an infinite loop while processing the request.",
-        closable: true
-      });
-    }
-
-    // 🔴 Bandwidth Limit Exceeded (509)
-    if (error.response?.status === 509) {
-      console.error("📊 Bandwidth limit exceeded:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "The server's bandwidth limit has been exceeded.",
-        closable: true
-      });
-    }
-
-    // 🔴 Not Extended (510)
-    if (error.response?.status === 510) {
-      console.error("🔌 Not extended:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Further extensions to the request are required.",
-        closable: true
-      });
-    }
-
-    // 🔴 Network Authentication Required (511)
-    if (error.response?.status === 511) {
-      console.error("🔐 Network authentication required:", error.config?.url);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Network authentication is required to access this resource.",
-        closable: true
-      });
-    }
-
-    // 🔴 Server Errors (5xx) - Catch all
-    if (error.response?.status && error.response.status >= 500 && error.response.status < 600) {
-      console.error("🚨 Server error:", error.config?.url, error.response);
-      toaster.error({
-        title: getErrorTitle(error),
-        description: "Something went wrong on our server. Please try again later.",
-        closable: true
-      });
-    }
-
-    // ⚫ Network or unknown errors
+    // Network or unknown errors
     if (!error.response) {
       console.error("🌐 Network error or no response from server:", error.message);
       toaster.error({
@@ -556,31 +244,5 @@ axiosClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// Optional: Add request/response logging for development
-// if (import.meta.env.DEV) {
-//   axiosClient.interceptors.request.use(
-//     (config) => {
-//       const isPublic = isPublicEndpoint(config.url);
-//       console.log(`🚀 ${config.method?.toUpperCase()} ${config.url} ${isPublic ? '(PUBLIC)' : '(AUTH)'}`, config.params || '');
-//       return config;
-//     },
-//     (error) => {
-//       console.error('🚀 Request Error:', error);
-//       return Promise.reject(error);
-//     }
-//   );
-
-//   axiosClient.interceptors.response.use(
-//     (response) => {
-//       console.log(`✅ ${response.status} ${response.config.url}`, response.data);
-//       return response;
-//     },
-//     (error) => {
-//       console.error(`❌ ${error.response?.status} ${error.config?.url}`, error.response?.data);
-//       return Promise.reject(error);
-//     }
-//   );
-// }
 
 export default axiosClient;

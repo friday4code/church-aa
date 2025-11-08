@@ -83,7 +83,7 @@ export default function AdminRoutes() {
     // - Automatically redirects unauthenticated users to login
     // - Redirects unauthorized users to unauthorized page
     // - Preserves location state for post-login redirection
-    <ProtectedRoute allowedRoles={["Admin"]}>
+    <ProtectedRoute allowedRoles={["admin"]}>
       <Routes>
         {/* AdminLayout Wrapper:
             - Provides consistent admin UI structure (sidebar, header, etc.)

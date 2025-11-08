@@ -1,21 +1,23 @@
 export interface User {
     id: number;
     email: string;
-    first_name: string;
-    last_name: string;
-    middle_name: string | null;
-    phone_number: string;
-    full_name: string;
-    avatar_url:string;
-    role: "user" | "admin"
-}
-
-export interface Tokens {
-    accessToken: string;
-    refreshToken: string;
+    name: string;
+    phone: string | null;
+    is_active: boolean;
+    roles: string[];
+    access_level: string;
+    region_id: number | null;
+    state_id: number | null;
+    district_id: number | null;
 }
 
 export interface LoginResponse {
+    access_token: Tokens["access_token"];
+    refresh_token: Tokens["refresh_token"];
     user: User;
-    tokens: Tokens;
+}
+
+export interface Tokens {
+    access_token: string;
+    refresh_token: string;
 }
