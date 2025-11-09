@@ -24,7 +24,7 @@
 import { Routes, Route } from "react-router";
 import ProtectedRoute from "@/modules/shared/ProtectedRoute";
 import AdminLayout from "@/modules/admin/layouts/AdminLayout";
-import { Dashboard } from "@/modules/admin/pages/Dashboard";
+import { Dashboard } from "@/modules/admin/pages/dashboard/Dashboard";
 import States from "@/modules/admin/pages/States";
 import Regions from "@/modules/admin/pages/Regions";
 import OldGroups from "@/modules/admin/pages/OldGroups";
