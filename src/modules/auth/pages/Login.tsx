@@ -63,7 +63,7 @@ const Login = () => {
         mutationFn: authApi.login,
         onSuccess: async (response) => {
             // Handle successful login, e.g., redirect or store token
-            console.log("Login successful:",response);
+            console.log("Login successful:");
 
             // save data
             setAuth({ user: response.user, tokens: { refresh_token: response.refresh_token, access_token: response.access_token } });
