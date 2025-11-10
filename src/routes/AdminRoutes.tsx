@@ -21,26 +21,26 @@
  * @since 2024
  */
 
-import { Routes, Route } from "react-router";
-import ProtectedRoute from "@/modules/shared/ProtectedRoute";
-import AdminLayout from "@/modules/admin/layouts/AdminLayout";
-import { Dashboard } from "@/modules/admin/pages/dashboard/Dashboard";
-import States from "@/modules/admin/pages/States";
-import Regions from "@/modules/admin/pages/Regions";
-import OldGroups from "@/modules/admin/pages/OldGroups";
-import Groups from "@/modules/admin/pages/Group";
-import Districts from "@/modules/admin/pages/Districts";
-import Users from "@/modules/admin/pages/users/Users";
-import UserRights from "@/modules/admin/pages/users/UserRights";
-import Index from "@/modules/admin/pages/users/Index";
 import AttendanceType from "@/modules/admin/components/AttendanceType";
+import AdminLayout from "@/modules/admin/layouts/AdminLayout";
 import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
 import YouthAttendanceDashboard from "@/modules/admin/pages/attendance/youthAttendance/Index";
 import YouthAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthAttendance";
 import YouthRevivalAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthRevivalAttendance";
 import YouthWeeklyAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthWeeklyAttendance";
-import AdminProfilePage from "@/modules/admin/pages/Profile";
-import ReportsDashboard from "@/modules/admin/pages/Reports";
+import { Dashboard } from "@/modules/admin/pages/dashboard/Dashboard";
+import Districts from "@/modules/admin/pages/districts/Districts";
+import Groups from "@/modules/admin/pages/groups/Group";
+import OldGroups from "@/modules/admin/pages/oldGroups/OldGroups";
+import AdminProfilePage from "@/modules/admin/pages/profile/Profile";
+import Regions from "@/modules/admin/pages/regions/Regions";
+import ReportsDashboard from "@/modules/admin/pages/reports/Reports";
+import States from "@/modules/admin/pages/states/States";
+import Index from "@/modules/admin/pages/users/Index";
+import UserRights from "@/modules/admin/pages/users/UserRights";
+import Users from "@/modules/admin/pages/users/Users";
+import ProtectedRoute from "@/modules/shared/ProtectedRoute";
+import { Route, Routes } from "react-router";
 
 /**
  * AdminRoutes Component

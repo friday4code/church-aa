@@ -1,4 +1,4 @@
-// components/districts/DistrictsPage.tsx
+// components/oldGroups/OldGroupsPage.tsx
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
@@ -35,11 +35,11 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import UploadDistrictsFromFile from "../components/PortingFile"
+import UploadOldGroupsFromFile from "../../components/PortingFile"
 import NaijaStates from 'naija-state-local-government'
-import { districtSchema, type DistrictFormData } from "../schemas/districts.schema"
-import { type District, useDistrictsStore } from "../stores/districts.store"
-import { copyDistrictsToClipboard, exportDistrictsToExcel, exportDistrictsToCSV, exportDistrictsToPDF } from "@/utils/districts.utils"
+import { oldGroupSchema, type OldGroupFormData } from "../../schemas/oldgroups.schema"
+import { type OldGroup, useOldGroupsStore } from "../../stores/oldgroups.store"
+import { copyOldGroupsToClipboard, exportOldGroupsToExcel, exportOldGroupsToCSV, exportOldGroupsToPDF } from "@/utils/olgroups.utils"
 
 // UUID generator function
 const uuid = () => {
@@ -109,6 +109,7 @@ const StateCombobox = ({ value, onChange, invalid = false }: {
                 </Combobox.IndicatorGroup>
             </Combobox.Control>
 
+            {/* <Portal> */}
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
                     {collection.items.length === 0 ? (
@@ -123,6 +124,7 @@ const StateCombobox = ({ value, onChange, invalid = false }: {
                     )}
                 </Combobox.Content>
             </Combobox.Positioner>
+            {/* </Portal> */}
         </Combobox.Root>
     )
 }
@@ -198,6 +200,7 @@ const LGACombobox = ({ stateName, value, onChange, invalid = false }: {
                 </Combobox.IndicatorGroup>
             </Combobox.Control>
 
+            {/* <Portal> */}
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
                     {!stateName ? (
@@ -219,6 +222,7 @@ const LGACombobox = ({ stateName, value, onChange, invalid = false }: {
                     )}
                 </Combobox.Content>
             </Combobox.Positioner>
+            {/* </Portal> */}
         </Combobox.Root>
     )
 }
@@ -226,30 +230,30 @@ const LGACombobox = ({ stateName, value, onChange, invalid = false }: {
 // Bulk Edit Dialog Component
 interface BulkEditDialogProps {
     isOpen: boolean
-    selectedDistricts: number[]
-    districts: District[]
+    selectedGroups: number[]
+    groups: OldGroup[]
     onClose: () => void
-    onUpdate: (id: number, data: Partial<DistrictFormData>) => void
+    onUpdate: (id: number, data: Partial<OldGroupFormData>) => void
 }
 
-const BulkEditDialog = ({ isOpen, selectedDistricts, districts, onClose, onUpdate }: BulkEditDialogProps) => {
-    const [tabs, setTabs] = useState<Array<{ id: string; district: District; title: string }>>([])
+const BulkEditDialog = ({ isOpen, selectedGroups, groups, onClose, onUpdate }: BulkEditDialogProps) => {
+    const [tabs, setTabs] = useState<Array<{ id: string; group: OldGroup; title: string }>>([])
     const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
     useEffect(() => {
-        if (isOpen && selectedDistricts.length > 0) {
-            const initialTabs = selectedDistricts.map(districtId => {
-                const district = districts.find(d => d.id === districtId)
+        if (isOpen && selectedGroups.length > 0) {
+            const initialTabs = selectedGroups.map(groupId => {
+                const group = groups.find(g => g.id === groupId)
                 return {
                     id: uuid(),
-                    district: district!,
-                    title: district?.districtName || 'District'
+                    group: group!,
+                    title: group?.groupName || 'Group'
                 }
             })
             setTabs(initialTabs)
             setSelectedTab(initialTabs[0]?.id || null)
         }
-    }, [isOpen, selectedDistricts, districts])
+    }, [isOpen, selectedGroups, groups])
 
     const removeTab = (id: string) => {
         if (tabs.length > 1) {
@@ -264,10 +268,10 @@ const BulkEditDialog = ({ isOpen, selectedDistricts, districts, onClose, onUpdat
         }
     }
 
-    const handleTabUpdate = (tabId: string, data: Partial<DistrictFormData>) => {
+    const handleTabUpdate = (tabId: string, data: Partial<OldGroupFormData>) => {
         const tab = tabs.find(t => t.id === tabId)
         if (tab) {
-            onUpdate(tab.district.id, data)
+            onUpdate(tab.group.id, data)
             removeTab(tabId)
         }
     }
@@ -279,7 +283,7 @@ const BulkEditDialog = ({ isOpen, selectedDistricts, districts, onClose, onUpdat
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl" maxW="4xl" w="full">
                         <Dialog.Header>
-                            <Dialog.Title>Update Districts</Dialog.Title>
+                            <Dialog.Title>Bulk Edit Old Groups</Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
@@ -310,8 +314,8 @@ const BulkEditDialog = ({ isOpen, selectedDistricts, districts, onClose, onUpdat
                                 <Tabs.ContentGroup>
                                     {tabs.map((tab) => (
                                         <Tabs.Content value={tab.id} key={tab.id}>
-                                            <DistrictEditForm
-                                                district={tab.district}
+                                            <OldGroupEditForm
+                                                group={tab.group}
                                                 onUpdate={(data) => handleTabUpdate(tab.id, data)}
                                                 onCancel={() => removeTab(tab.id)}
                                             />
@@ -340,19 +344,19 @@ const BulkEditDialog = ({ isOpen, selectedDistricts, districts, onClose, onUpdat
 // Bulk Delete Dialog Component
 interface BulkDeleteDialogProps {
     isOpen: boolean
-    selectedDistricts: number[]
-    districts: District[]
+    selectedGroups: number[]
+    groups: OldGroup[]
     onClose: () => void
     onConfirm: (ids: number[]) => void
 }
 
-const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onConfirm }: BulkDeleteDialogProps) => {
-    const selectedDistrictNames = districts
-        .filter(district => selectedDistricts.includes(district.id))
-        .map(district => district.districtName)
+const BulkDeleteDialog = ({ isOpen, selectedGroups, groups, onClose, onConfirm }: BulkDeleteDialogProps) => {
+    const selectedGroupNames = groups
+        .filter(group => selectedGroups.includes(group.id))
+        .map(group => group.groupName)
 
     const handleConfirm = () => {
-        onConfirm(selectedDistricts)
+        onConfirm(selectedGroups)
         onClose()
     }
 
@@ -363,18 +367,18 @@ const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onCon
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
-                            <Dialog.Title>Delete Multiple Districts</Dialog.Title>
+                            <Dialog.Title>Delete Multiple Old Groups</Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
                             <VStack align="stretch" gap="3">
                                 <Text>
-                                    Are you sure you want to delete <strong>{selectedDistricts.length} district(s)</strong>?
+                                    Are you sure you want to delete <strong>{selectedGroups.length} group(s)</strong>?
                                     This action cannot be undone.
                                 </Text>
 
-                                {selectedDistrictNames.length > 0 && (
+                                {selectedGroupNames.length > 0 && (
                                     <Box>
-                                        <Text fontWeight="medium" mb="2">Districts to be deleted:</Text>
+                                        <Text fontWeight="medium" mb="2">Groups to be deleted:</Text>
                                         <Box
                                             maxH="200px"
                                             overflowY="auto"
@@ -385,7 +389,7 @@ const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onCon
                                             bg="gray.50"
                                         >
                                             <VStack align="start" gap="1">
-                                                {selectedDistrictNames.map((name, index) => (
+                                                {selectedGroupNames.map((name, index) => (
                                                     <Text key={index} fontSize="sm">• {name}</Text>
                                                 ))}
                                             </VStack>
@@ -399,7 +403,7 @@ const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onCon
                                 <Button variant="outline" rounded="xl">Cancel</Button>
                             </Dialog.ActionTrigger>
                             <Button colorPalette="red" rounded="xl" onClick={handleConfirm}>
-                                Delete {selectedDistricts.length} District{selectedDistricts.length > 1 ? 's' : ''}
+                                Delete {selectedGroups.length} Group{selectedGroups.length > 1 ? 's' : ''}
                             </Button>
                         </Dialog.Footer>
                         <Dialog.CloseTrigger asChild>
@@ -412,23 +416,21 @@ const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onCon
     )
 }
 
-// Individual District Edit Form
-interface DistrictEditFormProps {
-    district: District
-    onUpdate: (data: Partial<DistrictFormData>) => void
+// Individual Old Group Edit Form
+interface OldGroupEditFormProps {
+    group: OldGroup
+    onUpdate: (data: Partial<OldGroupFormData>) => void
     onCancel: () => void
 }
 
-const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<DistrictFormData>({
-        resolver: zodResolver(districtSchema),
+const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) => {
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<OldGroupFormData>({
+        resolver: zodResolver(oldGroupSchema),
         defaultValues: {
-            stateName: district.stateName,
-            regionName: district.regionName,
-            oldGroupName: district.oldGroupName,
-            groupName: district.groupName,
-            districtName: district.districtName,
-            leader: district.leader
+            stateName: group.stateName,
+            regionName: group.regionName,
+            groupName: group.groupName,
+            leader: group.leader
         }
     })
 
@@ -444,17 +446,17 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
         setValue('regionName', value)
     }
 
-    const onSubmit = (data: DistrictFormData) => {
+    const onSubmit = (data: OldGroupFormData) => {
         onUpdate(data)
     }
 
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{district.districtName}</strong>
+                Editing: <strong>{group.groupName}</strong>
             </Text>
 
-            <form id={`district-form-${district.id}`} onSubmit={handleSubmit(onSubmit)}>
+            <form id={`group-form-${group.id}`} onSubmit={handleSubmit(onSubmit)}>
                 <VStack gap="4" colorPalette={"accent"}>
                     <Field.Root required invalid={!!errors.stateName}>
                         <StateCombobox
@@ -477,18 +479,8 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                         <Field.ErrorText>{errors.regionName?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root invalid={!!errors.oldGroupName}>
-                        <Field.Label>Old-group Name</Field.Label>
-                        <Input
-                            rounded="lg"
-                            placeholder="Enter old group name (optional)"
-                            {...register('oldGroupName')}
-                        />
-                        <Field.ErrorText>{errors.oldGroupName?.message}</Field.ErrorText>
-                    </Field.Root>
-
                     <Field.Root required invalid={!!errors.groupName}>
-                        <Field.Label>Group Name
+                        <Field.Label>Old-group Name
                             <Field.RequiredIndicator />
                         </Field.Label>
                         <Input
@@ -499,25 +491,13 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                         <Field.ErrorText>{errors.groupName?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root required invalid={!!errors.districtName}>
-                        <Field.Label>District Name
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            rounded="lg"
-                            placeholder="Enter district name"
-                            {...register('districtName')}
-                        />
-                        <Field.ErrorText>{errors.districtName?.message}</Field.ErrorText>
-                    </Field.Root>
-
                     <Field.Root required invalid={!!errors.leader}>
-                        <Field.Label>District Leader
+                        <Field.Label>Group Leader
                             <Field.RequiredIndicator />
                         </Field.Label>
                         <Input
                             rounded="lg"
-                            placeholder="Enter district leader name"
+                            placeholder="Enter group leader name"
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
@@ -534,7 +514,7 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                     size="sm"
                     colorPalette="accent"
                     type="submit"
-                    form={`district-form-${district.id}`}
+                    form={`group-form-${group.id}`}
                 >
                     Update & Close
                 </Button>
@@ -543,15 +523,15 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
     )
 }
 
-export const Districts: React.FC = () => {
+export const OldGroups: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
 
     return (
         <>
-            <title>Districts Data | {ENV.APP_NAME}</title>
+            <title>Old Groups | {ENV.APP_NAME}</title>
             <meta
                 name="description"
-                content="Manage districts data"
+                content="Manage old groups data"
             />
             <ErrorBoundary
                 onReset={reset}
@@ -565,42 +545,40 @@ export const Districts: React.FC = () => {
     );
 };
 
-export default Districts;
+export default OldGroups;
 
 const Content = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const [sortField, setSortField] = useState<keyof District>('districtName')
+    const [sortField, setSortField] = useState<keyof OldGroup>('groupName')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
-    const [selectedDistricts, setSelectedDistricts] = useState<number[]>([])
+    const [selectedGroups, setSelectedGroups] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
-    const { districts, addDistrict, updateDistrict, deleteDistrict } = useDistrictsStore()
+    const { oldGroups, addOldGroup, updateOldGroup, deleteOldGroup } = useOldGroupsStore()
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean
-        district?: District
+        group?: OldGroup
         mode: 'add' | 'edit'
     }>({ isOpen: false, mode: 'add' })
 
     const [deleteDialogState, setDeleteDialogState] = useState<{
         isOpen: boolean
-        district?: District
+        group?: OldGroup
     }>({ isOpen: false })
 
-    // Filter and sort districts
-    const filteredAndSortedDistricts = useMemo(() => {
-        let filtered = districts.filter(district =>
-            district.districtName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.oldGroupName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.stateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (district.leader && district.leader.toLowerCase().includes(searchQuery.toLowerCase()))
+    // Filter and sort groups
+    const filteredAndSortedGroups = useMemo(() => {
+        let filtered = oldGroups.filter(group =>
+            group.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            group.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            group.stateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (group.leader && group.leader.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
         // Sorting
@@ -622,46 +600,46 @@ const Content = () => {
         })
 
         return filtered
-    }, [districts, searchQuery, sortField, sortOrder])
+    }, [oldGroups, searchQuery, sortField, sortOrder])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedDistricts.length / pageSize)
-    const paginatedDistricts = filteredAndSortedDistricts.slice(
+    const totalPages = Math.ceil(filteredAndSortedGroups.length / pageSize)
+    const paginatedGroups = filteredAndSortedGroups.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedDistricts.map(district => district.id)
-    const allIds = filteredAndSortedDistricts.map(district => district.id)
+    const allIdsOnCurrentPage = paginatedGroups.map(group => group.id)
+    const allIds = filteredAndSortedGroups.map(group => group.id)
 
-    const isAllSelectedOnPage = paginatedDistricts.length > 0 &&
-        paginatedDistricts.every(district => selectedDistricts.includes(district.id))
+    const isAllSelectedOnPage = paginatedGroups.length > 0 &&
+        paginatedGroups.every(group => selectedGroups.includes(group.id))
 
-    const isAllSelected = filteredAndSortedDistricts.length > 0 &&
-        filteredAndSortedDistricts.every(district => selectedDistricts.includes(district.id))
+    const isAllSelected = filteredAndSortedGroups.length > 0 &&
+        filteredAndSortedGroups.every(group => selectedGroups.includes(group.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
-            setSelectedDistricts(prev => prev.filter(id => !allIdsOnCurrentPage.includes(id)))
+            setSelectedGroups(prev => prev.filter(id => !allIdsOnCurrentPage.includes(id)))
         } else {
-            setSelectedDistricts(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
+            setSelectedGroups(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
         }
     }
 
     const handleSelectAll = () => {
         if (isAllSelected) {
-            setSelectedDistricts([])
+            setSelectedGroups([])
         } else {
-            setSelectedDistricts(allIds)
+            setSelectedGroups(allIds)
         }
     }
 
-    const handleSelectDistrict = (districtId: number) => {
-        setSelectedDistricts(prev =>
-            prev.includes(districtId)
-                ? prev.filter(id => id !== districtId)
-                : [...prev, districtId]
+    const handleSelectGroup = (groupId: number) => {
+        setSelectedGroups(prev =>
+            prev.includes(groupId)
+                ? prev.filter(id => id !== groupId)
+                : [...prev, groupId]
         )
     }
 
@@ -670,7 +648,7 @@ const Content = () => {
         setCurrentPage(1)
     }
 
-    const handleSort = (field: keyof District) => {
+    const handleSort = (field: keyof OldGroup) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
@@ -679,13 +657,13 @@ const Content = () => {
         }
     }
 
-    const handleDeleteDistrict = (district: District) => {
-        setDeleteDialogState({ isOpen: true, district })
+    const handleDeleteGroup = (group: OldGroup) => {
+        setDeleteDialogState({ isOpen: true, group })
     }
 
     const confirmDelete = () => {
-        if (deleteDialogState.district) {
-            deleteDistrict(deleteDialogState.district.id)
+        if (deleteDialogState.group) {
+            deleteOldGroup(deleteDialogState.group.id)
             setDeleteDialogState({ isOpen: false })
         }
     }
@@ -696,8 +674,8 @@ const Content = () => {
     }
 
     const confirmBulkDelete = (ids: number[]) => {
-        ids.forEach(id => deleteDistrict(id))
-        setSelectedDistricts([])
+        ids.forEach(id => deleteOldGroup(id))
+        setSelectedGroups([])
         setIsActionBarOpen(false)
         setIsBulkDeleteOpen(false)
     }
@@ -706,26 +684,26 @@ const Content = () => {
         setIsBulkEditOpen(true)
     }
 
-    const handleBulkUpdate = (id: number, data: Partial<DistrictFormData>) => {
-        updateDistrict(id, data)
-        setSelectedDistricts(prev => prev.filter(districtId => districtId !== id))
+    const handleBulkUpdate = (id: number, data: Partial<OldGroupFormData>) => {
+        updateOldGroup(id, data)
+        setSelectedGroups(prev => prev.filter(groupId => groupId !== id))
     }
 
     const handleBulkEditClose = () => {
         setIsBulkEditOpen(false)
-        if (selectedDistricts.length === 0) {
+        if (selectedGroups.length === 0) {
             setIsActionBarOpen(false)
         }
     }
 
     // Close action bar when no items are selected
     useEffect(() => {
-        if (selectedDistricts.length === 0 && isActionBarOpen) {
+        if (selectedGroups.length === 0 && isActionBarOpen) {
             setIsActionBarOpen(false)
-        } else if (selectedDistricts.length > 0 && !isActionBarOpen) {
+        } else if (selectedGroups.length > 0 && !isActionBarOpen) {
             setIsActionBarOpen(true)
         }
-    }, [selectedDistricts, isActionBarOpen])
+    }, [selectedGroups, isActionBarOpen])
 
     return (
         <>
@@ -740,19 +718,19 @@ const Content = () => {
                     backdropFilter={"blur(20px)"}
                 >
                     <HStack>
-                        <Heading size="3xl">Districts Data</Heading>
-                        <Badge colorPalette={"accent"}>{districts.length}</Badge>
+                        <Heading size="3xl">All Old Groups</Heading>
+                        <Badge colorPalette={"accent"}>{oldGroups.length}</Badge>
                     </HStack>
 
                     <HStack gap="4">
-                        <UploadDistrictsFromFile />
+                        <UploadOldGroupsFromFile />
                         <Button
                             colorPalette="accent"
                             rounded="xl"
                             onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
                         >
                             <Add />
-                            Add District
+                            Add Old Group
                         </Button>
                     </HStack>
                 </Flex>
@@ -770,7 +748,7 @@ const Content = () => {
                                         color="accent"
                                         _hover={{ bg: "white" }}
                                         size="sm"
-                                        onClick={async () => await copyDistrictsToClipboard(districts)}
+                                        onClick={async () => await copyOldGroupsToClipboard(oldGroups)}
                                     >
                                         <Copy />
                                         Copy
@@ -782,7 +760,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportDistrictsToExcel(districts)}
+                                        onClick={() => exportOldGroupsToExcel(oldGroups)}
                                     >
                                         <DocumentDownload />
                                         Excel
@@ -794,7 +772,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportDistrictsToCSV(districts)}
+                                        onClick={() => exportOldGroupsToCSV(oldGroups)}
                                     >
                                         <DocumentText />
                                         CSV
@@ -806,7 +784,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportDistrictsToPDF(districts)}
+                                        onClick={() => exportOldGroupsToPDF(oldGroups)}
                                     >
                                         <ReceiptText />
                                         PDF
@@ -817,7 +795,7 @@ const Content = () => {
                                 <InputGroup bg="whiteAlpha.600" maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
                                     <Input
                                         rounded="xl"
-                                        placeholder="Search districts..."
+                                        placeholder="Search old groups..."
                                         onChange={(e) => handleSearch(e.target.value)}
                                     />
                                 </InputGroup>
@@ -848,23 +826,23 @@ const Content = () => {
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
-                                                onClick={() => handleSort('districtName')}
+                                                onClick={() => handleSort('regionName')}
                                             >
-                                                District Name {sortField === 'districtName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                                Region Name {sortField === 'regionName' && (sortOrder === 'asc' ? '↑' : '↓')}
                                             </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
                                                 onClick={() => handleSort('groupName')}
                                             >
-                                                Group Name {sortField === 'groupName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                                Old Group Name {sortField === 'groupName' && (sortOrder === 'asc' ? '↑' : '↓')}
                                             </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
                                                 cursor="pointer"
                                                 onClick={() => handleSort('leader')}
                                             >
-                                                District Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                                Group Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                                             </Table.ColumnHeader>
                                             <Table.ColumnHeader
                                                 fontWeight={"bold"}
@@ -874,22 +852,22 @@ const Content = () => {
                                         </Table.Row>
                                     </Table.Header>
                                     <Table.Body>
-                                        {paginatedDistricts.map((district) => (
-                                            <Table.Row key={district.id} bg="whiteAlpha.500">
+                                        {paginatedGroups.map((group) => (
+                                            <Table.Row key={group.id} bg="whiteAlpha.500">
                                                 <Table.Cell>
                                                     <Checkbox.Root
                                                         colorPalette={"accent"}
-                                                        checked={selectedDistricts.includes(district.id)}
-                                                        onCheckedChange={() => handleSelectDistrict(district.id)}
+                                                        checked={selectedGroups.includes(group.id)}
+                                                        onCheckedChange={() => handleSelectGroup(group.id)}
                                                     >
                                                         <Checkbox.HiddenInput />
                                                         <Checkbox.Control cursor="pointer" rounded="md" />
                                                     </Checkbox.Root>
                                                 </Table.Cell>
-                                                <Table.Cell>{district.id}</Table.Cell>
-                                                <Table.Cell fontWeight="medium">{district.districtName}</Table.Cell>
-                                                <Table.Cell fontWeight="medium">{district.groupName}</Table.Cell>
-                                                <Table.Cell>{district.leader || '-'}</Table.Cell>
+                                                <Table.Cell>{group.id}</Table.Cell>
+                                                <Table.Cell fontWeight="medium">{group.regionName}</Table.Cell>
+                                                <Table.Cell fontWeight="medium">{group.groupName}</Table.Cell>
+                                                <Table.Cell>{group.leader || '-'}</Table.Cell>
                                                 <Table.Cell textAlign="center">
                                                     <Menu.Root>
                                                         <Menu.Trigger asChild>
@@ -904,7 +882,7 @@ const Content = () => {
                                                                         value="edit"
                                                                         onClick={() => setDialogState({
                                                                             isOpen: true,
-                                                                            district,
+                                                                            group,
                                                                             mode: 'edit'
                                                                         })}
                                                                     >
@@ -914,7 +892,7 @@ const Content = () => {
                                                                         color="red"
                                                                         value="delete"
                                                                         colorPalette="red"
-                                                                        onClick={() => handleDeleteDistrict(district)}
+                                                                        onClick={() => handleDeleteGroup(group)}
                                                                     >
                                                                         <Trash /> Delete
                                                                     </Menu.Item>
@@ -972,7 +950,7 @@ const Content = () => {
                 onOpenChange={(s) => {
                     setIsActionBarOpen(s.open)
                     if (!s.open) {
-                        setSelectedDistricts([]);
+                        setSelectedGroups([]);
                     }
                 }}
                 closeOnInteractOutside={false}
@@ -980,7 +958,7 @@ const Content = () => {
                 <ActionBar.Positioner>
                     <ActionBar.Content rounded="xl" shadow="2xl">
                         <ActionBar.SelectionTrigger>
-                            {selectedDistricts.length} selected
+                            {selectedGroups.length} selected
                         </ActionBar.SelectionTrigger>
                         <ActionBar.Separator />
                         <Button
@@ -1019,14 +997,14 @@ const Content = () => {
 
             <Box>
                 {/* Add/Edit Dialog */}
-                <DistrictDialog
+                <OldGroupDialog
                     {...dialogState}
                     onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
                     onSave={(data) => {
                         if (dialogState.mode === 'add') {
-                            addDistrict(data)
-                        } else if (dialogState.district) {
-                            updateDistrict(dialogState.district.id, data)
+                            addOldGroup(data)
+                        } else if (dialogState.group) {
+                            updateOldGroup(dialogState.group.id, data)
                         }
                         setDialogState({ isOpen: false, mode: 'add' })
                     }}
@@ -1035,7 +1013,7 @@ const Content = () => {
                 {/* Single Delete Confirmation Dialog */}
                 <DeleteConfirmationDialog
                     isOpen={deleteDialogState.isOpen}
-                    district={deleteDialogState.district}
+                    group={deleteDialogState.group}
                     onClose={() => setDeleteDialogState({ isOpen: false })}
                     onConfirm={confirmDelete}
                 />
@@ -1043,8 +1021,8 @@ const Content = () => {
                 {/* Bulk Delete Dialog */}
                 <BulkDeleteDialog
                     isOpen={isBulkDeleteOpen}
-                    selectedDistricts={selectedDistricts}
-                    districts={districts}
+                    selectedGroups={selectedGroups}
+                    groups={oldGroups}
                     onClose={() => setIsBulkDeleteOpen(false)}
                     onConfirm={confirmBulkDelete}
                 />
@@ -1052,8 +1030,8 @@ const Content = () => {
                 {/* Bulk Edit Dialog */}
                 <BulkEditDialog
                     isOpen={isBulkEditOpen}
-                    selectedDistricts={selectedDistricts}
-                    districts={districts}
+                    selectedGroups={selectedGroups}
+                    groups={oldGroups}
                     onClose={handleBulkEditClose}
                     onUpdate={handleBulkUpdate}
                 />
@@ -1065,12 +1043,12 @@ const Content = () => {
 // Delete Confirmation Dialog Component
 interface DeleteConfirmationDialogProps {
     isOpen: boolean
-    district?: District
+    group?: OldGroup
     onClose: () => void
     onConfirm: () => void
 }
 
-const DeleteConfirmationDialog = ({ isOpen, district, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
+const DeleteConfirmationDialog = ({ isOpen, group, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
     return (
         <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
@@ -1078,11 +1056,11 @@ const DeleteConfirmationDialog = ({ isOpen, district, onClose, onConfirm }: Dele
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
-                            <Dialog.Title>Delete District</Dialog.Title>
+                            <Dialog.Title>Delete Old Group</Dialog.Title>
                         </Dialog.Header>
                         <Dialog.Body>
                             <p>
-                                Are you sure you want to delete <strong>{district?.districtName}</strong>?
+                                Are you sure you want to delete <strong>{group?.groupName}</strong>?
                                 This action cannot be undone.
                             </p>
                         </Dialog.Body>
@@ -1104,25 +1082,23 @@ const DeleteConfirmationDialog = ({ isOpen, district, onClose, onConfirm }: Dele
     )
 }
 
-// District Form Dialog Component
-interface DistrictDialogProps {
+// Old Group Form Dialog Component
+interface OldGroupDialogProps {
     isOpen: boolean
-    district?: District
+    group?: OldGroup
     mode: 'add' | 'edit'
     onClose: () => void
-    onSave: (data: DistrictFormData) => void
+    onSave: (data: OldGroupFormData) => void
 }
 
-const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDialogProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
-        resolver: zodResolver(districtSchema),
+const OldGroupDialog = ({ isOpen, group, mode, onClose, onSave }: OldGroupDialogProps) => {
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
+        resolver: zodResolver(oldGroupSchema),
         defaultValues: {
-            stateName: district?.stateName || '',
-            regionName: district?.regionName || '',
-            oldGroupName: district?.oldGroupName || '',
-            groupName: district?.groupName || '',
-            districtName: district?.districtName || '',
-            leader: district?.leader || ''
+            stateName: group?.stateName || '',
+            regionName: group?.regionName || '',
+            groupName: group?.groupName || '',
+            leader: group?.leader || ''
         }
     })
 
@@ -1138,7 +1114,7 @@ const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDia
         setValue('regionName', value)
     }
 
-    const onSubmit = (data: DistrictFormData) => {
+    const onSubmit = (data: OldGroupFormData) => {
         onSave(data)
         reset()
     }
@@ -1159,12 +1135,12 @@ const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDia
                     <Dialog.Content rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>
-                                {mode === 'add' ? 'Add District' : 'Update District'}
+                                {mode === 'add' ? 'Add New Old Group' : 'Update Old Group'}
                             </Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
-                            <form noValidate id="district-form" onSubmit={handleSubmit(onSubmit)}>
+                            <form noValidate id="old-group-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4" colorPalette={"accent"}>
                                     <Field.Root required invalid={!!errors.stateName}>
                                         <StateCombobox
@@ -1187,18 +1163,8 @@ const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDia
                                         <Field.ErrorText>{errors.regionName?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    <Field.Root invalid={!!errors.oldGroupName}>
-                                        <Field.Label>Old-group Name</Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            placeholder="Enter old group name (optional)"
-                                            {...register('oldGroupName')}
-                                        />
-                                        <Field.ErrorText>{errors.oldGroupName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
                                     <Field.Root required invalid={!!errors.groupName}>
-                                        <Field.Label>Group Name
+                                        <Field.Label>Old-group Name
                                             <Field.RequiredIndicator />
                                         </Field.Label>
                                         <Input
@@ -1209,25 +1175,13 @@ const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDia
                                         <Field.ErrorText>{errors.groupName?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    <Field.Root required invalid={!!errors.districtName}>
-                                        <Field.Label>District Name
-                                            <Field.RequiredIndicator />
-                                        </Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            placeholder="Enter district name"
-                                            {...register('districtName')}
-                                        />
-                                        <Field.ErrorText>{errors.districtName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
                                     <Field.Root required invalid={!!errors.leader}>
-                                        <Field.Label>District Leader
+                                        <Field.Label>Leader
                                             <Field.RequiredIndicator />
                                         </Field.Label>
                                         <Input
                                             rounded="lg"
-                                            placeholder="Enter district leader name"
+                                            placeholder="Enter group leader name"
                                             {...register('leader')}
                                         />
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
@@ -1240,8 +1194,8 @@ const DistrictDialog = ({ isOpen, district, mode, onClose, onSave }: DistrictDia
                             <Dialog.ActionTrigger asChild>
                                 <Button rounded="xl" variant="outline">Cancel</Button>
                             </Dialog.ActionTrigger>
-                            <Button rounded="xl" type="submit" form="district-form" colorPalette="accent">
-                                {mode === 'add' ? 'Add District' : 'Update District'}
+                            <Button rounded="xl" type="submit" form="old-group-form" colorPalette="accent">
+                                {mode === 'add' ? 'Add Old Group' : 'Update Old Group'}
                             </Button>
                         </Dialog.Footer>
 

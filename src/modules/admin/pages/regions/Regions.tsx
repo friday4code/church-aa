@@ -33,9 +33,9 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import { useRegionsStore, type Region } from "../stores/region.store"
-import { regionSchema, type RegionFormData } from "../schemas/region.schema"
-import UploadRegionsFromFile from "../components/UploadRegions"
+import { useRegionsStore, type Region } from "../../stores/region.store"
+import { regionSchema, type RegionFormData } from "../../schemas/region.schema"
+import UploadRegionsFromFile from "../../components/UploadRegions"
 import { exportRegionsToCSV, exportRegionsToExcel, exportRegionsToPDF } from "@/utils/export.regions.util"
 
 

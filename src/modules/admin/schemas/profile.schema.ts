@@ -1,4 +1,4 @@
-// schemas/admin-profile.schema.ts
+// schemas/profile.schema.ts
 import { z } from 'zod';
 
 export const adminProfileSchema = z.object({

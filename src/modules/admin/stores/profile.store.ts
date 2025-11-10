@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AdminProfileFormData, ChangePasswordFormData } from '../schemas/profile.schema';
+import { useAuthStore } from '@/store/auth.store';
+import type { User } from '@/types/auth.type';
 
 export interface AdminProfile {
     id: string;
@@ -23,28 +25,80 @@ interface AdminProfileStore {
     updateProfile: (data: Partial<AdminProfileFormData>) => void;
     changePassword: (data: ChangePasswordFormData) => Promise<boolean>;
     uploadAvatar: (file: File) => Promise<string>;
+    syncWithAuthStore: () => void;
 }
 
-// Mock initial admin data
-const initialAdminProfile: AdminProfile = {
-    id: 'admin-001',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@church.org',
-    phone: '+1 (555) 123-4567',
-    role: 'System Administrator',
-    department: 'IT & Digital Ministry',
-    bio: 'Passionate about leveraging technology to enhance church administration and member engagement. Dedicated to creating efficient systems for spiritual growth tracking.',
-    avatar: '/api/placeholder/150/150',
-    joinDate: new Date('2023-01-15'),
-    lastLogin: new Date(),
-    isActive: true,
+// Helper function to extract first and last name from full name
+const extractNames = (fullName: string): { firstName: string; lastName: string } => {
+    const names = fullName.split(' ');
+    const firstName = names[0] || '';
+    const lastName = names.slice(1).join(' ') || '';
+    return { firstName, lastName };
+};
+
+// Create initial profile from auth store data
+const createInitialProfile = (): AdminProfile => {
+    const authStore = useAuthStore.getState();
+    const user = authStore.user;
+
+    const { firstName, lastName } = extractNames(user?.name || '');
+
+    return {
+        id: user?.id?.toString() || '1',
+        firstName,
+        lastName,
+        email: user?.email || '',
+        phone: user?.phone || '',
+        role: user?.access_level || 'user',
+        department: getDepartmentFromRole(user),
+        bio: getBioFromRole(user),
+        avatar: '/api/placeholder/150/150',
+        joinDate: new Date('2023-01-15'),
+        lastLogin: new Date(),
+        isActive: user?.is_active || false
+    };
+};
+
+// Helper function to determine department based on role/access level
+const getDepartmentFromRole = (user: User | null): string => {
+    if (!user) return 'Administration';
+
+    switch (user.access_level) {
+        case 'admin':
+            return 'System Administration';
+        case 'regional_admin':
+            return 'Regional Administration';
+        case 'state_admin':
+            return 'State Administration';
+        case 'district_admin':
+            return 'District Administration';
+        default:
+            return 'General Administration';
+    }
+};
+
+// Helper function to generate bio based on role
+const getBioFromRole = (user: User | null): string => {
+    if (!user) return 'System administrator with full access to all features and settings.';
+
+    switch (user.access_level) {
+        case 'admin':
+            return 'System administrator with full access to all features and settings across all regions.';
+        case 'regional_admin':
+            return `Regional administrator managing church operations in region ${user.region_id}.`;
+        case 'state_admin':
+            return `State administrator overseeing church activities in state ${user.state_id}.`;
+        case 'district_admin':
+            return `District administrator coordinating church programs in district ${user.district_id}.`;
+        default:
+            return 'Church administration team member dedicated to supporting ministry operations.';
+    }
 };
 
 export const useAdminProfileStore = create<AdminProfileStore>()(
     persist(
         (set) => ({
-            profile: initialAdminProfile,
+            profile: createInitialProfile(),
 
             updateProfile: (data) => {
                 set((state) => ({
@@ -79,6 +133,11 @@ export const useAdminProfileStore = create<AdminProfileStore>()(
                         resolve(newAvatarUrl);
                     }, 1500);
                 });
+            },
+
+            syncWithAuthStore: () => {
+                const newProfile = createInitialProfile();
+                set({ profile: newProfile });
             },
         }),
         {

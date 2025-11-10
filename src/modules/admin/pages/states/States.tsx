@@ -30,13 +30,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { exportToExcel, exportToCSV, exportToPDF } from "@/utils/export.utils"
 import { Add, ArrowLeft3, ArrowRight3, Copy, DocumentDownload, DocumentText, Edit, More, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
-import { useStatesStore, type State } from "../stores/states.store"
-import { stateSchema, type StateFormData } from "../schemas/states.schemas"
+import { useStatesStore, type State } from "../../stores/states.store"
+import { stateSchema, type StateFormData } from "../../schemas/states.schemas"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import UploadStatesFromFile from "../components/PortingFile"
+import UploadStatesFromFile from "../../components/PortingFile"
 
 // UUID generator function
 const uuid = () => {

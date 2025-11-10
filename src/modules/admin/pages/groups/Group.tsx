@@ -35,11 +35,11 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import UploadGroupsFromFile from "../components/PortingFile"
+import UploadGroupsFromFile from "../../components/PortingFile"
 import NaijaStates from 'naija-state-local-government'
 import { copyGroupsToClipboard, exportGroupsToExcel, exportGroupsToCSV, exportGroupsToPDF } from "@/utils/group.utils"
-import { groupSchema, type GroupFormData } from "../schemas/group.schema"
-import { type Group, useGroupsStore } from "../stores/group.store"
+import { groupSchema, type GroupFormData } from "../../schemas/group.schema"
+import { type Group, useGroupsStore } from "../../stores/group.store"
 
 // UUID generator function
 const uuid = () => {
