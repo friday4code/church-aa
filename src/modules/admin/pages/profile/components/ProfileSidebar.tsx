@@ -118,14 +118,14 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
                             <VStack gap="0">
                                 <Text fontSize="sm" opacity={0.8}>Member Since</Text>
                                 <Text fontWeight="semibold">
-                                    {profile.joinDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                    {new Date(profile.joinDate)?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                 </Text>
                             </VStack>
 
                             <VStack gap="0">
                                 <Text fontSize="sm" opacity={0.8}>Last Login</Text>
                                 <Text fontWeight="semibold">
-                                    {profile.lastLogin.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    {new Date(profile.lastLogin)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </Text>
                             </VStack>
                         </HStack>
