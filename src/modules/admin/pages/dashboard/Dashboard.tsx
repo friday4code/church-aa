@@ -5,7 +5,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Grid, Stat, Card, Heading, Box, HStack, Text } from "@chakra-ui/react"
 import { Location, Map, Box1, Layer, Map1, Profile2User, User } from "iconsax-reactjs"
 
-export const Dashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
 
     return (
@@ -27,9 +27,6 @@ export const Dashboard: React.FC = () => {
     );
 };
 
-export default Dashboard;
-
-// comp
 
 const Content = () => {
     const statsData = [
@@ -152,5 +149,6 @@ const Content = () => {
     )
 }
 
+export default Dashboard;
 
 /* Loader Component */

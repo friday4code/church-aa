@@ -5,7 +5,6 @@ import {
     Portal,
     CloseButton,
     Button,
-    Tabs,
 } from "@chakra-ui/react"
 import { useEffect, useState } from "react"
 import type { State } from "../../../stores/states.store"

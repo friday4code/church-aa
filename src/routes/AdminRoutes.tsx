@@ -28,7 +28,7 @@ import YouthAttendanceDashboard from "@/modules/admin/pages/attendance/youthAtte
 import YouthAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthAttendance";
 import YouthRevivalAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthRevivalAttendance";
 import YouthWeeklyAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthWeeklyAttendance";
-import { Dashboard } from "@/modules/admin/pages/dashboard/Dashboard";
+import Dashboard from "@/modules/admin/pages/dashboard/Dashboard";
 import Districts from "@/modules/admin/pages/districts/Districts";
 import Groups from "@/modules/admin/pages/groups/Group";
 import OldGroups from "@/modules/admin/pages/oldGroups/OldGroups";
@@ -71,7 +71,7 @@ import { Route, Routes } from "react-router";
  *
  * @example
  * // Usage in main app routing
- * <Route path="/admin/*" element={<AdminRoutes />} />
+ * <Route path="admin/*" element={<AdminRoutes />} />
  *
  * @see {@link ProtectedRoute} for authentication and authorization logic
  * @see {@link AdminLayout} for the shared admin UI layout structure
@@ -91,12 +91,12 @@ export default function AdminRoutes() {
             - Implements outlet pattern for child route rendering */}
         <Route element={<AdminLayout />}>
           {/* Core Admin Pages - Direct route mappings */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/states" element={<States />} />
-          <Route path="/regions" element={<Regions />} />
-          <Route path="/old_groups" element={<OldGroups />} />
-          <Route path="/groups" element={<Groups />} />
-          <Route path="/districts" element={<Districts />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="states" element={<States />} />
+          <Route path="regions" element={<Regions />} />
+          <Route path="old_groups" element={<OldGroups />} />
+          <Route path="groups" element={<Groups />} />
+          <Route path="districts" element={<Districts />} />
 
           {/* User Management Subsystem:
               - /users (index) - User management dashboard
@@ -104,7 +104,7 @@ export default function AdminRoutes() {
               - /users/rights - User permissions and role management
               
               Uses nested routing pattern for organized user management features */}
-          <Route path="/users">
+          <Route path="users">
             <Route element={<Index />} index />
             <Route path="all" element={<Users />} />
             <Route path="rights" element={<UserRights />} />
@@ -116,7 +116,7 @@ export default function AdminRoutes() {
               
               The :type parameter allows for different attendance categories
               (e.g., sunday-service, bible-study, special-events) */}
-          <Route path="/attendance">
+          <Route path="attendance">
             <Route element={<AttendanceDashboard />} index />
             <Route path=":type" element={<AttendanceType />} />
           </Route>
@@ -128,7 +128,7 @@ export default function AdminRoutes() {
               - /youth_ministry/revival_attendance - Revival meeting attendance
               
               Specialized routing for youth ministry with multiple attendance types */}
-          <Route path="/youth_ministry">
+          <Route path="youth_ministry">
             <Route element={<YouthAttendanceDashboard />} index />
             <Route path="attendance" element={<YouthAttendancePage />} />
             <Route path="weekly_attendance" element={<YouthWeeklyAttendancePage />} />

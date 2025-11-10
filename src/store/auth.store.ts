@@ -51,9 +51,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       isAdmin: () => {
-        const accessLevel = get().user?.access_level;
-        return accessLevel === 'admin' || accessLevel === 'regional_admin' ||
-          accessLevel === 'state_admin' || accessLevel === 'district_admin';
+        const roles = get().user?.roles || [];
+        return roles.includes('admin') || roles.includes('regional_admin') ||
+          roles.includes('state_admin') || roles.includes('district_admin');
       },
 
       hasRole: (roleName: string) => {
