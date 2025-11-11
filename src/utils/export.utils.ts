@@ -2,13 +2,12 @@
 import { utils, writeFile } from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { State } from '@/modules/admin/stores/states.store'
+import type { State } from '@/types/states.type'
 
 export const exportToExcel = (data: State[], filename: string = 'states') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'S/N': item.id,
-        'State Name': item.stateName,
-        'State Code': item.stateCode,
+        'State Name': item.name,
+        'State Code': item.code,
         'State Leader': item.leader
     })))
     const workbook = utils.book_new()
@@ -18,9 +17,8 @@ export const exportToExcel = (data: State[], filename: string = 'states') => {
 
 export const exportToCSV = (data: State[], filename: string = 'states') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'S/N': item.id,
-        'State Name': item.stateName,
-        'State Code': item.stateCode,
+        'State Name': item.name,
+        'State Code': item.code,
         'State Leader': item.leader
     })))
     const csv = utils.sheet_to_csv(worksheet)
@@ -40,7 +38,7 @@ export const exportToPDF = (data: State[], filename: string = 'states') => {
 
     autoTable(doc, {
         head: [['S/N', 'State Name', 'State Code', 'State Leader']],
-        body: data.map(item => [item.id, item.stateName, item.stateCode, item.leader]),
+        body: data.map((item, i) => [i, item.name, item.code, item.leader]),
         startY: 20,
     })
 
@@ -48,8 +46,8 @@ export const exportToPDF = (data: State[], filename: string = 'states') => {
 }
 
 export const copyToClipboard = async (data: State[]) => {
-    const text = data.map(item =>
-        `${item.id}\t${item.stateName}\t${item.stateCode}\t${item.leader}`
+    const text = data.map((item, i) =>
+        `${i}\t${item.name}\t${item.code}\t${item.leader}`
     ).join('\n')
 
     const header = 'S/N\tState Name\tState Code\tState Leader\n'

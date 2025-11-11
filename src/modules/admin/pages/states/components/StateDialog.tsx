@@ -4,18 +4,20 @@ import {
     Dialog,
     Portal,
     Field,
-    Input,
     CloseButton,
     Button,
     VStack,
+    Input,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { stateSchema, type StateFormData } from "../../../schemas/states.schemas"
-import type { State } from "../../../stores/states.store"
-import { useCallback } from "react"
+import type { State } from "@/types/states.type"
+import { useEffect } from "react"
+import StateCombobox from "@/modules/admin/components/StateCombobox"
 
 interface StateDialogProps {
+    isLoading?: boolean
     isOpen: boolean
     state?: State
     mode: 'add' | 'edit'
@@ -23,15 +25,35 @@ interface StateDialogProps {
     onSave: (data: StateFormData) => void
 }
 
-const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps) => {
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<StateFormData>({
+const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateDialogProps) => {
+
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<StateFormData>({
         resolver: zodResolver(stateSchema),
         defaultValues: {
-            stateName: state?.stateName || '',
-            stateCode: state?.stateCode || '',
+            stateName: state?.name || '',
+            stateCode: state?.code || '',
             leader: state?.leader || ''
         }
     })
+
+    const currentStateName = watch('stateName')
+    const currentStateCode = watch('stateCode')
+
+    const handleStateChange = (value: string) => {
+        setValue('stateName', value)
+        // Generate state code from state name
+        const stateCode = value ? generateStateCode(value) : ''
+        setValue('stateCode', stateCode)
+    }
+
+    // Helper function to generate state code from state name
+    const generateStateCode = (stateName: string): string => {
+        if (!stateName) return ''
+
+        // Remove "State" from the name if present and take first 3 letters in uppercase
+        const cleanName = stateName.replace(/state/gi, '').trim()
+        return cleanName.substring(0, 3).toUpperCase()
+    }
 
     const onSubmit = (data: StateFormData) => {
         onSave(data)
@@ -43,8 +65,19 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
         reset()
     }
 
-    const StateDialogForm = useCallback(() => {
-        return (
+    // Reset form when dialog opens with state data
+    useEffect(() => {
+        if (isOpen && state) {
+            reset({
+                stateName: state.name,
+                stateCode: state.code,
+                leader: state.leader
+            })
+        }
+    }, [isOpen, state, reset])
+
+    return (
+        <>
             <Dialog.Root
                 open={isOpen}
                 onOpenChange={(e) => {
@@ -56,7 +89,7 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content rounded="xl">
+                        <Dialog.Content rounded="xl" maxW="2xl">
                             <Dialog.Header>
                                 <Dialog.Title>
                                     {mode === 'add' ? 'Add New State' : 'Update State'}
@@ -67,13 +100,11 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                                 <form noValidate id="state-form" onSubmit={handleSubmit(onSubmit)}>
                                     <VStack gap="4" colorPalette={"accent"}>
                                         <Field.Root required invalid={!!errors.stateName}>
-                                            <Field.Label>State Name
-                                                <Field.RequiredIndicator />
-                                            </Field.Label>
-                                            <Input
-                                                rounded="lg"
-                                                placeholder="Enter state name"
-                                                {...register('stateName')}
+                                            <StateCombobox
+                                                value={currentStateName}
+                                                onChange={handleStateChange}
+                                                required
+                                                invalid={!!errors.stateName}
                                             />
                                             <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
                                         </Field.Root>
@@ -84,9 +115,14 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                                             </Field.Label>
                                             <Input
                                                 rounded="lg"
-                                                placeholder="Enter state code"
+                                                placeholder="State code will be auto-generated"
+                                                value={currentStateCode}
+                                                readOnly
                                                 {...register('stateCode')}
                                             />
+                                            <Field.HelperText>
+                                                Auto-generated from state name
+                                            </Field.HelperText>
                                             <Field.ErrorText>{errors.stateCode?.message}</Field.ErrorText>
                                         </Field.Root>
 
@@ -109,7 +145,16 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                                 <Dialog.ActionTrigger asChild>
                                     <Button rounded="xl" variant="outline">Cancel</Button>
                                 </Dialog.ActionTrigger>
-                                <Button rounded="xl" type="submit" form="state-form" colorPalette="accent">
+
+                                <Button
+                                    rounded="xl"
+                                    type="submit"
+                                    form="state-form"
+                                    colorPalette="accent"
+                                    loading={isLoading}
+                                    loadingText={mode === 'add' ? 'Adding State' : 'Updating State'}
+                                    disabled={isLoading}
+                                >
                                     {mode === 'add' ? 'Add State' : 'Update State'}
                                 </Button>
                             </Dialog.Footer>
@@ -121,10 +166,8 @@ const StateDialog = ({ isOpen, state, mode, onClose, onSave }: StateDialogProps)
                     </Dialog.Positioner>
                 </Portal>
             </Dialog.Root>
-        )
-    }, [state, mode, isOpen, errors, handleSubmit, onSubmit, register])
-
-    return <StateDialogForm />
+        </>
+    )
 }
 
 export default StateDialog;

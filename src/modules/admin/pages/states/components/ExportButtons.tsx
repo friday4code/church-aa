@@ -6,21 +6,22 @@ import {
 } from "@chakra-ui/react"
 import { Copy, DocumentDownload, DocumentText, ReceiptText } from "iconsax-reactjs"
 import { exportToExcel, exportToCSV, exportToPDF } from "@/utils/export.utils"
-import type { State } from "../../../stores/states.store"
+import type { State } from "@/types/states.type"
 
 interface ExportButtonsProps {
     states: State[]
 }
 
+
 const ExportButtons = ({ states }: ExportButtonsProps) => {
     return (
-        <HStack>
+        <HStack w="full">
             <Button
                 rounded="xl"
                 variant="solid"
-                bg="whiteAlpha.500"
+                bg="bg"
                 color="accent"
-                _hover={{ bg: "white" }}
+                _hover={{ bg: "bg.muted" }}
                 size="sm"
                 onClick={() => navigator.clipboard.writeText(JSON.stringify(states))}
             >
@@ -29,9 +30,9 @@ const ExportButtons = ({ states }: ExportButtonsProps) => {
             </Button>
             <Button
                 variant="solid"
-                bg="whiteAlpha.500"
+                bg="bg"
                 color="accent"
-                _hover={{ bg: "white" }}
+                _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
                 onClick={() => exportToExcel(states)}
@@ -41,9 +42,9 @@ const ExportButtons = ({ states }: ExportButtonsProps) => {
             </Button>
             <Button
                 variant="solid"
-                bg="whiteAlpha.500"
+                bg="bg"
                 color="accent"
-                _hover={{ bg: "white" }}
+                _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
                 onClick={() => exportToCSV(states)}
@@ -53,9 +54,9 @@ const ExportButtons = ({ states }: ExportButtonsProps) => {
             </Button>
             <Button
                 variant="solid"
-                bg="whiteAlpha.500"
+                bg="bg"
                 color="accent"
-                _hover={{ bg: "white" }}
+                _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
                 onClick={() => exportToPDF(states)}

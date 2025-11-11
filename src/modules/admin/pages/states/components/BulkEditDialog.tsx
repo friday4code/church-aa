@@ -5,13 +5,15 @@ import {
     Portal,
     CloseButton,
     Button,
+    Tabs,
 } from "@chakra-ui/react"
 import { useEffect, useState } from "react"
-import type { State } from "../../../stores/states.store"
 import type { StateFormData } from "../../../schemas/states.schemas"
-import StateEditForm  from "./StateEditForm"
+import StateEditForm from "./StateEditForm"
+import type { State } from "@/types/states.type"
 
 interface BulkEditDialogProps {
+    isLoading: boolean
     isOpen: boolean
     selectedStates: number[]
     states: State[]
@@ -24,7 +26,7 @@ const uuid = () => {
     return Math.random().toString(36).substring(2, 15)
 }
 
-const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: BulkEditDialogProps) => {
+const BulkEditDialog = ({ isLoading, isOpen, selectedStates, states, onClose, onUpdate }: BulkEditDialogProps) => {
     const [tabs, setTabs] = useState<Array<{ id: string; state: State; title: string }>>([])
     const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
@@ -36,7 +38,7 @@ const BulkEditDialog = ({ isOpen, selectedStates, states, onClose, onUpdate }: B
                 return {
                     id: uuid(),
                     state: state!,
-                    title: state?.stateName || 'State'
+                    title: state?.name || 'State'
                 }
             })
             setTabs(initialTabs)

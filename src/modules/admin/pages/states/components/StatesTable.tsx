@@ -10,16 +10,17 @@ import {
     Pagination,
 } from "@chakra-ui/react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
-import type { State } from "../../../stores/states.store"
+import TableLoading from "./StatesTableLoading"
+import type { State } from "@/types/states.type"
 
 interface StatesTableProps {
-    states: State[]
     paginatedStates: State[]
     selectedStates: number[]
     sortField: keyof State
     sortOrder: 'asc' | 'desc'
     currentPage: number
     totalPages: number
+    isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof State) => void
     onSelectAllOnPage: () => void
@@ -30,7 +31,7 @@ interface StatesTableProps {
 }
 
 const StatesTable = ({
-    states,
+    isLoading,
     paginatedStates,
     selectedStates,
     sortField,
@@ -45,6 +46,9 @@ const StatesTable = ({
     onDeleteState,
     onPageChange,
 }: StatesTableProps) => {
+    if (isLoading) {
+        return <TableLoading />;
+    }
     return (
         <>
             {/* Table */}
@@ -72,16 +76,16 @@ const StatesTable = ({
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
-                                onClick={() => onSort('stateName')}
+                                onClick={() => onSort('name')}
                             >
-                                State Name {sortField === 'stateName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                State Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
-                                onClick={() => onSort('stateCode')}
+                                onClick={() => onSort('code')}
                             >
-                                State Code {sortField === 'stateCode' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                State Code {sortField === 'code' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -97,9 +101,9 @@ const StatesTable = ({
                             </Table.ColumnHeader>
                         </Table.Row>
                     </Table.Header>
-                    <Table.Body>
-                        {paginatedStates.map((state) => (
-                            <Table.Row key={state.id} bg="whiteAlpha.500">
+                    <Table.Body >
+                        {paginatedStates.map((state, index) => (
+                            <Table.Row key={state.id} >
                                 <Table.Cell>
                                     <Checkbox.Root
                                         colorPalette={"accent"}
@@ -110,9 +114,9 @@ const StatesTable = ({
                                         <Checkbox.Control cursor="pointer" rounded="md" />
                                     </Checkbox.Root>
                                 </Table.Cell>
-                                <Table.Cell>{state.id}</Table.Cell>
-                                <Table.Cell fontWeight="medium">{state.stateName}</Table.Cell>
-                                <Table.Cell>{state.stateCode}</Table.Cell>
+                                <Table.Cell>{index + 1}</Table.Cell>
+                                <Table.Cell fontWeight="medium">{state.name}</Table.Cell>
+                                <Table.Cell>{state.code}</Table.Cell>
                                 <Table.Cell>{state.leader}</Table.Cell>
                                 <Table.Cell textAlign="center">
                                     <Menu.Root>

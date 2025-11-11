@@ -17,8 +17,9 @@ import {
     Portal,
     useDisclosure,
 } from "@chakra-ui/react"
-import { useStatesStore } from "../stores/states.store"
 import { DocumentDownload, DocumentUpload, TickCircle, Warning2 } from "iconsax-reactjs"
+import { useStates } from "../hooks/useState"
+import type { State } from "@/types/states.type"
 
 interface PortingResult {
     success: boolean
@@ -28,14 +29,25 @@ interface PortingResult {
     totalProcessed: number
 }
 
-const UploadStatesFromFile = () => {
+interface UploadStatesFromFileProps {
+    data: State[]
+}
+
+const UploadStatesFromFile = ({ data }: UploadStatesFromFileProps) => {
     const { open, onOpen, onClose } = useDisclosure()
     const [isProcessing, setIsProcessing] = useState(false)
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+    const { createState, updateState } = useStates()
 
-    const { states, addState, updateState } = useStatesStore()
+    const handleAddState = (stateData: Omit<State, 'id'>) => {
+        createState(stateData)
+    }
+
+    const handleUpdateState = (id: number, stateData: Partial<State>) => {
+        updateState({ id, data: stateData })
+    }
 
     // Download template function - CORRECTED
     const calculateColumnWidths = (data: any[]) => {
@@ -60,9 +72,9 @@ const UploadStatesFromFile = () => {
     }
 
     const downloadTemplate = () => {
-        const templateData = states.map(s => ({
-            "STATE NAME": s.stateName,
-            "STATE CODE": s.stateCode,
+        const templateData = data.map(s => ({
+            "STATE NAME": s.name,
+            "STATE CODE": s.code,
             "LEADER": s.leader
         }))
 
@@ -103,8 +115,8 @@ const UploadStatesFromFile = () => {
             // Process each row
             jsonData.forEach((row, index) => {
                 try {
-                    const stateName = row['State Name'] || row['stateName'] || row['STATE_NAME']
-                    const stateCode = row['State Code'] || row['stateCode'] || row['STATE_CODE']
+                    const stateName = row['State Name'] || row['stateName'] || row['STATE NAME']
+                    const stateCode = row['State Code'] || row['stateCode'] || row['STATE CODE']
                     const leader = row['State Leader'] || row['leader'] || row['LEADER'] || row['State Leader']
 
                     if (!stateName || !stateCode) {
@@ -113,25 +125,25 @@ const UploadStatesFromFile = () => {
                     }
 
                     // Check if state already exists (by code or name)
-                    const existingState = states.find(
-                        state => state.stateCode === stateCode.toUpperCase() ||
-                            state.stateName.toLowerCase() === stateName.toLowerCase()
+                    const existingState = data.find(
+                        state => state.code === stateCode.toUpperCase() ||
+                            state.name.toLowerCase() === stateName.toLowerCase()
                     )
 
                     if (existingState) {
                         // Update existing state
-                        updateState(existingState.id, {
-                            stateName: stateName.toUpperCase(),
-                            stateCode: stateCode.toUpperCase(),
-                            leader: leader?.toUpperCase() || existingState.leader
+                        handleUpdateState(existingState.id, {
+                            name: stateName,
+                            code: stateCode,
+                            leader: leader || existingState.leader
                         })
                         result.updated++
                     } else {
                         // Add new state
-                        addState({
-                            stateName: stateName.toUpperCase(),
-                            stateCode: stateCode.toUpperCase(),
-                            leader: leader?.toUpperCase() || ''
+                        handleAddState({
+                            name: stateName,
+                            code: stateCode,
+                            leader: leader || ''
                         })
                         result.added++
                     }
@@ -172,7 +184,9 @@ const UploadStatesFromFile = () => {
         <>
             {/* Trigger Button */}
             <Button
+                bg="bg"
                 variant="outline"
+                color="bg.inverted"
                 onClick={onOpen}
                 rounded="xl"
             >

@@ -9,7 +9,7 @@ import {
     Text,
     Box,
 } from "@chakra-ui/react"
-import type { State } from "../../../stores/states.store"
+import type { State } from "@/types/states.type"
 
 interface BulkDeleteDialogProps {
     isOpen: boolean
@@ -22,7 +22,7 @@ interface BulkDeleteDialogProps {
 const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }: BulkDeleteDialogProps) => {
     const selectedStateNames = states
         .filter(state => selectedStates.includes(state.id))
-        .map(state => state.stateName)
+        .map(state => state.name)
 
     const handleConfirm = () => {
         onConfirm(selectedStates)
@@ -84,6 +84,5 @@ const BulkDeleteDialog = ({ isOpen, selectedStates, states, onClose, onConfirm }
         </Dialog.Root>
     )
 }
-
 
 export default BulkDeleteDialog;

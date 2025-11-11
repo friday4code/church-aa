@@ -1,7 +1,7 @@
-// components/states/StatesPage.tsx
+// components/states/States.tsx
 "use client"
 
-import { useState, useMemo, useEffect, lazy, Suspense } from "react"
+import { useState, useMemo, useEffect, lazy, Suspense, useCallback } from "react"
 import { useSearchParams } from "react-router"
 import {
     Box,
@@ -15,8 +15,9 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import { useStatesStore, type State } from "../../stores/states.store"
-import { type StateFormData } from "../../schemas/states.schemas"
+import type { State } from "@/types/states.type"
+import { useStates } from "../../hooks/useState"
+import { Toaster } from "@/components/ui/toaster"
 
 // Lazy load components with proper loading states
 const StatesHeader = lazy(() => import("./components/StatesHeader"))
@@ -91,7 +92,7 @@ export default States;
 
 const Content = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const [sortField, setSortField] = useState<keyof State>('stateName')
+    const [sortField, setSortField] = useState<keyof State>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
@@ -100,7 +101,23 @@ const Content = () => {
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
-    const { states, addState, updateState, deleteState } = useStatesStore()
+    const {
+        states,
+        isLoading,
+        createState,
+        updateState,
+        deleteState,
+        isCreating,
+        isUpdating,
+        isDeleting
+    } = useStates({
+        onCreateSuccess() {
+            setDialogState({ isOpen: false, mode: 'add' })
+        },
+        onUpdateSuccess() {
+            setDialogState({ isOpen: false, mode: 'edit' })
+        },
+    })
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -114,11 +131,11 @@ const Content = () => {
         state?: State
     }>({ isOpen: false })
 
-    // Filter and sort states
+    // Filter and sort states - use states directly
     const filteredAndSortedStates = useMemo(() => {
         let filtered = states.filter(state =>
-            state.stateName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            state.stateCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            state.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             state.leader.toLowerCase().includes(searchQuery.toLowerCase())
         )
 
@@ -135,7 +152,6 @@ const Content = () => {
 
         return filtered
     }, [states, searchQuery, sortField, sortOrder])
-
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedStates.length / pageSize)
     const paginatedStates = filteredAndSortedStates.slice(
@@ -162,6 +178,10 @@ const Content = () => {
             setSelectedStates(prev => [...new Set([...prev, ...allIdsOnCurrentPage])])
         }
     }
+
+    const closeActionBar = useCallback(() => {
+        setSelectedStates([]);
+    }, [selectedStates]);
 
     const handleSelectAll = () => {
         if (isAllSelected) {
@@ -220,8 +240,8 @@ const Content = () => {
         setIsBulkEditOpen(true)
     }
 
-    const handleBulkUpdate = (id: number, data: Partial<StateFormData>) => {
-        updateState(id, data)
+    const handleBulkUpdate = (id: number, data: any) => {
+        updateState({ id, data })
         // Remove from selected states after update
         setSelectedStates(prev => prev.filter(stateId => stateId !== id))
     }
@@ -234,13 +254,20 @@ const Content = () => {
         }
     }
 
-    const handleSaveState = (data: StateFormData) => {
-        if (dialogState.mode === 'add') {
-            addState(data)
-        } else if (dialogState.state) {
-            updateState(dialogState.state.id, data)
+    const handleSaveState = (data: any) => {
+        // Transform data to match API structure
+        const apiData = {
+            name: data.stateName,
+            code: data.stateCode,
+            leader: data.leader
         }
-        setDialogState({ isOpen: false, mode: 'add' })
+
+        if (dialogState.mode === 'add') {
+            createState(apiData)
+        } else if (dialogState.state) {
+            updateState({ id: dialogState.state.id, data: apiData })
+        }
+
     }
 
     // Close action bar when no items are selected
@@ -252,13 +279,24 @@ const Content = () => {
         }
     }, [selectedStates, isActionBarOpen])
 
+    if (isLoading && states.length === 0) {
+        return (
+            <Center h="400px">
+                <VStack gap="4">
+                    <Spinner size="xl" color="accent.500" />
+                    <Text fontSize="lg" color="gray.600">Loading states...</Text>
+                </VStack>
+            </Center>
+        )
+    }
+
     return (
         <>
             <VStack gap="6" align="stretch">
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <StatesHeader
-                        statesCount={states.length}
+                        states={states}
                         onAddState={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -273,13 +311,13 @@ const Content = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <ExportButtons states={states} />
+                                <ExportButtons states={states} /> {/* Use states directly */}
                             </Suspense>
 
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <StatesTable
-                                    states={states}
+                                    // states={states} // Use states directly
                                     paginatedStates={paginatedStates}
                                     selectedStates={selectedStates}
                                     sortField={sortField}
@@ -293,17 +331,18 @@ const Content = () => {
                                     onEditState={(state) => setDialogState({ isOpen: true, state, mode: 'edit' })}
                                     onDeleteState={handleDeleteState}
                                     onPageChange={setCurrentPage}
+                                    isLoading={isLoading}
                                 />
                             </Suspense>
                         </VStack>
                     </Card.Body>
                 </Card.Root>
             </VStack>
-
             {/* Action Bar for selected items */}
             {isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <StatesActionBar
+                        close={closeActionBar}
                         isOpen={isActionBarOpen}
                         selectedCount={selectedStates.length}
                         isAllSelected={isAllSelected}
@@ -323,6 +362,7 @@ const Content = () => {
                             {...dialogState}
                             onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
                             onSave={handleSaveState}
+                            isLoading={isCreating || isUpdating}
                         />
                     </Suspense>
                 )}
@@ -335,6 +375,7 @@ const Content = () => {
                             state={deleteDialogState.state}
                             onClose={() => setDeleteDialogState({ isOpen: false })}
                             onConfirm={confirmDelete}
+                            isLoading={isDeleting}
                         />
                     </Suspense>
                 )}
@@ -345,9 +386,10 @@ const Content = () => {
                         <BulkDeleteDialog
                             isOpen={isBulkDeleteOpen}
                             selectedStates={selectedStates}
-                            states={states}
+                            states={paginatedStates}
                             onClose={() => setIsBulkDeleteOpen(false)}
                             onConfirm={confirmBulkDelete}
+                        // isLoading={isDeleting}
                         />
                     </Suspense>
                 )}
@@ -358,13 +400,17 @@ const Content = () => {
                         <BulkEditDialog
                             isOpen={isBulkEditOpen}
                             selectedStates={selectedStates}
-                            states={states}
+                            states={paginatedStates}
                             onClose={handleBulkEditClose}
                             onUpdate={handleBulkUpdate}
+                            isLoading={isUpdating}
                         />
                     </Suspense>
                 )}
             </Box>
+
+
+            <Toaster />
         </>
     )
 }

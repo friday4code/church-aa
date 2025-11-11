@@ -15,6 +15,7 @@ interface StatesActionBarProps {
     onSelectAll: () => void
     onBulkEdit: () => void
     onBulkDelete: () => void
+    close: () => void
 }
 
 const StatesActionBar = ({
@@ -25,11 +26,15 @@ const StatesActionBar = ({
     onSelectAll,
     onBulkEdit,
     onBulkDelete,
+    close
 }: StatesActionBarProps) => {
     return (
         <ActionBar.Root
             open={isOpen}
-            onOpenChange={(s) => onOpenChange(s.open)}
+            onOpenChange={(s) => {
+                onOpenChange(s.open)
+                if (!s.open) close();
+            }}
             closeOnInteractOutside={false}
         >
             <ActionBar.Positioner>

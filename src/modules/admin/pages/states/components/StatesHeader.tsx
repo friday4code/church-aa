@@ -11,14 +11,16 @@ import {
 } from "@chakra-ui/react"
 import { Add, SearchNormal1 } from "iconsax-reactjs"
 import UploadStatesFromFile from "../../../components/PortingFile"
+import type { State } from "@/types/states.type"
 
 interface StatesHeaderProps {
-    statesCount: number
+    states: State[]
     onAddState: () => void
     onSearch: (value: string) => void
 }
 
-const StatesHeader = ({ statesCount, onAddState, onSearch }: StatesHeaderProps) => {
+const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
+    
     return (
         <Flex
             justify="space-between"
@@ -26,17 +28,18 @@ const StatesHeader = ({ statesCount, onAddState, onSearch }: StatesHeaderProps) 
             pos="sticky"
             top={6}
             zIndex={"sticky"}
-            backdropFilter={"blur(20px)"}
+        // backdropFilter={"blur(20px)"}
         >
             <HStack>
                 <Heading size="3xl">All States</Heading>
-                <Badge colorPalette={"accent"}>{statesCount}</Badge>
+                <Badge colorPalette={"accent"}>{states?.length}</Badge>
             </HStack>
 
             <HStack gap="4">
-                <UploadStatesFromFile />
-                <InputGroup bg="whiteAlpha.600" maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
+                <UploadStatesFromFile data={states} />
+                <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
                     <Input
+                        bg="bg"
                         rounded="xl"
                         placeholder="Search states..."
                         onChange={(e) => onSearch(e.target.value)}

@@ -11,7 +11,8 @@ import {
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { stateSchema, type StateFormData } from "../../../schemas/states.schemas"
-import type { State } from "../../../stores/states.store"
+import type { State } from "@/types/states.type"
+import StateCombobox from "@/modules/admin/components/StateCombobox"
 
 interface StateEditFormProps {
     state: State
@@ -20,14 +21,23 @@ interface StateEditFormProps {
 }
 
 const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
-    const { register, handleSubmit, formState: { errors } } = useForm<StateFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<StateFormData>({
         resolver: zodResolver(stateSchema),
         defaultValues: {
-            stateName: state.stateName,
-            stateCode: state.stateCode,
+            stateName: state.name,
+            stateCode: state.code,
             leader: state.leader
         }
     })
+
+    const currentStateName = watch('stateName')
+    const currentStateCode = watch('stateCode')
+
+    const handleStateChange = (value: string) => {
+        setValue('stateName', value)
+ 
+        setValue('stateCode', state?.code)
+    }
 
     const onSubmit = (data: StateFormData) => {
         onUpdate(data)
@@ -36,19 +46,17 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{state.stateName}</strong>
+                Editing: <strong>{state.name}</strong>
             </Text>
 
             <form id={`state-form-${state.id}`} onSubmit={handleSubmit(onSubmit)}>
                 <VStack gap="4" colorPalette={"accent"}>
                     <Field.Root required invalid={!!errors.stateName}>
-                        <Field.Label>State Name
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            rounded="lg"
-                            placeholder="Enter state name"
-                            {...register('stateName')}
+                        <StateCombobox
+                            value={currentStateName}
+                            onChange={handleStateChange}
+                            required
+                            invalid={!!errors.stateName}
                         />
                         <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
                     </Field.Root>
@@ -59,9 +67,15 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
                         </Field.Label>
                         <Input
                             rounded="lg"
-                            placeholder="Enter state code"
+                            placeholder="State code will be auto-generated"
+                            value={currentStateCode}
+                            readOnly
+                            bg="gray.50"
                             {...register('stateCode')}
                         />
+                        <Field.HelperText>
+                            Auto-generated from state name
+                        </Field.HelperText>
                         <Field.ErrorText>{errors.stateCode?.message}</Field.ErrorText>
                     </Field.Root>
 
@@ -82,7 +96,6 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
             <HStack justify="flex-end" gap="2" mt="4">
                 <Button variant="outline" size="sm" onClick={onCancel}>
                     Skip
-
                 </Button>
                 <Button
                     size="sm"

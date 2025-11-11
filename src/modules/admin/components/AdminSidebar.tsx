@@ -13,6 +13,7 @@ import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteTe
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
 import { ColorModeButton } from "@/components/ui/color-mode";
+import { Tooltip } from "@/components/ui/tooltip";
 
 
 const AdminSidebar: React.FC = () => {
@@ -27,7 +28,7 @@ const AdminSidebar: React.FC = () => {
         { name: "Dashboard", href: "/admin/dashboard", icon: <Chart2 variant="Bulk" /> },
         { name: "States", href: "/admin/states", icon: <Location variant="Bulk" /> },
         { name: "Regions", href: "/admin/regions", icon: <Map variant="Bulk" /> },
-        { name: "Old Groups", href: "/admin/old_groups", icon: <Box1 variant="Bulk" /> },
+        { name: "Old Group of Districts", href: "/admin/old_groups", icon: <Box1 variant="Bulk" /> },
         { name: "Groups", href: "/admin/groups", icon: <Layer variant="Bulk" /> },
         { name: "Districts", href: "/admin/districts", icon: <Map1 variant="Bulk" /> },
         { name: "Users and Rights", href: "/admin/users", icon: <People variant="Bulk" /> },
@@ -44,32 +45,43 @@ const AdminSidebar: React.FC = () => {
                 <Stack rounded="xl" p='4' w="full" h="full">
                     {links?.map((link, i) => (
                         <NavLink key={i} to={link.href}>
-                            <HStack
-                                color="white"
-                                rounded="lg"
-                                p="2"
-                                w={isCollapsed ? "fit" : "full"}
-                                fontSize={"sm"}
-                                fontWeight={"semibold"}
-                                bg={{
-                                    _light: isLinkActive(link.href) ? "accent" : "transparent",
-                                    _dark: isLinkActive(link.href) ? "accent.900" : "transparent",
-                                }}
-                                _hover={{
-                                    bg: {
-                                        _light: isLinkActive(link.href) ? "accent.600" : "accent.50/20",
-                                        _dark: isLinkActive(link.href) ? "accent.900" : "accent.50/20"
+                            <Tooltip openDelay={0} positioning={{ placement: "right" }}
+                                contentProps={{
+                                    bg: "bg",
+                                    p: "3",
+                                    color:"black",
+                                    _dark: {
+                                        color: "white"
                                     }
                                 }}
-                            >
-                                <Center>
-                                    {link.icon}
-                                </Center>
+                                content={link.name}>
+                                <HStack
+                                    color="white"
+                                    rounded="lg"
+                                    p="2"
+                                    w={isCollapsed ? "fit" : "full"}
+                                    fontSize={"sm"}
+                                    fontWeight={"semibold"}
+                                    bg={{
+                                        _light: isLinkActive(link.href) ? "accent" : "transparent",
+                                        _dark: isLinkActive(link.href) ? "accent.900" : "transparent",
+                                    }}
+                                    _hover={{
+                                        bg: {
+                                            _light: isLinkActive(link.href) ? "accent.600" : "accent.50/20",
+                                            _dark: isLinkActive(link.href) ? "accent.900" : "accent.50/20"
+                                        }
+                                    }}
+                                >
+                                    <Center>
+                                        {link.icon}
+                                    </Center>
 
-                                {!isCollapsed && <Box lineClamp={1}>
-                                    {link.name}
-                                </Box>}
-                            </HStack>
+                                    {!isCollapsed && <Box lineClamp={1}>
+                                        {link.name}
+                                    </Box>}
+                                </HStack>
+                            </Tooltip>
                         </NavLink>
                     ))}
                     <Separator />
@@ -124,8 +136,8 @@ const ProfileAvatar = () => {
         <Menu.Root positioning={{ placement: "right-end" }}>
             <Menu.Trigger cursor="pointer" rounded="full" focusRing="outside">
                 <Avatar.Root size="sm">
-                    <Avatar.Fallback name={user?.full_name} />
-                    <Avatar.Image src={user?.avatar_url} />
+                    <Avatar.Fallback name={user?.name} />
+                    <Avatar.Image src={undefined} />
                 </Avatar.Root>
             </Menu.Trigger>
             <Portal>

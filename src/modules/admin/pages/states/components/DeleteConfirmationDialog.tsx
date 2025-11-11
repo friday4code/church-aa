@@ -1,22 +1,23 @@
 "use client"
 
+import type { State } from "@/types/states.type";
 import {
     Dialog,
     Portal,
     CloseButton,
     Button,
     Text,
-} from "@chakra-ui/react"
-import type { State } from "../../../stores/states.store"
+} from "@chakra-ui/react";
 
 interface DeleteConfirmationDialogProps {
     isOpen: boolean
+    isLoading?: boolean
     state?: State
     onClose: () => void
     onConfirm: () => void
 }
 
-const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
+const DeleteConfirmationDialog = ({ isLoading,isOpen, state, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
     return (
         <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
@@ -28,7 +29,7 @@ const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteC
                         </Dialog.Header>
                         <Dialog.Body>
                             <Text>
-                                Are you sure you want to delete <strong>{state?.stateName}</strong>?
+                                Are you sure you want to delete <strong>{state?.name}</strong>?
                                 This action cannot be undone and will permanently remove this state from the system.
                             </Text>
                         </Dialog.Body>
@@ -36,7 +37,13 @@ const DeleteConfirmationDialog = ({ isOpen, state, onClose, onConfirm }: DeleteC
                             <Dialog.ActionTrigger asChild>
                                 <Button variant="outline" rounded="xl">Cancel</Button>
                             </Dialog.ActionTrigger>
-                            <Button colorPalette="red" rounded="xl" onClick={onConfirm}>
+                            <Button
+                                colorPalette="red"
+                                rounded="xl"
+                                onClick={onConfirm}
+                                loading={isLoading}
+                                disabled={isLoading}
+                            >
                                 Delete
                             </Button>
                         </Dialog.Footer>
