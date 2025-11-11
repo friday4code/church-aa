@@ -71,9 +71,14 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
 
                 <ScrollArea.RootProvider
                     bgGradient="to-br"
-                    gradientFrom={"accent.100/90"}
-                    gradientTo={"red.50/90"}
-                    value={scrollArea} h="full" size={"xs"} shadow={"sm"} rounded={10}>
+                    gradientFrom={{ base: "accent.100/90", _dark: "blackAlpha.500" }}
+                    gradientTo={{ base: "red.50/90", _dark: "black" }}
+                    value={scrollArea}
+                    h="full"
+                    size={"xs"}
+                    shadow={"sm"}
+                    rounded={10}
+                >
                     <ScrollArea.Viewport>
                         <ScrollArea.Content rounded={6}>
                             <Container pos="relative" maxW={"7xl"} py="6">
