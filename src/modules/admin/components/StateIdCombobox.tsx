@@ -67,6 +67,7 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             disabled={disabled || isLoading}
             collection={collection}
             value={value ? [value] : []}
+            defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
