@@ -2,15 +2,15 @@
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { District } from '@/modules/admin/stores/districts.store';
+import type { District } from '@/types/districts.type';
 
 export const copyDistrictsToClipboard = async (districts: District[]): Promise<void> => {
-    const header = 'S/N\tDistrict Name\tGroup Name\tDistrict Leader\tRegion\tState\n';
+    const header = 'S/N\tDistrict Name\tDistrict Leader\tRegion\tState\tCode\n';
 
     const text = districts
         .map(
-            (district) =>
-                `${district.id}\t${district.districtName}\t${district.groupName}\t${district.leader || ''}\t${district.regionName}\t${district.stateName}`
+            (district, index) =>
+                `${index + 1}\t${district.name}\t${district.leader}\t${district.region}\t${district.state}\t${district.code}`
         )
         .join('\n');
 
@@ -35,16 +35,13 @@ export const copyDistrictsToClipboard = async (districts: District[]): Promise<v
 export const exportDistrictsToExcel = (districts: District[]): void => {
     try {
         // Prepare data for Excel
-        const excelData = districts.map(district => ({
-            'S/N': district.id,
-            'District Name': district.districtName,
-            'Group Name': district.groupName,
-            'Old Group Name': district.oldGroupName || '',
-            'District Leader': district.leader || '',
-            'Region': district.regionName,
-            'State': district.stateName,
-            'Created Date': new Date(district.createdAt).toLocaleDateString(),
-            'Updated Date': new Date(district.updatedAt).toLocaleDateString()
+        const excelData = districts.map((district, index) => ({
+            'S/N': index + 1,
+            'District Name': district.name,
+            'District Leader': district.leader,
+            'Region': district.region,
+            'State': district.state,
+            'Code': district.code
         }));
 
         // Create worksheet
@@ -58,21 +55,13 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
         const colWidths = [
             { wch: 8 },  // S/N
             { wch: 25 }, // District Name
-            { wch: 20 }, // Group Name
-            { wch: 20 }, // Old Group Name
             { wch: 25 }, // District Leader
             { wch: 20 }, // Region
             { wch: 15 }, // State
-            { wch: 12 }, // Created Date
-            { wch: 12 }  // Updated Date
+            { wch: 10 }  // Code
         ];
         worksheet['!cols'] = colWidths;
 
-        // Generate Excel file and save
-        // const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
-        // const data = new Blob([excelBuffer], {
-        //     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        // });
         writeFile(workbook, `districts-data-${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
         console.error('Error exporting to Excel:', error);
@@ -83,19 +72,16 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
 export const exportDistrictsToCSV = (districts: District[]): void => {
     try {
         // CSV headers
-        const headers = ['S/N', 'District Name', 'Group Name', 'Old Group Name', 'District Leader', 'Region', 'State', 'Created Date', 'Updated Date'];
+        const headers = ['S/N', 'District Name', 'District Leader', 'Region', 'State', 'Code'];
 
         // CSV data rows
-        const csvRows = districts.map(district => [
-            district.id.toString(),
-            `"${district.districtName.replace(/"/g, '""')}"`,
-            `"${district.groupName.replace(/"/g, '""')}"`,
-            `"${(district.oldGroupName || '').replace(/"/g, '""')}"`,
-            `"${(district.leader || '').replace(/"/g, '""')}"`,
-            `"${district.regionName.replace(/"/g, '""')}"`,
-            `"${district.stateName.replace(/"/g, '""')}"`,
-            new Date(district.createdAt).toLocaleDateString(),
-            new Date(district.updatedAt).toLocaleDateString()
+        const csvRows = districts.map((district, index) => [
+            (index + 1).toString(),
+            `"${district.name.replace(/"/g, '""')}"`,
+            `"${district.leader.replace(/"/g, '""')}"`,
+            `"${district.region.replace(/"/g, '""')}"`,
+            `"${district.state.replace(/"/g, '""')}"`,
+            `"${district.code.replace(/"/g, '""')}"`
         ]);
 
         // Combine headers and rows
@@ -142,23 +128,23 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
         doc.text(`Total Districts: ${districts.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = districts.map(district => [
-            district.id.toString(),
-            district.districtName,
-            district.groupName,
-            district.leader || '-',
-            district.regionName,
-            district.stateName
+        const tableData = districts.map((district, index) => [
+            (index + 1).toString(),
+            district.name,
+            district.leader,
+            district.region,
+            district.state,
+            district.code
         ]);
 
         // Define table columns
         const tableColumns = [
             'S/N',
             'District Name',
-            'Group Name',
             'District Leader',
             'Region',
-            'State'
+            'State',
+            'Code'
         ];
 
         // Add table to PDF
@@ -183,10 +169,10 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
             columnStyles: {
                 0: { cellWidth: 15 }, // S/N
                 1: { cellWidth: 30 }, // District Name
-                2: { cellWidth: 25 }, // Group Name
-                3: { cellWidth: 30 }, // District Leader
-                4: { cellWidth: 25 }, // Region
-                5: { cellWidth: 20 }  // State
+                2: { cellWidth: 30 }, // District Leader
+                3: { cellWidth: 25 }, // Region
+                4: { cellWidth: 20 }, // State
+                5: { cellWidth: 15 }  // Code
             },
             margin: { top: 35 }
         });

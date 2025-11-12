@@ -1,4 +1,5 @@
-import { useState } from "react"
+// components/UploadRegions.tsx
+import { useState, useEffect } from "react"
 import { utils, read, writeFile } from "xlsx"
 import {
     Box,
@@ -18,7 +19,11 @@ import {
     useDisclosure,
 } from "@chakra-ui/react"
 import { DocumentDownload, DocumentUpload, TickCircle, Warning2 } from "iconsax-reactjs"
-import { useRegionsStore } from "../stores/region.store"
+
+import type { Region, CreateRegionRequest } from "@/types/regions.type"
+// import type { State, States } from "@/types/states.type"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useStates } from "@/modules/admin/hooks/useState"
 
 interface PortingResult {
     success: boolean
@@ -28,52 +33,71 @@ interface PortingResult {
     totalProcessed: number
 }
 
-const UploadRegionsFromFile = () => {
+interface UploadRegionsFromFileProps {
+    data?: Region[]
+}
+
+const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
     const { open, onOpen, onClose } = useDisclosure()
     const [isProcessing, setIsProcessing] = useState(false)
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
+    const [stateMapping, setStateMapping] = useState<Map<string, number>>(new Map())
 
-    const { regions, addRegion, updateRegion } = useRegionsStore()
+    const { regions = [], createRegion, updateRegion, isCreating, isUpdating } = useRegions()
+    const { states = [] } = useStates()
+
+    // Use provided data or fallback to regions from hook
+    const regionsData = data.length > 0 ? data : regions
+
+    // Create state name to ID mapping
+    useEffect(() => {
+        if (states.length > 0) {
+            const mapping = new Map<string, number>()
+            states.forEach(state => {
+                mapping.set(state.name, state.id)
+            })
+            setStateMapping(mapping)
+        }
+    }, [states])
 
     // Download template function
     const calculateColumnWidths = (data: any[]) => {
         const headers = Object.keys(data[0])
         const widths = headers.map(header => {
-            // Start with header length
             let maxLength = header.length
-
-            // Check data lengths for this column
             data.forEach(row => {
                 const value = String(row[header] || '')
                 if (value.length > maxLength) {
                     maxLength = value.length
                 }
             })
-
-            // Add some padding
-            return { wch: Math.min(maxLength + 2, 50) } // Cap at 50 characters
+            return { wch: Math.min(maxLength + 2, 50) }
         })
-
         return widths
     }
 
     const downloadTemplate = () => {
-        const templateData = regions.map(r => ({
-            "STATE NAME": r.stateName,
-            "REGION NAME": r.regionName,
+        const templateData = regionsData.map(r => ({
+            "STATE": r.state,
+            "REGION NAME": r.name,
+            "REGION CODE": r.code,
             "LEADER": r.leader
         }));
 
+        // Add example row
+        templateData.push({
+            "STATE": "LAGOS",
+            "REGION NAME": "IKEJA",
+            "REGION CODE": "IKE",
+            "LEADER": "John Doe"
+        });
 
         const worksheet = utils.json_to_sheet(templateData)
-
-        // Auto-calculate column widths based on content
         worksheet['!cols'] = calculateColumnWidths(templateData)
 
         const workbook = utils.book_new()
         utils.book_append_sheet(workbook, worksheet, "Regions Template")
-
         writeFile(workbook, "regions_template.xlsx")
     }
 
@@ -101,45 +125,57 @@ const UploadRegionsFromFile = () => {
             }
 
             // Process each row
-            jsonData.forEach((row, index) => {
+            for (const [index, row] of jsonData.entries()) {
                 try {
-                    const stateName = row['State Name'] || row['stateName'] || row['STATE_NAME']
-                    const regionName = row['Region Name'] || row['regionName'] || row['REGION_NAME']
-                    const leader = row['Region Leader'] || row['leader'] || row['LEADER'] || row['Region Leader']
+                    const state = row['State'] || row['state'] || row['STATE']
+                    const regionName = row['Region Name'] || row['regionName'] || row['REGION NAME'] || row['name']
+                    const regionCode = row['Region Code'] || row['regionCode'] || row['REGION CODE'] || row['code']
+                    const leader = row['Leader'] || row['leader'] || row['LEADER']
 
-                    if (!stateName || !regionName) {
-                        result.errors.push(`Row ${index + 1}: Missing state name or region name`)
-                        return
+                    if (!state || !regionName || !regionCode) {
+                        result.errors.push(`Row ${index + 1}: Missing state, region name, or region code`)
+                        continue
                     }
 
-                    // Check if region already exists (by state name and region name)
-                    const existingRegion = regions.find(
+                    // Get state_id from mapping
+                    const stateId = stateMapping.get(state)
+                    if (!stateId) {
+                        result.errors.push(`Row ${index + 1}: State "${state}" not found in system`)
+                        continue
+                    }
+
+                    // Check if region already exists (by name and state)
+                    const existingRegion = regionsData.find(
                         region =>
-                            region.stateName.toLowerCase() === stateName.toLowerCase() &&
-                            region.regionName.toLowerCase() === regionName.toLowerCase()
+                            region.state.toLowerCase() === state.toLowerCase() &&
+                            region.name.toLowerCase() === regionName.toLowerCase()
                     )
 
                     if (existingRegion) {
                         // Update existing region
-                        updateRegion(existingRegion.id, {
-                            stateName: stateName.toUpperCase(),
-                            regionName: regionName.toUpperCase(),
-                            leader: leader?.toUpperCase() || existingRegion.leader
-                        })
+                        const updateData: Partial<CreateRegionRequest> = {
+                            name: regionName,
+                            state_id: stateId,
+                            leader: leader,
+                            code: regionCode
+                        }
+                        updateRegion({ id: existingRegion.id, data: updateData })
                         result.updated++
                     } else {
                         // Add new region
-                        addRegion({
-                            stateName: stateName.toUpperCase(),
-                            regionName: regionName.toUpperCase(),
-                            leader: leader?.toUpperCase() || ''
-                        })
+                        const createData: CreateRegionRequest = {
+                            name: regionName,
+                            state_id: stateId,
+                            leader: leader || '',
+                            code: regionCode
+                        }
+                        createRegion(createData)
                         result.added++
                     }
                 } catch (error) {
                     result.errors.push(`Row ${index + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`)
                 }
-            })
+            }
 
             if (result.errors.length > 0) {
                 result.success = false
@@ -169,19 +205,15 @@ const UploadRegionsFromFile = () => {
         onClose()
     }
 
+    const isLoading = isProcessing || isCreating || isUpdating
+
     return (
         <>
-            {/* Trigger Button */}
-            <Button
-                variant="outline"
-                onClick={onOpen}
-                rounded="xl"
-            >
+            <Button variant="outline" onClick={onOpen} rounded="xl">
                 <DocumentUpload />
                 Upload From CSV/EXCEL File
             </Button>
 
-            {/* Dialog */}
             <Dialog.Root open={open} onOpenChange={(e) => !e.open && handleClose()}>
                 <Portal>
                     <Dialog.Backdrop />
@@ -193,7 +225,6 @@ const UploadRegionsFromFile = () => {
 
                             <Dialog.Body>
                                 <VStack gap="4" align="stretch">
-                                    {/* Download Template */}
                                     <Card.Root variant="outline">
                                         <Card.Body>
                                             <VStack gap="3">
@@ -210,20 +241,18 @@ const UploadRegionsFromFile = () => {
                                                     </Button>
                                                 </HStack>
                                                 <Text fontSize="sm" color="gray.600">
-                                                    Download the Excel template to ensure proper formatting
+                                                    Available states: {Array.from(stateMapping.keys()).join(', ')}
                                                 </Text>
                                             </VStack>
                                         </Card.Body>
                                     </Card.Root>
 
-                                    {/* File Upload */}
                                     <FileUpload.Root
                                         onFileAccept={(fd) => processFile(fd.files)}
                                         accept=".xlsx,.xls,.csv"
-                                        disabled={isProcessing}
+                                        disabled={isLoading}
                                     >
                                         <FileUpload.HiddenInput />
-
                                         <InputGroup
                                             startElement={<DocumentUpload />}
                                             endElement={
@@ -233,9 +262,6 @@ const UploadRegionsFromFile = () => {
                                                             me="-1"
                                                             size="xs"
                                                             variant="plain"
-                                                            focusVisibleRing="inside"
-                                                            focusRingWidth="2px"
-                                                            pointerEvents="auto"
                                                             onClick={clearFile}
                                                         />
                                                     </FileUpload.ClearTrigger>
@@ -250,14 +276,12 @@ const UploadRegionsFromFile = () => {
                                                 </FileUpload.Trigger>
                                             </Input>
                                         </InputGroup>
-
                                         <FileUpload.Label>
                                             Upload Excel or CSV file with region data
                                         </FileUpload.Label>
                                     </FileUpload.Root>
 
-                                    {/* Processing State */}
-                                    {isProcessing && (
+                                    {isLoading && (
                                         <Alert.Root status="info" rounded="md">
                                             <DocumentUpload />
                                             <Box>
@@ -267,7 +291,6 @@ const UploadRegionsFromFile = () => {
                                         </Alert.Root>
                                     )}
 
-                                    {/* Results */}
                                     {portingResult && (
                                         <Alert.Root status={portingResult.success ? "success" : "warning"} rounded="md">
                                             {portingResult.success ? <TickCircle /> : <Warning2 />}
@@ -310,8 +333,8 @@ const UploadRegionsFromFile = () => {
                                 <Button
                                     rounded="xl"
                                     colorPalette="blue"
-                                    loading={isProcessing}
-                                    disabled={!selectedFile || isProcessing}
+                                    loading={isLoading}
+                                    disabled={!selectedFile || isLoading || stateMapping.size === 0}
                                     onClick={() => selectedFile && processFile([selectedFile])}
                                 >
                                     Import Data

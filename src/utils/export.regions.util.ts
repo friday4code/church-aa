@@ -1,18 +1,27 @@
-import type { Region } from "@/modules/admin/stores/region.store"
-import type { State } from "@/modules/admin/stores/states.store"
+// utils/export.regions.util.ts
+import type { Region } from "@/types/regions.type"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { utils, writeFile } from "xlsx"
-import { exportToExcel, exportToCSV, exportToPDF, copyToClipboard } from "./export.utils"
 
-// Regions Export Functions (new)
+// Regions Export Functions (updated)
 export const exportRegionsToExcel = (data: Region[], filename: string = 'regions') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'S/N': item.id,
-        'State Name': item.stateName,
-        'Region Name': item.regionName,
+        'State': item.state,
+        'Region Name': item.name,
+        'Region Code': item.code,
         'Region Leader': item.leader
     })))
+
+    // Set column widths to fit content
+    const colWidths = [
+        { wch: Math.max(...data.map(item => item.state?.length || 0), 'State'.length) + 2 }, // State
+        { wch: Math.max(...data.map(item => item.name?.length || 0), 'Region Name'.length) + 2 }, // Region Name
+        { wch: Math.max(...data.map(item => item.code?.length || 0), 'Region Code'.length) + 2 }, // Region Code
+        { wch: Math.max(...data.map(item => item.leader?.length || 0), 'Region Leader'.length) + 2 }, // Region Leader
+    ]
+    worksheet['!cols'] = colWidths
+
     const workbook = utils.book_new()
     utils.book_append_sheet(workbook, worksheet, 'Regions')
     writeFile(workbook, `${filename}_${new Date().toISOString().replaceAll("/", "_")}.xlsx`)
@@ -20,9 +29,9 @@ export const exportRegionsToExcel = (data: Region[], filename: string = 'regions
 
 export const exportRegionsToCSV = (data: Region[], filename: string = 'regions') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'S/N': item.id,
-        'State Name': item.stateName,
-        'Region Name': item.regionName,
+        'State': item.state,
+        'Region Name': item.name,
+        'Region Code': item.code,
         'Region Leader': item.leader
     })))
     const csv = utils.sheet_to_csv(worksheet)
@@ -47,11 +56,18 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
 
     autoTable(doc, {
-        head: [['S/N', 'State Name', 'Region Name', 'Region Leader']],
-        body: data.map(item => [item.id, item.stateName, item.regionName, item.leader]),
+        head: [['State', 'Region Name', 'Region Code', 'Region Leader']],
+        body: data.map(item => [item.state, item.name, item.code, item.leader]),
         startY: 30,
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [66, 135, 245] } // Blue header
+        headStyles: { fillColor: [66, 135, 245] }, // Blue header
+        columnStyles: {
+            0: { cellWidth: 'auto' }, // State
+            1: { cellWidth: 'auto' }, // Region Name
+            2: { cellWidth: 'auto' }, // Region Code
+            3: { cellWidth: 'auto' }  // Region Leader
+        },
+        tableWidth: 'wrap'
     })
 
     // Footer with page numbers
@@ -72,10 +88,10 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
 
 export const copyRegionsToClipboard = async (data: Region[]) => {
     const text = data.map(item =>
-        `${item.id}\t${item.stateName}\t${item.regionName}\t${item.leader}`
+        `${item.state}\t${item.name}\t${item.code}\t${item.leader}`
     ).join('\n')
 
-    const header = 'S/N\tState Name\tRegion Name\tRegion Leader\n'
+    const header = 'State\tRegion Name\tRegion Code\tRegion Leader\n'
     await navigator.clipboard.writeText(header + text)
 }
 
@@ -83,45 +99,36 @@ export const copyRegionsToClipboard = async (data: Region[]) => {
 export const exportDataToExcel = (data: any[], filename: string = 'data') => {
     if (data.length === 0) return
 
-    // Check if it's State data
-    if ('stateCode' in data[0]) {
-        exportToExcel(data as State[], filename)
-    }
     // Check if it's Region data
-    else if ('regionName' in data[0]) {
+    if ('state' in data[0] && 'code' in data[0]) {
         exportRegionsToExcel(data as Region[], filename)
     }
+    // Add other data type checks here as needed
 }
 
 export const exportDataToCSV = (data: any[], filename: string = 'data') => {
     if (data.length === 0) return
 
-    if ('stateCode' in data[0]) {
-        exportToCSV(data as State[], filename)
-    }
-    else if ('regionName' in data[0]) {
+    if ('state' in data[0] && 'code' in data[0]) {
         exportRegionsToCSV(data as Region[], filename)
     }
+    // Add other data type checks here as needed
 }
 
 export const exportDataToPDF = (data: any[], filename: string = 'data') => {
     if (data.length === 0) return
 
-    if ('stateCode' in data[0]) {
-        exportToPDF(data as State[], filename)
-    }
-    else if ('regionName' in data[0]) {
+    if ('state' in data[0] && 'code' in data[0]) {
         exportRegionsToPDF(data as Region[], filename)
     }
+    // Add other data type checks here as needed
 }
 
 export const copyDataToClipboard = async (data: any[]) => {
     if (data.length === 0) return
 
-    if ('stateCode' in data[0]) {
-        await copyToClipboard(data as State[])
-    }
-    else if ('regionName' in data[0]) {
+    if ('state' in data[0] && 'code' in data[0]) {
         await copyRegionsToClipboard(data as Region[])
     }
+    // Add other data type checks here as needed
 }

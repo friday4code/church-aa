@@ -1,3 +1,4 @@
+import type { District, Districts } from "@/types/districts.type";
 import { axiosClient } from "../config/axios.config"
 
 export const adminApi = {
@@ -130,8 +131,8 @@ export const adminApi = {
     },
 
     // Districts
-    getDistricts: async (): Promise<any> => {
-        const { data } = await axiosClient.get<any>("/hierarchy/districts");
+    getDistricts: async (): Promise<Districts> => {
+        const { data } = await axiosClient.get<Districts>("/hierarchy/districts");
         return data;
     },
 
@@ -140,12 +141,12 @@ export const adminApi = {
         return data;
     },
 
-    createDistrict: async (districtData: any): Promise<any> => {
-        const { data } = await axiosClient.post<any>("/hierarchy/districts", districtData);
+    createDistrict: async (districtData: District): Promise<any> => {
+        const { data } = await axiosClient.post<District>("/hierarchy/districts", districtData);
         return data;
     },
 
-    updateDistrict: async (districtId: string | number, districtData: any): Promise<any> => {
+    updateDistrict: async (districtId: string | number, districtData: Partial<District>): Promise<any> => {
         const { data } = await axiosClient.put<any>(`/hierarchy/district/${districtId}`, districtData);
         return data;
     },

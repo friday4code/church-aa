@@ -1,16 +1,16 @@
 "use client"
 
+import { useStates } from "@/modules/admin/hooks/useState";
+import type { States } from "@/types/states.type";
 import {
     Combobox,
+    Field,
     useListCollection,
 } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
-import NaijaStates from 'naija-state-local-government'
 
-// Get all Nigerian states
-const nigerianStates = NaijaStates.states()
 
-const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
+const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
@@ -18,44 +18,68 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
     disabled?: boolean;
 }) => {
     const [inputValue, setInputValue] = useState("")
+    const { states: data, isLoading } = useStates()
+    const states: States = data;
 
     const { collection, set } = useListCollection({
-        initialItems: nigerianStates.map(state => ({ label: state, value: state })) as { label: string, value: string }[],
+        initialItems: [] as { label: string, value: string }[],
         itemToString: (item) => item.label,
         itemToValue: (item) => item.value,
     })
 
-    // Filter states based on input
+    // Update collection when states data loads or input changes
     useEffect(() => {
-        const filtered = nigerianStates
-            .filter(state =>
-                state.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(state => ({ label: state, value: state }))
+        if (!states || states.length === 0) return
 
-        set(filtered)
-    }, [inputValue, set])
+        const filteredStates = states
+            .filter(state =>
+                state.name.toLowerCase().includes(inputValue.toLowerCase())
+            )
+            .map(state => ({
+                label: state.name,
+                value: state.name
+            }))
+
+        set(filteredStates)
+    }, [states, inputValue, set])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
-            onChange(details.value[0])
+            const selectedState = details.value[0]
+            onChange(selectedState)
         } else {
             onChange('')
         }
     }
 
+    // Sync the input value with the selected value
+    useEffect(() => {
+        if (value) {
+            setInputValue(value)
+        } else {
+            setInputValue("")
+        }
+    }, [value])
+
     return (
         <Combobox.Root
-            disabled={disabled}
+            required={required}
+            disabled={disabled || isLoading}
             collection={collection}
             value={value ? [value] : []}
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
+            closeOnSelect={true}
         >
-            <Combobox.Label>State Name</Combobox.Label>
+            <Combobox.Label>State Name
+                <Field.RequiredIndicator />
+            </Combobox.Label>
             <Combobox.Control>
-                <Combobox.Input rounded="xl" placeholder="Select state" />
+                <Combobox.Input
+                    rounded="xl"
+                    placeholder={isLoading ? "Loading states..." : "Select state"}
+                />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
                     <Combobox.Trigger />
@@ -64,7 +88,9 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
-                    {collection.items.length === 0 ? (
+                    {isLoading ? (
+                        <Combobox.Empty>Loading states...</Combobox.Empty>
+                    ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No states found</Combobox.Empty>
                     ) : (
                         collection.items.map((item) => (
@@ -80,4 +106,4 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
     )
 }
 
-export default StateCombobox
+export default StateIdCombobox

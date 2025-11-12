@@ -5,7 +5,7 @@ import ErrorFallback from "@/components/ErrorFallback"
 import { ENV } from "@/config/env"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ErrorBoundary } from "react-error-boundary"
-import { DistrictsContent } from "./components/DistrictsContent"
+import { DistrictsContent } from "./DistrictsContent"
 
 export const Districts: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
