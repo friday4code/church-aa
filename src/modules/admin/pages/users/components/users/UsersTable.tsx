@@ -1,4 +1,3 @@
-// components/groups/components/GroupsTable.tsx
 "use client"
 
 import {
@@ -9,32 +8,33 @@ import {
     Portal,
     ButtonGroup,
     Pagination,
+    Badge,
 } from "@chakra-ui/react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
-import TableLoading from "./GroupsTableLoading"
-import type { Group } from "@/types/groups.type"
+import UsersTableLoading from "./UsersTableLoading"
+import type { User } from "@/types/users.type"
 
-interface GroupsTableProps {
-    paginatedGroups: Group[]
-    selectedGroups: number[]
-    sortField: keyof Group
+interface UsersTableProps {
+    paginatedUsers: any[]
+    selectedUsers: number[]
+    sortField: string
     sortOrder: 'asc' | 'desc'
     currentPage: number
     totalPages: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
-    onSort: (field: keyof Group) => void
+    onSort: (field: keyof User) => void
     onSelectAllOnPage: () => void
-    onSelectGroup: (groupId: number) => void
-    onEditGroup: (group: Group) => void
-    onDeleteGroup: (group: Group) => void
+    onSelectUser: (userId: number) => void
+    onEditUser: (user: any) => void
+    onDeleteUser: (user: any) => void
     onPageChange: (page: number) => void
 }
 
-const GroupsTable = ({
+const UsersTable = ({
     isLoading,
-    paginatedGroups,
-    selectedGroups,
+    paginatedUsers,
+    selectedUsers,
     sortField,
     sortOrder,
     currentPage,
@@ -42,13 +42,13 @@ const GroupsTable = ({
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
-    onSelectGroup,
-    onEditGroup,
-    onDeleteGroup,
+    onSelectUser,
+    onEditUser,
+    onDeleteUser,
     onPageChange,
-}: GroupsTableProps) => {
+}: UsersTableProps) => {
     if (isLoading) {
-        return <TableLoading />;
+        return <UsersTableLoading />;
     }
 
     return (
@@ -80,21 +80,28 @@ const GroupsTable = ({
                                 cursor="pointer"
                                 onClick={() => onSort('name')}
                             >
-                                Group Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                Full Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
-                                onClick={() => onSort('leader')}
+                                onClick={() => onSort('email')}
                             >
-                                Group Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                Email {sortField === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
-                                onClick={() => onSort('access_level')}
+                                onClick={() => onSort('phone')}
                             >
-                                Access Level {sortField === 'access_level' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                Phone {sortField === 'phone' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('roles')}
+                            >
+                                Roles {sortField === 'roles' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -103,34 +110,31 @@ const GroupsTable = ({
                             </Table.ColumnHeader>
                         </Table.Row>
                     </Table.Header>
-                    <Table.Body>
-                        {paginatedGroups?.map((group, index) => (
-                            <Table.Row key={group.id}>
+                    <Table.Body >
+                        {paginatedUsers.map((user, index) => (
+                            <Table.Row key={user.id} >
                                 <Table.Cell>
                                     <Checkbox.Root
                                         colorPalette={"accent"}
-                                        checked={selectedGroups.includes(group.id)}
-                                        onCheckedChange={() => onSelectGroup(group.id)}
+                                        checked={selectedUsers.includes(user.id)}
+                                        onCheckedChange={() => onSelectUser(user.id)}
                                     >
                                         <Checkbox.HiddenInput />
                                         <Checkbox.Control cursor="pointer" rounded="md" />
                                     </Checkbox.Root>
                                 </Table.Cell>
                                 <Table.Cell>{index + 1}</Table.Cell>
-                                <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
-                                <Table.Cell>{group.leader}</Table.Cell>
+                                <Table.Cell fontWeight="medium">
+                                    {user.name}
+                                </Table.Cell>
+                                <Table.Cell>{user.email}</Table.Cell>
+                                <Table.Cell>{user.phone}</Table.Cell>
                                 <Table.Cell>
-                                    <span style={{
-                                        textTransform: 'capitalize',
-                                        padding: '4px 8px',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: '500',
-                                        backgroundColor: getAccessLevelColor(group?.access_level),
-                                        color: 'white'
-                                    }}>
-                                        {group?.access_level?.replace('-', ' ')}
-                                    </span>
+                                    {user.roles?.map((role: string, idx: number) => (
+                                        <Badge key={idx} colorPalette="blue" variant="subtle" mr="1">
+                                            {role}
+                                        </Badge>
+                                    ))}
                                 </Table.Cell>
                                 <Table.Cell textAlign="center">
                                     <Menu.Root>
@@ -144,7 +148,7 @@ const GroupsTable = ({
                                                 <Menu.Content rounded="lg">
                                                     <Menu.Item
                                                         value="edit"
-                                                        onClick={() => onEditGroup(group)}
+                                                        onClick={() => onEditUser(user)}
                                                     >
                                                         <Edit /> Edit
                                                     </Menu.Item>
@@ -152,7 +156,7 @@ const GroupsTable = ({
                                                         color="red"
                                                         value="delete"
                                                         colorPalette="red"
-                                                        onClick={() => onDeleteGroup(group)}
+                                                        onClick={() => onDeleteUser(user)}
                                                     >
                                                         <Trash /> Delete
                                                     </Menu.Item>
@@ -203,16 +207,4 @@ const GroupsTable = ({
     )
 }
 
-// Helper function to get color for access level badges
-const getAccessLevelColor = (accessLevel: string): string => {
-    const colors: { [key: string]: string } = {
-        'state-admin': '#3182CE',
-        'region-admin': '#38A169',
-        'district-admin': '#D69E2E',
-        'group-admin': '#805AD5',
-        'user': '#718096'
-    };
-    return colors[accessLevel] || '#718096';
-}
-
-export default GroupsTable;
+export default UsersTable;

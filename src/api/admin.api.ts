@@ -4,17 +4,17 @@ import { axiosClient } from "../config/axios.config"
 export const adminApi = {
     // Users
     getUsers: async (): Promise<any> => {
-        const { data } = await axiosClient.get<any>("/users/");
+        const { data } = await axiosClient.get<any>("/api/users/");        
         return data;
     },
 
     createUser: async (userData: any): Promise<any> => {
-        const { data } = await axiosClient.post<any>("/users/", userData);
+        const { data } = await axiosClient.post<any>("/api/users/", userData);
         return data;
     },
 
     updateUser: async (userId: string | number, userData: any): Promise<any> => {
-        const { data } = await axiosClient.put<any>(`/users/${userId}`, userData);
+        const { data } = await axiosClient.put<any>(`/api/users/${userId}`, userData);
         return data;
     },
 

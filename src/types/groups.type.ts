@@ -2,7 +2,7 @@
 export interface Group {
     id: number;
     group_id: number;
-    group_name: string;
+    name: string;
     leader: string;
     access_level: string;
     state_id: number;

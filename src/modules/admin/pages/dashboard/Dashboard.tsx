@@ -45,8 +45,8 @@ import { useGroups } from "../../hooks/useGroup";
 import { useOldGroups } from "../../hooks/useOldGroup";
 import { useRegions } from "../../hooks/useRegion";
 import { useUsers } from "../../hooks/useUser";
-import { useStates } from "../../hooks/useUserRight";
 import type { Region } from "@/types/regions.type";
+import { useStates } from "../../hooks/useState";
 
 
 const Dashboard: React.FC = () => {
@@ -76,11 +76,11 @@ const Content = () => {
 
     // Use custom hooks
     const { data: users, isLoading: usersLoading, error: usersError } = useUsers();
-    const { data: states, isLoading: statesLoading, error: statesError } = useStates();
-    const { data: regions, isLoading: regionsLoading, error: regionsError } = useRegions();
-    const { data: districts, isLoading: districtsLoading, error: districtsError } = useDistricts();
-    const { data: groups, isLoading: groupsLoading, error: groupsError } = useGroups();
-    const { data: oldGroups, isLoading: oldGroupsLoading, error: oldGroupsError } = useOldGroups();
+    const { states, isLoading: statesLoading, error: statesError } = useStates();
+    const { regions, isLoading: regionsLoading, error: regionsError } = useRegions();
+    const { districts, isLoading: districtsLoading, error: districtsError } = useDistricts();
+    const { groups, isLoading: groupsLoading, error: groupsError } = useGroups();
+    const { oldGroups, isLoading: oldGroupsLoading, error: oldGroupsError } = useOldGroups();
     const { data: attendance, isLoading: attendanceLoading, error: attendanceError } = useAttendance();
 
     // Handle errors with toasts

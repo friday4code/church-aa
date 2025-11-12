@@ -17,11 +17,38 @@ import {
 } from "@chakra-ui/react"
 import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip } from "recharts"
-import {Profile2User, ProfileTick, Shield, TrendUp, ArrowRight } from "iconsax-reactjs"
+import { Profile2User, ProfileTick, Shield, TrendUp, ArrowRight } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
-import { useUserRightsStore } from "../../stores/userRights.store"
-import { useUsersStore } from "../../stores/users.store"
+import { useUsers } from "../../hooks/useUser"
+import { useUserRights } from "../../hooks/useUserRight"
 
+
+// Define types for the component props and state
+interface DashboardStats {
+    totalUsers: number
+    totalUserRights: number
+    superAdmins: number
+    groupAdmins: number
+    districtAdmins: number
+    regionAdmins: number
+    stateAdmins: number
+    activeUsers: number
+}
+
+interface ChartDataItem {
+    name: string
+    value: number
+    color: string
+}
+
+interface StatCardProps {
+    title: string
+    value: number
+    icon: React.ComponentType<any>
+    color: string
+    link: string
+    description?: string
+}
 
 export const Index: React.FC = () => {
     return (
@@ -38,104 +65,111 @@ export const Index: React.FC = () => {
 
 export default Index
 
-const Content = () => {
+const Content: React.FC = () => {
     const navigate = useNavigate()
-    const { users } = useUsersStore()
-    const { userRights } = useUserRightsStore()
-    
-    const [stats, setStats] = useState({
+    const { data: users, isLoading: usersLoading, error: usersError } = useUsers()
+    const { data: userRights, isLoading: rightsLoading, error: rightsError } = useUserRights()
+
+    const [stats, setStats] = useState<DashboardStats>({
         totalUsers: 0,
         totalUserRights: 0,
         superAdmins: 0,
         groupAdmins: 0,
+        districtAdmins: 0,
+        regionAdmins: 0,
+        stateAdmins: 0,
         activeUsers: 0
     })
 
-    const [chartData, setChartData] = useState<Array<{ name: string; value: number; color: string }>>([])
+    const [chartData, setChartData] = useState<ChartDataItem[]>([])
 
     useEffect(() => {
+        if (usersLoading || rightsLoading) return
+
         // Calculate statistics
-        const totalUsers = users.length
-        const totalUserRights = userRights.length
-        
-        const accessLevelCounts = userRights.reduce((acc, right) => {
+        const totalUsers = users?.length || 0
+        const totalUserRights = userRights?.length || 0
+
+        const accessLevelCounts = (userRights || []).reduce((acc, right) => {
             acc[right.accessLevel] = (acc[right.accessLevel] || 0) + 1
             return acc
         }, {} as Record<string, number>)
 
+        const superAdmins = accessLevelCounts['super_admin'] || 0
+        const groupAdmins = accessLevelCounts['group_admin'] || 0
+        const districtAdmins = accessLevelCounts['district_admin'] || 0
+        const regionAdmins = accessLevelCounts['region_admin'] || 0
+        const stateAdmins = accessLevelCounts['state_admin'] || 0
+
+        const activeUsers = (users || []).filter(user =>
+            (userRights || []).some(right => right.userId === user.id)
+        ).length
+
         setStats({
             totalUsers,
             totalUserRights,
-            superAdmins: accessLevelCounts['super_admin'] || 0,
-            groupAdmins: accessLevelCounts['group_admin'] || 0,
-            activeUsers: users.filter(user => 
-                userRights.some(right => right.userId === user.id)
-            ).length
+            superAdmins,
+            groupAdmins,
+            districtAdmins,
+            regionAdmins,
+            stateAdmins,
+            activeUsers
         })
 
         // Prepare chart data
         const chartData = [
             {
                 name: 'Super Admins',
-                value: accessLevelCounts['super_admin'] || 0,
+                value: superAdmins,
                 color: 'blue.solid'
             },
             {
                 name: 'Group Admins',
-                value: accessLevelCounts['group_admin'] || 0,
+                value: groupAdmins,
                 color: 'green.solid'
             },
             {
                 name: 'District Admins',
-                value: accessLevelCounts['district_admin'] || 0,
+                value: districtAdmins,
                 color: 'orange.solid'
             },
             {
                 name: 'Region Admins',
-                value: accessLevelCounts['region_admin'] || 0,
+                value: regionAdmins,
                 color: 'purple.solid'
             },
             {
                 name: 'State Admins',
-                value: accessLevelCounts['state_admin'] || 0,
+                value: stateAdmins,
                 color: 'red.solid'
             },
             {
                 name: 'No Rights',
-                value: totalUsers - (accessLevelCounts['super_admin'] || 0) - (accessLevelCounts['group_admin'] || 0) - 
-                      (accessLevelCounts['district_admin'] || 0) - (accessLevelCounts['region_admin'] || 0) - 
-                      (accessLevelCounts['state_admin'] || 0),
+                value: totalUsers - (superAdmins + groupAdmins + districtAdmins + regionAdmins + stateAdmins),
                 color: 'gray.solid'
             }
         ].filter(item => item.value > 0)
 
         setChartData(chartData)
-    }, [users, userRights])
+    }, [users, userRights, usersLoading, rightsLoading])
 
-    const StatCard = ({ 
-        title, 
-        value, 
-        icon: Icon, 
-        color, 
-        link, 
-        description 
-    }: { 
-        title: string
-        value: number
-        icon: any
-        color: string
-        link: string
-        description?: string
+    const StatCard: React.FC<StatCardProps> = ({
+        title,
+        value,
+        icon: Icon,
+        color,
+        link,
+        description
     }) => (
-        <Card.Root 
-            bg="white" 
-            border="1px" 
-            borderColor="gray.200" 
-            rounded="xl" 
+        <Card.Root
+            bg="white"
+            border="1px"
+            borderColor="gray.200"
+            rounded="xl"
             p="6"
             cursor="pointer"
             transition="all 0.2s"
-            _hover={{ 
+            _hover={{
                 transform: 'translateY(-2px)',
                 shadow: 'lg',
                 borderColor: color
@@ -149,7 +183,7 @@ const Content = () => {
                             {title}
                         </Text>
                         <Heading size="2xl" color={color}>
-                            {value}
+                            {usersLoading || rightsLoading ? "-" : value}
                         </Heading>
                         {description && (
                             <Text fontSize="xs" color="gray.500">
@@ -167,9 +201,9 @@ const Content = () => {
                     </Box>
                 </Flex>
                 <Flex justify="space-between" align="center" mt="4">
-                    <Link 
+                    <Link
                         href={link}
-                        fontSize="sm" 
+                        fontSize="sm"
                         color={color}
                         fontWeight="medium"
                         onClick={(e) => {
@@ -186,7 +220,7 @@ const Content = () => {
     )
 
     // Donut Chart Component using Recharts
-    const UserRightsDonutChart = () => {
+    const UserRightsDonutChart: React.FC = () => {
         const chart = useChart({
             data: chartData,
         })
@@ -194,6 +228,14 @@ const Content = () => {
         const totalUsersWithRights = chartData
             .filter(item => item.name !== 'No Rights')
             .reduce((sum, item) => sum + item.value, 0)
+
+        if (usersLoading || rightsLoading) {
+            return (
+                <Box boxSize="200px" display="flex" alignItems="center" justifyContent="center">
+                    <Text color="gray.500">Loading chart...</Text>
+                </Box>
+            )
+        }
 
         return (
             <Chart.Root boxSize="200px" chart={chart} mx="auto">
@@ -208,7 +250,7 @@ const Content = () => {
                         outerRadius={80}
                         isAnimationActive={true}
                         animationDuration={500}
-                        data={chart.data}
+                        data={chart.data as any}
                         dataKey={chart.key("value")}
                         nameKey="name"
                     >
@@ -230,17 +272,127 @@ const Content = () => {
         )
     }
 
+    // Show loading state
+    if (usersLoading || rightsLoading) {
+        return (
+            <VStack gap="8" align="stretch">
+                <Flex justify="space-between" align="center">
+                    <VStack align="start" gap="1">
+                        <Heading size="3xl">Dashboard</Heading>
+                        <Text color="gray.600" fontSize="lg">
+                            Loading dashboard data...
+                        </Text>
+                    </VStack>
+                </Flex>
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap="6">
+                    {[1, 2, 3, 4].map((item) => (
+                        <Card.Root key={item} bg="white" border="1px" borderColor="gray.200" rounded="xl" p="6">
+                            <Card.Body p="0">
+                                <Flex justify="space-between" align="start">
+                                    <VStack align="start" gap="2">
+                                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                                            Loading...
+                                        </Text>
+                                        <Heading size="2xl" color="gray.300">
+                                            -
+                                        </Heading>
+                                    </VStack>
+                                    <Box p="3" bg="gray.100" rounded="lg" color="gray.300">
+                                        <Box boxSize="24" />
+                                    </Box>
+                                </Flex>
+                            </Card.Body>
+                        </Card.Root>
+                    ))}
+                </SimpleGrid>
+            </VStack>
+        )
+    }
+
+    // Show error state
+    if (usersError || rightsError) {
+        return (
+            <VStack gap="8" align="stretch">
+                <Flex justify="space-between" align="center">
+                    <VStack align="start" gap="1">
+                        <Heading size="3xl">Users Stats</Heading>
+                        <Text color="red.600" fontSize="lg">
+                            Error loading dashboard data
+                        </Text>
+                    </VStack>
+                </Flex>
+            </VStack>
+        )
+    }
+
     return (
         <VStack gap="8" align="stretch">
             {/* Header */}
             <Flex justify="space-between" align="center">
                 <VStack align="start" gap="1">
-                    <Heading size="3xl">Dashboard</Heading>
+                    <Heading size="3xl">Users Stats</Heading>
                     <Text color="gray.600" fontSize="lg">
                         Welcome to your Church Attendance System
                     </Text>
                 </VStack>
             </Flex>
+
+            {/* Quick Actions */}
+            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Header pb="4">
+                    <Heading size="lg">Quick Actions</Heading>
+                </Card.Header>
+                <Card.Body pt="0">
+                    <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
+                        <Card.Root
+                            variant="outline"
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                                bg: 'blue.50',
+                                borderColor: 'blue.200'
+                            }}
+                            onClick={() => navigate('/admin/users/all')}
+                        >
+                            <Card.Body>
+                                <HStack justify="space-between">
+                                    <VStack align="start" gap="1">
+                                        <Text fontWeight="medium">Manage Users</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                            Add, edit, or remove users
+                                        </Text>
+                                    </VStack>
+                                    <ArrowRight size="20" color="blue" />
+                                </HStack>
+                            </Card.Body>
+                        </Card.Root>
+
+                        <Card.Root
+                            variant="outline"
+                            cursor="pointer"
+                            transition="all 0.2s"
+                            _hover={{
+                                bg: 'green.50',
+                                borderColor: 'green.200'
+                            }}
+                            onClick={() => navigate('/admin/users/rights')}
+                        >
+                            <Card.Body>
+                                <HStack justify="space-between">
+                                    <VStack align="start" gap="1">
+                                        <Text fontWeight="medium">Manage Rights</Text>
+                                        <Text fontSize="sm" color="gray.600">
+                                            Configure user access levels
+                                        </Text>
+                                    </VStack>
+                                    <ArrowRight size="20" color="green" />
+                                </HStack>
+                            </Card.Body>
+                        </Card.Root>
+                    </SimpleGrid>
+                </Card.Body>
+            </Card.Root>
+
 
             {/* Statistics Cards */}
             <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap="6">
@@ -252,7 +404,7 @@ const Content = () => {
                     link="/admin/users/all"
                     description="Registered users in system"
                 />
-                
+
                 <StatCard
                     title="User Rights"
                     value={stats.totalUserRights}
@@ -261,7 +413,7 @@ const Content = () => {
                     link="/admin/users/rights"
                     description="Access rights configured"
                 />
-                
+
                 <StatCard
                     title="Super Admins"
                     value={stats.superAdmins}
@@ -270,7 +422,7 @@ const Content = () => {
                     link="/admin/users/rights"
                     description="Full system access"
                 />
-                
+
                 <StatCard
                     title="Active Users"
                     value={stats.activeUsers}
@@ -292,11 +444,11 @@ const Content = () => {
                             </Text>
                         </VStack>
                         <Badge colorPalette="blue" variant="subtle" fontSize="sm">
-                            Real-time
+                            Live Data
                         </Badge>
                     </Flex>
                 </Card.Header>
-                
+
                 <Card.Body pt="0">
                     <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8" alignItems="center">
                         {/* Donut Chart */}
@@ -309,23 +461,23 @@ const Content = () => {
                             <Text fontSize="lg" fontWeight="medium" color="gray.700">
                                 Access Level Breakdown
                             </Text>
-                            
+
                             <VStack align="start" gap="3" w="full">
-                                {chartData.map((item, index) => (
+                                {chartData.map((item) => (
                                     <Flex key={item.name} justify="space-between" align="center" w="full">
                                         <HStack gap="3">
-                                            <Box 
-                                                w="3" 
-                                                h="3" 
-                                                rounded="full" 
+                                            <Box
+                                                w="3"
+                                                h="3"
+                                                rounded="full"
                                                 bg={item.color.replace('.solid', '.500')}
                                             />
                                             <Text fontSize="sm" color="gray.700">
                                                 {item.name}
                                             </Text>
                                         </HStack>
-                                        <Badge 
-                                            variant="subtle" 
+                                        <Badge
+                                            variant="subtle"
                                             colorPalette={item.color.replace('.solid', '') as any}
                                         >
                                             {item.value}
@@ -335,10 +487,10 @@ const Content = () => {
                             </VStack>
 
                             {/* Summary Stats */}
-                            <Box 
-                                bg="gray.50" 
-                                rounded="lg" 
-                                p="4" 
+                            <Box
+                                bg="gray.50"
+                                rounded="lg"
+                                p="4"
                                 w="full"
                                 border="1px"
                                 borderColor="gray.200"
@@ -367,61 +519,7 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
 
-            {/* Quick Actions */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
-                <Card.Header pb="4">
-                    <Heading size="lg">Quick Actions</Heading>
-                </Card.Header>
-                <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2 }} gap="4">
-                        <Card.Root 
-                            variant="outline" 
-                            cursor="pointer"
-                            transition="all 0.2s"
-                            _hover={{ 
-                                bg: 'blue.50',
-                                borderColor: 'blue.200'
-                            }}
-                            onClick={() => navigate('/admin/users/all')}
-                        >
-                            <Card.Body>
-                                <HStack justify="space-between">
-                                    <VStack align="start" gap="1">
-                                        <Text fontWeight="medium">Manage Users</Text>
-                                        <Text fontSize="sm" color="gray.600">
-                                            Add, edit, or remove users
-                                        </Text>
-                                    </VStack>
-                                    <ArrowRight size="20" color="blue" />
-                                </HStack>
-                            </Card.Body>
-                        </Card.Root>
 
-                        <Card.Root 
-                            variant="outline" 
-                            cursor="pointer"
-                            transition="all 0.2s"
-                            _hover={{ 
-                                bg: 'green.50',
-                                borderColor: 'green.200'
-                            }}
-                            onClick={() => navigate('/admin/users/rights')}
-                        >
-                            <Card.Body>
-                                <HStack justify="space-between">
-                                    <VStack align="start" gap="1">
-                                        <Text fontWeight="medium">Manage Rights</Text>
-                                        <Text fontSize="sm" color="gray.600">
-                                            Configure user access levels
-                                        </Text>
-                                    </VStack>
-                                    <ArrowRight size="20" color="green" />
-                                </HStack>
-                            </Card.Body>
-                        </Card.Root>
-                    </SimpleGrid>
-                </Card.Body>
-            </Card.Root>
         </VStack>
     )
 }
