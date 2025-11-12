@@ -17,10 +17,10 @@ import { useStates } from "../../../hooks/useState"
 import { useRegions } from "../../../hooks/useRegion"
 import { useDistricts } from "../../../hooks/useDistrict"
 import { useGroups } from "../../../hooks/useGroup"
-import StateIdCombobox from "../../regions/components/StateIdCombobox"
-import RegionIdCombobox from "./RegionIdCombobox"
-import DistrictIdCombobox from "./DistrictIdCombobox"
-import GroupIdCombobox from "./GroupIdCombobox"
+import StateIdCombobox from "../../../components/StateIdCombobox"
+import RegionIdCombobox from "../../../components/RegionIdCombobox"
+import DistrictIdCombobox from "../../../components/DistrictIdCombobox"
+import GroupIdCombobox from "../../../components/GroupIdCombobox"
 
 interface OldGroupEditFormProps {
     group: OldGroup

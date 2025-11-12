@@ -10,6 +10,7 @@ import { Provider } from "./components/ui/provider";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      retry: false,
       refetchOnWindowFocus: false
     }
   }

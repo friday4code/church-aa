@@ -16,7 +16,7 @@ import { regionSchema, type RegionFormData } from "../../../schemas/region.schem
 import type { Region } from "@/types/regions.type"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useStates } from "../../../hooks/useState"
-import StateIdCombobox from "./StateIdCombobox"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 
 interface RegionDialogProps {
     isLoading?: boolean

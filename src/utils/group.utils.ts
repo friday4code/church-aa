@@ -2,15 +2,15 @@
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { Group } from '@/modules/admin/stores/group.store';
+import type { Group } from '@/types/groups.type';
 
 export const copyGroupsToClipboard = async (groups: Group[]): Promise<void> => {
-    const header = 'S/N\tOld Group Name\tGroup Name\tGroup Leader\tRegion\tState\n';
+    const header = 'S/N\tGroup Name\tGroup Leader\tAccess Level\tState ID\tRegion ID\tDistrict ID\n';
 
     const text = groups
         .map(
-            (group) =>
-                `${group.id}\t${group.oldGroupName || ''}\t${group.groupName}\t${group.leader || ''}\t${group.regionName}\t${group.stateName}`
+            (group, index) =>
+                `${index + 1}\t${group.group_name}\t${group.leader}\t${group.access_level}\t${group.state_id}\t${group.region_id}\t${group.district_id}`
         )
         .join('\n');
 
@@ -35,15 +35,16 @@ export const copyGroupsToClipboard = async (groups: Group[]): Promise<void> => {
 export const exportGroupsToExcel = (groups: Group[]): void => {
     try {
         // Prepare data for Excel
-        const excelData = groups.map(group => ({
-            'S/N': group.id,
-            'Old Group Name': group.oldGroupName || '',
-            'Group Name': group.groupName,
-            'Group Leader': group.leader || '',
-            'Region': group.regionName,
-            'State': group.stateName,
-            'Created Date': group.createdAt.toLocaleDateString(),
-            'Updated Date': group.updatedAt.toLocaleDateString()
+        const excelData = groups.map((group, index) => ({
+            'S/N': index + 1,
+            'Group Name': group.group_name,
+            'Group Leader': group.leader,
+            'Access Level': group.access_level,
+            'State ID': group.state_id,
+            'Region ID': group.region_id,
+            'District ID': group.district_id,
+            'Created Date': group.createdAt ? group.createdAt.toLocaleDateString() : '',
+            'Updated Date': group.updatedAt ? group.updatedAt.toLocaleDateString() : ''
         }));
 
         // Create worksheet
@@ -56,21 +57,18 @@ export const exportGroupsToExcel = (groups: Group[]): void => {
         // Set column widths
         const colWidths = [
             { wch: 8 },  // S/N
-            { wch: 20 }, // Old Group Name
-            { wch: 20 }, // Group Name
+            { wch: 25 }, // Group Name
             { wch: 25 }, // Group Leader
-            { wch: 20 }, // Region
-            { wch: 15 }, // State
+            { wch: 20 }, // Access Level
+            { wch: 10 }, // State ID
+            { wch: 12 }, // Region ID
+            { wch: 12 }, // District ID
             { wch: 12 }, // Created Date
             { wch: 12 }  // Updated Date
         ];
         worksheet['!cols'] = colWidths;
 
         // Generate Excel file and save
-        // const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
-        // const data = new Blob([excelBuffer], {
-        //     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        // });
         writeFile(workbook, `groups-data-${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
         console.error('Error exporting to Excel:', error);
@@ -81,18 +79,19 @@ export const exportGroupsToExcel = (groups: Group[]): void => {
 export const exportGroupsToCSV = (groups: Group[]): void => {
     try {
         // CSV headers
-        const headers = ['S/N', 'Old Group Name', 'Group Name', 'Group Leader', 'Region', 'State', 'Created Date', 'Updated Date'];
+        const headers = ['S/N', 'Group Name', 'Group Leader', 'Access Level', 'State ID', 'Region ID', 'District ID', 'Created Date', 'Updated Date'];
 
         // CSV data rows
-        const csvRows = groups.map(group => [
-            group.id.toString(),
-            `"${(group.oldGroupName || '').replace(/"/g, '""')}"`,
-            `"${group.groupName.replace(/"/g, '""')}"`,
-            `"${(group.leader || '').replace(/"/g, '""')}"`,
-            `"${group.regionName.replace(/"/g, '""')}"`,
-            `"${group.stateName.replace(/"/g, '""')}"`,
-            group.createdAt.toLocaleDateString(),
-            group.updatedAt.toLocaleDateString()
+        const csvRows = groups.map((group, index) => [
+            (index + 1).toString(),
+            `"${group.group_name.replace(/"/g, '""')}"`,
+            `"${group.leader.replace(/"/g, '""')}"`,
+            `"${group.access_level.replace(/"/g, '""')}"`,
+            group.state_id.toString(),
+            group.region_id.toString(),
+            group.district_id.toString(),
+            group.createdAt ? group.createdAt.toLocaleDateString() : '',
+            group.updatedAt ? group.updatedAt.toLocaleDateString() : ''
         ]);
 
         // Combine headers and rows
@@ -139,23 +138,25 @@ export const exportGroupsToPDF = (groups: Group[]): void => {
         doc.text(`Total Groups: ${groups.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = groups.map(group => [
-            group.id.toString(),
-            group.oldGroupName || '-',
-            group.groupName,
-            group.leader || '-',
-            group.regionName,
-            group.stateName
+        const tableData = groups.map((group, index) => [
+            (index + 1).toString(),
+            group.group_name,
+            group.leader,
+            group.access_level,
+            group.state_id.toString(),
+            group.region_id.toString(),
+            group.district_id.toString()
         ]);
 
         // Define table columns
         const tableColumns = [
             'S/N',
-            'Old Group Name',
             'Group Name',
             'Group Leader',
-            'Region',
-            'State'
+            'Access Level',
+            'State ID',
+            'Region ID',
+            'District ID'
         ];
 
         // Add table to PDF
@@ -179,11 +180,12 @@ export const exportGroupsToPDF = (groups: Group[]): void => {
             },
             columnStyles: {
                 0: { cellWidth: 15 }, // S/N
-                1: { cellWidth: 25 }, // Old Group Name
-                2: { cellWidth: 25 }, // Group Name
-                3: { cellWidth: 30 }, // Group Leader
-                4: { cellWidth: 25 }, // Region
-                5: { cellWidth: 20 }  // State
+                1: { cellWidth: 30 }, // Group Name
+                2: { cellWidth: 25 }, // Group Leader
+                3: { cellWidth: 20 }, // Access Level
+                4: { cellWidth: 15 }, // State ID
+                5: { cellWidth: 15 }, // Region ID
+                6: { cellWidth: 15 }  // District ID
             },
             margin: { top: 35 }
         });
@@ -213,12 +215,12 @@ export const exportGroupsToPDF = (groups: Group[]): void => {
 // Utility function to format data for display
 export const formatGroupsForExport = (groups: Group[]) => {
     return groups.map(group => ({
-        id: group.id,
-        oldGroupName: group.oldGroupName || '',
-        groupName: group.groupName,
-        leader: group.leader || '',
-        regionName: group.regionName,
-        stateName: group.stateName,
+        group_name: group.group_name,
+        leader: group.leader,
+        access_level: group.access_level,
+        state_id: group.state_id,
+        region_id: group.region_id,
+        district_id: group.district_id,
         createdAt: group.createdAt,
         updatedAt: group.updatedAt
     }));
