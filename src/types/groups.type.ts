@@ -1,9 +1,29 @@
-interface Region {
-    code: string;
+// types/groups.type.ts
+export interface Group {
     id: number;
-    leader: string;
+    group_id: number;
     name: string;
-    state: string;
+    code: string;
+    leader: string;
+    state_id: number;
+    region_id: number;
+    district_id: number;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
-type Regions = Region[];
+export type Groups = Group[];
+
+export interface CreateGroupData {
+    name: string;
+    code: string;
+    leader: string;
+    state_id: number;
+    region_id: number;
+    district_id: number;
+}
+
+export interface UpdateGroupData {
+    id: number;
+    data: Partial<CreateGroupData>;
+}

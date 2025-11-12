@@ -1,11 +1,14 @@
-// schemas/oldGroups.schemas.ts
-import { z } from 'zod';
+// schemas/oldgroups.schema.ts
+import { z } from 'zod'
 
 export const oldGroupSchema = z.object({
-    stateName: z.string().min(1, 'State name is required'),
-    regionName: z.string().min(1, 'Region name is required'),
-    groupName: z.string().min(1, 'Group name is required'),
-    leader: z.string().min(5,"Group leader is required"),
-});
+    name: z.string().min(1, 'Group name is required'),
+    code: z.string().min(1, 'Group code is required'),
+    leader: z.string().min(1, 'Group leader is required'),
+    state_id: z.number().min(1, 'State ID is required'),
+    region_id: z.number().min(1, 'Region ID is required'),
+    district_id: z.number().min(1, 'District ID is required'),
+    group_id: z.number().min(1, 'Group ID is required'),
+})
 
-export type OldGroupFormData = z.infer<typeof oldGroupSchema>;
+export type OldGroupFormData = z.infer<typeof oldGroupSchema>
