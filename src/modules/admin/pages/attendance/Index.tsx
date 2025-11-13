@@ -441,6 +441,7 @@ const Content = () => {
     // No data state
     if (!attendanceData || attendanceData.length === 0) {
         return (
+            <>
             <VStack gap="8" align="stretch">
                 <Flex justify="space-between" align="center">
                     <VStack align="start" gap="1">
@@ -458,6 +459,48 @@ const Content = () => {
                     </VStack>
                 </Alert.Root>
             </VStack>
+
+                {/* Quick Actions */}
+                <Card.Root border="1px" borderColor="gray.200" rounded="xl">
+                    <Card.Header pb="4">
+                        <Heading size="lg">Quick Actions</Heading>
+                    </Card.Header>
+                    <Card.Body pt="0">
+                        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                            {Object.entries(SERVICE_TYPES).map(([serviceType, config]) => (
+                                <Card.Root
+                                    key={serviceType}
+                                    variant="outline"
+                                    cursor="pointer"
+                                    transition="all 0.2s"
+                                    _hover={{
+                                        bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.50`,
+                                        borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.200`,
+                                        _dark: {
+                                            bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}/10`,
+                                            borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}`,
+
+                                        }
+                                    }}
+                                    onClick={() => navigate(`/admin/attendance/${serviceType}`)}
+                                >
+                                    <Card.Body>
+                                        <HStack justify="space-between">
+                                            <VStack align="start" gap="1">
+                                                <Text fontWeight="medium">{config.name}</Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    Manage attendance records
+                                                </Text>
+                                            </VStack>
+                                            <ArrowRight size="20" color={getServiceColor(serviceType as ServiceType).replace('.solid', '')} />
+                                        </HStack>
+                                    </Card.Body>
+                                </Card.Root>
+                            ))}
+                        </SimpleGrid>
+                    </Card.Body>
+                </Card.Root>
+            </>
         )
     }
 
