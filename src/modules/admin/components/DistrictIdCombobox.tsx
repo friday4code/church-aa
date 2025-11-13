@@ -10,16 +10,18 @@ import {
 } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 
-const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
+const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
     invalid?: boolean;
     disabled?: boolean;
+    items?: District[];
 }) => {
     const [inputValue, setInputValue] = useState("")
-    const { districts: data, isLoading } = useDistricts()
-    const districts: District[] = data || [];
+    const { districts: allDistricts = [], isLoading } = useDistricts()
+    const districts: District[] = items || allDistricts || [];
+    const shouldShowLoading = !items && isLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -41,7 +43,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             }))
 
         set(filteredDistricts)
-    }, [districts, inputValue, set])
+       }, [districts, inputValue, set, items])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
@@ -64,7 +66,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
     return (
         <Combobox.Root
             required={required}
-            disabled={disabled || isLoading}
+            disabled={disabled || shouldShowLoading}
             collection={collection}
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
@@ -79,7 +81,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={isLoading ? "Loading districts..." : "Select district"}
+                    placeholder={shouldShowLoading ? "Loading districts..." : "Select district"}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -89,7 +91,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
-                    {isLoading ? (
+                    {shouldShowLoading ? (
                         <Combobox.Empty>Loading districts...</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No districts found</Combobox.Empty>

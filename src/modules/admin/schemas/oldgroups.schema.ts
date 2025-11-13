@@ -7,8 +7,6 @@ export const oldGroupSchema = z.object({
     leader: z.string().min(1, 'Group leader is required'),
     state_id: z.number().min(1, 'State ID is required'),
     region_id: z.number().min(1, 'Region ID is required'),
-    district_id: z.number().min(1, 'District ID is required'),
-    group_id: z.number().min(1, 'Group ID is required'),
 })
 
 export type OldGroupFormData = z.infer<typeof oldGroupSchema>

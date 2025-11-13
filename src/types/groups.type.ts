@@ -1,13 +1,12 @@
 // types/groups.type.ts
 export interface Group {
     id: number;
-    group_id: number;
+    code: string;
     name: string;
-    leader: string;
-    access_level: string;
-    state_id: number;
-    region_id: number;
-    district_id: number;
+    leader: string | null;
+    state: string;
+    region: string;
+    district: string;
     createdAt?: Date;
     updatedAt?: Date;
 }

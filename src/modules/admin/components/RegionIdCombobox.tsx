@@ -10,16 +10,18 @@ import {
 } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 
-const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
+const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
     invalid?: boolean;
     disabled?: boolean;
+    items?: Region[];
 }) => {
     const [inputValue, setInputValue] = useState("")
-    const { regions: data, isLoading } = useRegions()
-    const regions: Region[] = data || [];
+    const { regions: allRegions = [], isLoading } = useRegions()
+    const regions: Region[] = items || allRegions || [];
+    const shouldShowLoading = !items && isLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -29,7 +31,10 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
 
     // Update collection when regions data loads or input changes
     useEffect(() => {
-        if (!regions || regions.length === 0) return
+        if (!regions || regions.length === 0) {
+            set([])
+            return
+        }
 
         const filteredRegions = regions
             .filter(region =>
@@ -41,7 +46,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             }))
 
         set(filteredRegions)
-    }, [regions, inputValue, set])
+    }, [regions, inputValue, set, items])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
@@ -64,7 +69,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
     return (
         <Combobox.Root
             required={required}
-            disabled={disabled || isLoading}
+            disabled={disabled || shouldShowLoading}
             collection={collection}
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
@@ -79,7 +84,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={isLoading ? "Loading regions..." : "Select region"}
+                    placeholder={shouldShowLoading ? "Loading regions..." : "Select region"}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -89,7 +94,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
-                    {isLoading ? (
+                    {shouldShowLoading ? (
                         <Combobox.Empty>Loading regions...</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No regions found</Combobox.Empty>

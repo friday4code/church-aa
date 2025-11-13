@@ -6,8 +6,6 @@ export interface OldGroup {
     leader: string
     state_id: number
     region_id: number
-    district_id: number
-    group_id: number
 }
 
 // For form data (camelCase for frontend)
@@ -17,8 +15,6 @@ export interface OldGroupFormData {
     leader: string
     state_id: number
     region_id: number
-    district_id: number
-    group_id: number
 }
 
 // For API responses
@@ -40,8 +36,6 @@ export interface CreateOldGroupRequest {
     leader: string
     state_id: number
     region_id: number
-    district_id: number
-    group_id: number
 }
 
 export interface UpdateOldGroupRequest {
@@ -50,6 +44,4 @@ export interface UpdateOldGroupRequest {
     leader?: string
     state_id?: number
     region_id?: number
-    district_id?: number
-    group_id?: number
 }

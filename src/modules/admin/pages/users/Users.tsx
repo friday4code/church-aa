@@ -15,6 +15,7 @@ import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
 import { Toaster } from "@/components/ui/toaster"
+import { toaster } from "@/components/ui/toaster"
 import type { UserFormData } from "../../schemas/users.schema"
 import { useUserMutations, useUsers } from "../../hooks/useUser"
 import type { User } from "@/types/users.type"
@@ -100,7 +101,7 @@ const Content = () => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
-    
+
     const { data: users = [], isLoading } = useUsers()
     const { createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUserMutations()
 
@@ -212,8 +213,16 @@ const Content = () => {
 
     const confirmDelete = () => {
         if (deleteDialogState.user) {
-            deleteUser.mutate(deleteDialogState.user.id)
-            setDeleteDialogState({ isOpen: false })
+            deleteUser.mutate(deleteDialogState.user.id, {
+                onSuccess: () => {
+                    toaster.create({ description: 'User deleted successfully', type: 'success', closable: true })
+                    setDeleteDialogState({ isOpen: false })
+                },
+                onError: (error: any) => {
+                    const msg = error?.message || 'Failed to delete user'
+                    toaster.create({ description: msg, type: 'error', closable: true })
+                }
+            })
         }
     }
 
@@ -258,14 +267,44 @@ const Content = () => {
         }
 
         if (dialogState.mode === 'add') {
-            createUser.mutate(apiData)
+            createUser.mutate(apiData, {
+                onSuccess: () => {
+                    toaster.create({ description: 'User added successfully', type: 'success', closable: true })
+                    setDialogState({ isOpen: false, mode: 'add' })
+                },
+                onError: (error: any) => {
+                    const msg = error?.message || 'Failed to add user'
+                    toaster.create({ description: msg, type: 'error', closable: true })
+                }
+            })
         } else if (dialogState.user) {
             // For update, only include password if provided
             const updateData = { ...apiData }
             if (!updateData.password) {
                 delete updateData.password
             }
-            updateUser.mutate({ id: dialogState.user.id, data: updateData })
+
+            // Ensure roles are numeric IDs when possible
+            const coercedRoles = (Array.isArray(updateData.roles) ? updateData.roles : []).map((r: any) => {
+                if (typeof r === 'number') return r
+                if (typeof r === 'string') {
+                    const n = parseInt(r, 10)
+                    return Number.isFinite(n) ? n : r
+                }
+                return r
+            })
+            updateData.roles = coercedRoles
+
+            updateUser.mutate({ id: dialogState.user.id, data: updateData }, {
+                onSuccess: () => {
+                    toaster.create({ description: 'User updated successfully', type: 'success', closable: true })
+                    setDialogState({ isOpen: false, mode: 'add' })
+                },
+                onError: (error: any) => {
+                    const msg = error?.message || 'Failed to update user'
+                    toaster.create({ description: msg, type: 'error', closable: true })
+                }
+            })
         }
     }
     // Close action bar when no items are selected

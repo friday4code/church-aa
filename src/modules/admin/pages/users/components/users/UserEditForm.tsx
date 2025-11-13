@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
 import { userSchema, type UserFormData } from "@/modules/admin/schemas/users.schema"
+import { useAuthStore } from "@/store/auth.store"
 
 interface UserEditFormProps {
     user: any
@@ -23,6 +24,7 @@ interface UserEditFormProps {
 
 const UserEditForm = ({ user, onUpdate, onCancel }: UserEditFormProps) => {
     const [showPassword, setShowPassword] = useState(false)
+    const authUser = useAuthStore((state) => state.user)
 
     const { register, handleSubmit, formState: { errors } } = useForm<UserFormData>({
         resolver: zodResolver(userSchema("edit")),
@@ -31,9 +33,9 @@ const UserEditForm = ({ user, onUpdate, onCancel }: UserEditFormProps) => {
             email: user.email,
             phone: user.phone,
             password: '', // Don't pre-fill password for security
-            state_id: user.state_id || 0,
-            region_id: user.region_id || 0,
-            district_id: user.district_id || 0,
+            state_id: user.state_id || authUser?.state_id || 0,
+            region_id: user.region_id || authUser?.region_id || 0,
+            district_id: user.district_id || authUser?.district_id || 0,
             roles: user.roles || ['user']
         }
     })

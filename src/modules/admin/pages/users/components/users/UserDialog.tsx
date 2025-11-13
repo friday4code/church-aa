@@ -10,12 +10,14 @@ import {
     Input,
     InputGroup,
     IconButton,
+    Text,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState } from "react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
 import { userSchema, type UserFormData } from "@/modules/admin/schemas/users.schema"
+import { useAuthStore } from "@/store/auth.store"
 
 interface UserDialogProps {
     isLoading?: boolean
@@ -28,6 +30,16 @@ interface UserDialogProps {
 
 const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDialogProps) => {
     const [showPassword, setShowPassword] = useState(false)
+    const authUser = useAuthStore((state) => state.user)
+
+    // Determine effective IDs (prefer the user being edited, fallback to auth user's IDs)
+    const effectiveStateId = (user && (user.state_id ?? undefined)) ?? authUser?.state_id
+    const effectiveRegionId = (user && (user.region_id ?? undefined)) ?? authUser?.region_id
+    const effectiveDistrictId = (user && (user.district_id ?? undefined)) ?? authUser?.district_id
+
+    // If any of these are missing, Zod validation (which requires min(1)) will fail silently
+    // when submitting hidden fields. Disable submit and show a helpful message instead.
+    const canSubmit = !!effectiveStateId && !!effectiveRegionId && !!effectiveDistrictId
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm<UserFormData>({
         resolver: zodResolver(userSchema(mode)),
@@ -36,14 +48,16 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
             email: user?.email || '',
             phone: user?.phone || '',
             password: '',
-            state_id: user?.state_id as number || 0,
-            region_id: user?.region_id as number || 0,
-            district_id: user?.district_id as number || 0,
+            state_id: user?.state_id || authUser?.state_id || 0,
+            region_id: user?.region_id || authUser?.region_id || 0,
+            district_id: user?.district_id || authUser?.district_id || 0,
             roles: user?.roles || [1]
         }
     })
 
     const onSubmit = (data: UserFormData) => {
+        console.log("payload",data);
+        
         onSave(data)
         reset()
     }
@@ -62,13 +76,25 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                 email: user.email || '',
                 phone: user.phone || '',
                 password: '',
-                state_id: user.state_id || 0,
-                region_id: user.region_id || 0,
-                district_id: user.district_id || 0,
+                state_id: user.state_id || authUser?.state_id || 0,
+                region_id: user.region_id || authUser?.region_id || 0,
+                district_id: user.district_id || authUser?.district_id || 0,
                 roles: user.roles || [1]
             })
+        } else if (isOpen && !user) {
+            // For add mode, set defaults from auth user
+            reset({
+                name: '',
+                email: '',
+                phone: '',
+                password: '',
+                state_id: authUser?.state_id || 0,
+                region_id: authUser?.region_id || 0,
+                district_id: authUser?.district_id || 0,
+                roles: [1]
+            })
         }
-    }, [isOpen, user, reset])
+    }, [isOpen, user, authUser, reset])
 
     return (
         <Dialog.Root
@@ -92,6 +118,11 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                         <Dialog.Body>
                             <form noValidate id="user-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4" colorPalette={"accent"}>
+                                    {!canSubmit && mode === 'add' && (
+                                        <Text color="red.500" fontSize="sm">
+                                            Your account does not have a valid State / Region / District assigned. Please update your profile or contact an administrator before adding users.
+                                        </Text>
+                                    )}
                                     <Field.Root required invalid={!!errors.name}>
                                         <Field.Label>Full Name
                                             <Field.RequiredIndicator />
@@ -157,9 +188,9 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                     </Field.Root>
 
                                     {/* Hidden fields for API compatibility */}
-                                    <input type="hidden" {...register('state_id')} />
-                                    <input type="hidden" {...register('region_id')} />
-                                    <input type="hidden" {...register('district_id')} />
+                                    <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('district_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('roles')} />
                                 </VStack>
                             </form>
@@ -177,7 +208,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                 colorPalette="accent"
                                 loading={isLoading}
                                 loadingText={mode === 'add' ? 'Adding User' : 'Updating User'}
-                                disabled={isLoading}
+                                disabled={isLoading || (mode === 'add' && !canSubmit)}
                             >
                                 {mode === 'add' ? 'Add User' : 'Update User'}
                             </Button>
