@@ -1,8 +1,7 @@
-// components/oldgroups/components/GroupIdCombobox.tsx
 "use client"
 
-import { useGroups } from "@/modules/admin/hooks/useGroup";
-import type { Group } from "@/types/groups.type";
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup";
+import type { OldGroup } from "@/types/oldGroups.type";
 import {
     Combobox,
     Field,
@@ -10,7 +9,8 @@ import {
 } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
 
-const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
+
+const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
@@ -18,8 +18,8 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
     disabled?: boolean;
 }) => {
     const [inputValue, setInputValue] = useState("")
-    const { groups: data, isLoading } = useGroups()
-    const groups: Group[] = data || [];
+    const { oldGroups: data, isLoading } = useOldGroups()
+    const oldGroups: OldGroup[] = data || [];
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -27,26 +27,21 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when groups data loads or input changes
+    // Update collection when oldGroups data loads or input changes
     useEffect(() => {
-        if (!groups || groups.length === 0) return
+        if (!oldGroups || oldGroups.length === 0) return
 
-        const filteredGroups = groups
-            .filter(group =>
-                group.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(group => ({
-                label: group.name,
-                value: group.name
-            }))
+        const filtered = oldGroups
+            .filter(g => g.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map(g => ({ label: g.name, value: g.name }))
 
-        set(filteredGroups)
-    }, [groups, inputValue, set])
+        set(filtered)
+    }, [oldGroups, inputValue, set])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
-            const selectedGroup = details.value[0]
-            onChange(selectedGroup)
+            const selected = details.value[0]
+            onChange(selected)
         } else {
             onChange('')
         }
@@ -73,13 +68,13 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             invalid={invalid}
             closeOnSelect={true}
         >
-            <Combobox.Label>Group Name
+            <Combobox.Label>Old Group Name
                 <Field.RequiredIndicator />
             </Combobox.Label>
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={isLoading ? "Loading groups..." : "Select group"}
+                    placeholder={isLoading ? "Loading old groups..." : "Select old group"}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -90,9 +85,9 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
                     {isLoading ? (
-                        <Combobox.Empty>Loading groups...</Combobox.Empty>
+                        <Combobox.Empty>Loading old groups...</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
-                        <Combobox.Empty>No groups found</Combobox.Empty>
+                        <Combobox.Empty>No old groups found</Combobox.Empty>
                     ) : (
                         collection.items.map((item) => (
                             <Combobox.Item key={item.value} item={item}>
@@ -107,4 +102,4 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
     )
 }
 
-export default GroupIdCombobox
+export default OldGroupIdCombobox

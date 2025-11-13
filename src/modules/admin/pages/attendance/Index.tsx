@@ -14,14 +14,26 @@ import {
     SimpleGrid,
     Badge,
     Link,
+    Spinner,
+    Alert,
 } from "@chakra-ui/react"
 import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
 import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
-import { useAttendanceStore, SERVICE_TYPES, type ServiceType } from "../../stores/attendance.store"
-import { calculateTotals } from "@/utils/attendance.utils"
+import { calculateTotals, mapServiceTypeToInternal } from "@/utils/attendance.utils"
+import { useAttendance } from "../../hooks/useAttendance"
 
+// Define service types locally since we're not using the store
+export type ServiceType = 'sunday-worship' | 'house-caring' | 'search-scriptures' | 'thursday-revival' | 'monday-bible'
+
+export const SERVICE_TYPES: Record<ServiceType, { name: string; apiValue: string }> = {
+    'sunday-worship': { name: 'Sunday Worship', apiValue: 'Sunday Service' },
+    'house-caring': { name: 'House Caring', apiValue: 'House Caring' },
+    'search-scriptures': { name: 'Search Scriptures', apiValue: 'Search Scriptures' },
+    'thursday-revival': { name: 'Thursday Revival', apiValue: 'Thursday Revival' },
+    'monday-bible': { name: 'Monday Bible', apiValue: 'Monday Bible' }
+}
 
 export const AttendanceDashboard: React.FC = () => {
     return (
@@ -40,7 +52,7 @@ export default AttendanceDashboard
 
 const Content = () => {
     const navigate = useNavigate()
-    const { attendances, getAttendancesByServiceType } = useAttendanceStore()
+    const { data: attendanceData, isLoading, error } = useAttendance()
 
     const [stats, setStats] = useState({
         totalRecords: 0,
@@ -75,23 +87,39 @@ const Content = () => {
         serviceType: ServiceType;
     }>>([])
 
+    // Get attendances by service type without using store
+    const getAttendancesByServiceType = (serviceType: ServiceType) => {
+        if (!attendanceData) return []
+        const serviceConfig = SERVICE_TYPES[serviceType]
+        return attendanceData.filter(att => att.service_type === serviceConfig.apiValue)
+    }
+
+    // Get unique service types with data
+    const getServiceTypesWithData = () => {
+        if (!attendanceData) return []
+        return Object.keys(SERVICE_TYPES).filter(serviceType => {
+            const serviceConfig = SERVICE_TYPES[serviceType as ServiceType]
+            return attendanceData.some(att => att.service_type === serviceConfig.apiValue)
+        })
+    }
+
     useEffect(() => {
+        if (!attendanceData) return
+
         // Calculate overall statistics
-        const totalRecords = attendances.length
-        const allTotals = calculateTotals(attendances)
+        const totalRecords = attendanceData.length
+        const allTotals = calculateTotals(attendanceData)
         const totalAttendance = allTotals.total
         const averageAttendance = totalRecords > 0 ? Math.round(totalAttendance / totalRecords) : 0
 
         // Get unique service types with data
-        const serviceTypesWithData = Object.keys(SERVICE_TYPES).filter(serviceType =>
-            getAttendancesByServiceType(serviceType as ServiceType).length > 0
-        )
+        const serviceTypesWithData = getServiceTypesWithData()
 
         // Calculate last 7 days activity
         const oneWeekAgo = new Date()
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-        const recentActivity = attendances.filter(att =>
-            new Date(att.createdAt) > oneWeekAgo
+        const recentActivity = attendanceData.filter(att =>
+            new Date(att.created_at) > oneWeekAgo
         ).length
 
         setStats({
@@ -115,7 +143,7 @@ const Content = () => {
                 totalAttendance: serviceTotals.total,
                 averageAttendance: serviceAttendances.length > 0 ? Math.round(serviceTotals.total / serviceAttendances.length) : 0,
                 lastUpdated: serviceAttendances.length > 0
-                    ? new Date(Math.max(...serviceAttendances.map(a => new Date(a.updatedAt).getTime())))
+                    ? new Date(Math.max(...serviceAttendances.map(a => new Date(a.updated_at).getTime())))
                     : null
             }
         })
@@ -133,10 +161,10 @@ const Content = () => {
         setServiceDistribution(distributionData)
 
         // Prepare monthly attendance data for bar chart
-        const monthlyAttendance = calculateMonthlyAttendance(attendances)
+        const monthlyAttendance = calculateMonthlyAttendance(attendanceData)
         setMonthlyData(monthlyAttendance)
 
-    }, [attendances, getAttendancesByServiceType])
+    }, [attendanceData])
 
     // Helper function to get color for each service type
     const getServiceColor = (serviceType: ServiceType): string => {
@@ -150,7 +178,7 @@ const Content = () => {
         return colorMap[serviceType] || 'gray.solid'
     }
 
-    // Calculate monthly attendance data
+    // Calculate monthly attendance data using raw API data
     const calculateMonthlyAttendance = (attendances: any[]) => {
         const monthlyData: Record<string, any> = {}
         const currentYear = new Date().getFullYear()
@@ -170,12 +198,15 @@ const Content = () => {
                     }
                 }
 
-                const serviceTotal = attendance.men + attendance.women + attendance.youthBoys +
-                    attendance.youthGirls + attendance.childrenBoys + attendance.childrenGirls
+                const serviceTotal = attendance.men + attendance.women + attendance.youth_boys +
+                    attendance.youth_girls + attendance.children_boys + attendance.children_girls
 
                 monthlyData[monthKey].total += serviceTotal
 
-                switch (attendance.serviceType) {
+                // Map API service type to internal service type for grouping
+                const internalServiceType = mapServiceTypeToInternal(attendance.service_type)
+
+                switch (internalServiceType) {
                     case 'sunday-worship':
                         monthlyData[monthKey].sundayWorship += serviceTotal
                         break
@@ -207,7 +238,6 @@ const Content = () => {
         value,
         icon: Icon,
         color,
-        link,
         description,
         trend
     }: {
@@ -215,29 +245,25 @@ const Content = () => {
         value: number | string
         icon: any
         color: string
-        link: string
         description?: string
         trend?: number
     }) => (
         <Card.Root
-            bg="white"
             border="1px"
             borderColor="gray.200"
             rounded="xl"
             p="6"
-            cursor="pointer"
             transition="all 0.2s"
             _hover={{
                 transform: 'translateY(-2px)',
                 shadow: 'lg',
                 borderColor: color
             }}
-            onClick={() => navigate(link)}
         >
             <Card.Body p="0">
                 <Flex justify="space-between" align="start">
                     <VStack align="start" gap="2">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        <Text fontSize="sm" color="bg.inverted" fontWeight="medium">
                             {title}
                         </Text>
                         <Heading size="2xl" color={color}>
@@ -261,13 +287,14 @@ const Content = () => {
                     <Box
                         p="3"
                         bg={`${color}.50`}
+                        _dark={{ bg: `${color}/20`, color: `${color}.50` }}
                         rounded="lg"
                         color={color}
                     >
-                        <Icon size="24" />
+                        <Icon size="14" />
                     </Box>
                 </Flex>
-                <Flex justify="space-between" align="center" mt="4">
+                {/* <Flex justify="space-between" align="center" mt="4">
                     <Link
                         href={link}
                         fontSize="sm"
@@ -281,7 +308,7 @@ const Content = () => {
                         View details
                     </Link>
                     <ArrowRight size="16" color="currentColor" />
-                </Flex>
+                </Flex> */}
             </Card.Body>
         </Card.Root>
     )
@@ -385,6 +412,55 @@ const Content = () => {
         )
     }
 
+    // Loading state
+    if (isLoading) {
+        return (
+            <Flex justify="center" align="center" height="400px">
+                <VStack gap="4">
+                    <Spinner size="xl" color="blue.500" />
+                    <Text>Loading attendance data...</Text>
+                </VStack>
+            </Flex>
+        )
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <Alert.Root status="error" variant="subtle" rounded="lg">
+                <Alert.Content>
+                    <VStack align="start" gap="2">
+                        <Text fontWeight="bold">Error loading attendance data</Text>
+                        <Text>Please try again later.</Text>
+                    </VStack>
+                </Alert.Content>
+            </Alert.Root>
+        )
+    }
+
+    // No data state
+    if (!attendanceData || attendanceData.length === 0) {
+        return (
+            <VStack gap="8" align="stretch">
+                <Flex justify="space-between" align="center">
+                    <VStack align="start" gap="1">
+                        <Heading size="3xl">Attendance Dashboard</Heading>
+                        <Text color="gray.600" fontSize="lg">
+                            Overview of all church service attendance
+                        </Text>
+                    </VStack>
+                </Flex>
+
+                <Alert.Root status="info" variant="subtle" rounded="lg">
+                    <VStack align="start" gap="2">
+                        <Text fontWeight="bold">No attendance data available</Text>
+                        <Text>Start by adding your first attendance record.</Text>
+                    </VStack>
+                </Alert.Root>
+            </VStack>
+        )
+    }
+
     return (
         <VStack gap="8" align="stretch">
             {/* Header */}
@@ -404,7 +480,6 @@ const Content = () => {
                     value={stats.totalRecords}
                     icon={Calendar}
                     color="blue"
-                    link="/admin/attendance"
                     description="All attendance records"
                 />
 
@@ -413,7 +488,6 @@ const Content = () => {
                     value={stats.totalAttendance}
                     icon={Profile2User}
                     color="green"
-                    link="/admin/attendance"
                     description="Combined attendance count"
                 />
 
@@ -422,7 +496,6 @@ const Content = () => {
                     value={stats.averageAttendance}
                     icon={TrendUp}
                     color="purple"
-                    link="/admin/attendance"
                     description="Average attendance per record"
                 />
 
@@ -431,7 +504,6 @@ const Content = () => {
                     value={stats.servicesWithData}
                     icon={ChartSquare}
                     color="orange"
-                    link="/admin/attendance"
                     description="Services with attendance data"
                 />
 
@@ -440,15 +512,57 @@ const Content = () => {
                     value={stats.recentActivity}
                     icon={UserOctagon}
                     color="red"
-                    link="/admin/attendance"
                     description="Records added last 7 days"
                 />
             </SimpleGrid>
 
+
+            {/* Quick Actions */}
+            <Card.Root border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Header pb="4">
+                    <Heading size="lg">Quick Actions</Heading>
+                </Card.Header>
+                <Card.Body pt="0">
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                        {Object.entries(SERVICE_TYPES).map(([serviceType, config]) => (
+                            <Card.Root
+                                key={serviceType}
+                                variant="outline"
+                                cursor="pointer"
+                                transition="all 0.2s"
+                                _hover={{
+                                    bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.50`,
+                                    borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.200`,
+                                    _dark:{
+                                        bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}/10`,
+                                        borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}`,
+
+                                    }
+                                }}
+                                onClick={() => navigate(`/admin/attendance/${serviceType}`)}
+                            >
+                                <Card.Body>
+                                    <HStack justify="space-between">
+                                        <VStack align="start" gap="1">
+                                            <Text fontWeight="medium">{config.name}</Text>
+                                            <Text fontSize="sm" color="gray.600">
+                                                Manage attendance records
+                                            </Text>
+                                        </VStack>
+                                        <ArrowRight size="20" color={getServiceColor(serviceType as ServiceType).replace('.solid', '')} />
+                                    </HStack>
+                                </Card.Body>
+                            </Card.Root>
+                        ))}
+                    </SimpleGrid>
+                </Card.Body>
+            </Card.Root>
+
+
             {/* Charts Section */}
             <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
                 {/* Service Distribution Chart */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root  border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -502,7 +616,7 @@ const Content = () => {
 
                                 {/* Summary Stats */}
                                 <Box
-                                    bg="gray.50"
+                                bg="bg"
                                     rounded="lg"
                                     p="4"
                                     w="full"
@@ -514,7 +628,7 @@ const Content = () => {
                                             <Text fontSize="xs" color="gray.500">
                                                 Most Records
                                             </Text>
-                                            <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                                            <Text fontSize="lg" fontWeight="bold" >
                                                 {serviceDistribution.length > 0
                                                     ? serviceDistribution.reduce((max, item) =>
                                                         item.value > max.value ? item : max
@@ -527,7 +641,7 @@ const Content = () => {
                                             <Text fontSize="xs" color="gray.500">
                                                 Total Services
                                             </Text>
-                                            <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                                            <Text fontSize="lg" fontWeight="bold">
                                                 {serviceDistribution.length}
                                             </Text>
                                         </VStack>
@@ -539,7 +653,7 @@ const Content = () => {
                 </Card.Root>
 
                 {/* Monthly Attendance Trend */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -561,7 +675,7 @@ const Content = () => {
             </SimpleGrid>
 
             {/* Service Type Breakdown */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+            <Card.Root border="1px" borderColor="gray.200" rounded="xl">
                 <Card.Header pb="4">
                     <Heading size="lg">Service Type Breakdown</Heading>
                     <Text color="gray.600" mt="1">
@@ -649,41 +763,7 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
 
-            {/* Quick Actions */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
-                <Card.Header pb="4">
-                    <Heading size="lg">Quick Actions</Heading>
-                </Card.Header>
-                <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
-                        {Object.entries(SERVICE_TYPES).map(([serviceType, config]) => (
-                            <Card.Root
-                                key={serviceType}
-                                variant="outline"
-                                cursor="pointer"
-                                transition="all 0.2s"
-                                _hover={{
-                                    bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.50`,
-                                    borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.200`
-                                }}
-                                onClick={() => navigate(`/admin/attendance/${serviceType}`)}
-                            >
-                                <Card.Body>
-                                    <HStack justify="space-between">
-                                        <VStack align="start" gap="1">
-                                            <Text fontWeight="medium">{config.name}</Text>
-                                            <Text fontSize="sm" color="gray.600">
-                                                Manage attendance records
-                                            </Text>
-                                        </VStack>
-                                        <ArrowRight size="20" color={getServiceColor(serviceType as ServiceType).replace('.solid', '')} />
-                                    </HStack>
-                                </Card.Body>
-                            </Card.Root>
-                        ))}
-                    </SimpleGrid>
-                </Card.Body>
-            </Card.Root>
+
         </VStack>
     )
 }

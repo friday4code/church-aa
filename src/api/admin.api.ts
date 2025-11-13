@@ -1,10 +1,11 @@
 import type { District, Districts } from "@/types/districts.type";
 import { axiosClient } from "../config/axios.config"
+import type { AttendanceRecord } from "@/types/attendance.type";
 
 export const adminApi = {
     // Users
     getUsers: async (): Promise<any> => {
-        const { data } = await axiosClient.get<any>("/api/users/");        
+        const { data } = await axiosClient.get<any>("/api/users/");
         return data;
     },
 
@@ -18,30 +19,29 @@ export const adminApi = {
         return data;
     },
 
-    // Attendance
-    getAttendance: async (): Promise<any> => {
-        const { data } = await axiosClient.get<any>("/attendance/attendance");
+    // Attendance - updated to use proper types
+    getAttendance: async (): Promise<AttendanceRecord[]> => {
+        const { data } = await axiosClient.get<AttendanceRecord[]>("/attendance/attendance");
         return data;
     },
 
-    getAttendanceById: async (attendanceId: string | number): Promise<any> => {
-        const { data } = await axiosClient.get<any>(`/attendance/attendance/${attendanceId}`);
+    getAttendanceById: async (attendanceId: string | number): Promise<AttendanceRecord> => {
+        const { data } = await axiosClient.get<AttendanceRecord>(`/attendance/attendance/${attendanceId}`);
         return data;
     },
 
-    createAttendance: async (attendanceData: any): Promise<any> => {
-        const { data } = await axiosClient.post<any>("/attendance/attendance", attendanceData);
+    createAttendance: async (attendanceData: any): Promise<AttendanceRecord> => {
+        const { data } = await axiosClient.post<AttendanceRecord>("/attendance/attendance", attendanceData);
         return data;
     },
 
-    updateAttendance: async (attendanceId: string | number, attendanceData: any): Promise<any> => {
-        const { data } = await axiosClient.put<any>(`/attendance/attendance/${attendanceId}`, attendanceData);
+    updateAttendance: async (attendanceId: string | number, attendanceData: any): Promise<AttendanceRecord> => {
+        const { data } = await axiosClient.put<AttendanceRecord>(`/attendance/attendance/${attendanceId}`, attendanceData);
         return data;
     },
 
-    deleteAttendance: async (attendanceId: string | number): Promise<any> => {
-        const { data } = await axiosClient.delete<any>(`/attendance/attendance/${attendanceId}`);
-        return data;
+    deleteAttendance: async (attendanceId: string | number): Promise<void> => {
+        await axiosClient.delete(`/attendance/attendance/${attendanceId}`);
     },
 
     uploadAttendanceCSV: async (fileData: FormData): Promise<any> => {

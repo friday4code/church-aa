@@ -67,6 +67,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             disabled={disabled || isLoading}
             collection={collection}
             value={value ? [value] : []}
+            defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}

@@ -1,4 +1,3 @@
-// components/districts/components/BulkEditDialog.tsx
 "use client"
 
 import {
@@ -9,16 +8,18 @@ import {
     Tabs,
 } from "@chakra-ui/react"
 import { useEffect, useState } from "react"
-import type { DistrictFormData } from "../../../schemas/districts.schema"
-import type { District } from "@/types/districts.type"
+import type { AttendanceFormData } from "../../../schemas/attendance.schema"
+import AttendanceEditForm from "./AttendanceEditForm"
+import type { Attendance } from "@/types/attendance.type"
+import { useDistricts } from "../../../hooks/useDistrict"
 
 interface BulkEditDialogProps {
-    isLoading: boolean
     isOpen: boolean
-    selectedDistricts: number[]
-    districts: District[]
+    selectedAttendances: number[]
+    attendances: Attendance[]
     onClose: () => void
-    onUpdate: (id: number, data: Partial<DistrictFormData>) => void
+    onUpdate: (id: number, data: Partial<AttendanceFormData>) => void
+    serviceName: string
 }
 
 // UUID generator function
@@ -26,46 +27,51 @@ const uuid = () => {
     return Math.random().toString(36).substring(2, 15)
 }
 
-const BulkEditDialog = ({ isLoading, isOpen, selectedDistricts, districts, onClose, onUpdate }: BulkEditDialogProps) => {
-    const [tabs, setTabs] = useState<Array<{ id: string; district: District; title: string }>>([])
+const BulkEditDialog = ({ isOpen, selectedAttendances, attendances, onClose, onUpdate, serviceName }: BulkEditDialogProps) => {
+    const [tabs, setTabs] = useState<Array<{ id: string; attendance: Attendance; title: string }>>([])
     const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
-    // Initialize tabs when dialog opens
+    const { districts = [] } = useDistricts()
+
     useEffect(() => {
-        if (isOpen && selectedDistricts.length > 0) {
-            const initialTabs = selectedDistricts.map(districtId => {
-                const district = districts.find(d => d.id === districtId)
-                return {
-                    id: uuid(),
-                    district: district!,
-                    title: district?.name || 'District'
-                }
-            })
+        if (isOpen && selectedAttendances.length > 0) {
+            const initialTabs = selectedAttendances
+                .map(attendanceId => {
+                    const attendance = attendances.find(a => a.id === attendanceId)
+                    if (!attendance) return null
+
+                    const districtName = districts.find(d => d.id === attendance.district_id)?.name || `District ${attendance.district_id}`
+
+                    return {
+                        id: uuid(),
+                        attendance,
+                        title: `${districtName} - ${attendance.month}`
+                    }
+                })
+                .filter(Boolean) as Array<{ id: string; attendance: Attendance; title: string }>
+
             setTabs(initialTabs)
             setSelectedTab(initialTabs[0]?.id || null)
         }
-    }, [isOpen, selectedDistricts, districts])
+    }, [isOpen, selectedAttendances, attendances, districts])
 
     const removeTab = (id: string) => {
         if (tabs.length > 1) {
             const newTabs = tabs.filter(tab => tab.id !== id)
             setTabs(newTabs)
 
-            // If the removed tab was selected, select the first tab
             if (selectedTab === id) {
                 setSelectedTab(newTabs[0]?.id || null)
             }
         } else {
-            // If it's the last tab, close the dialog
             onClose()
         }
     }
 
-    const handleTabUpdate = (tabId: string, data: Partial<DistrictFormData>) => {
+    const handleTabUpdate = (tabId: string, data: Partial<AttendanceFormData>) => {
         const tab = tabs.find(t => t.id === tabId)
         if (tab) {
-            onUpdate(tab.district.id, data)
-            // Remove the tab after successful update
+            onUpdate(tab.attendance.id, data)
             removeTab(tabId)
         }
     }
@@ -77,7 +83,7 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedDistricts, districts, onClo
                 <Dialog.Positioner>
                     <Dialog.Content rounded="xl" maxW="4xl" w="full">
                         <Dialog.Header>
-                            <Dialog.Title>Bulk Edit Districts</Dialog.Title>
+                            <Dialog.Title>Update {serviceName} Attendance</Dialog.Title>
                         </Dialog.Header>
 
                         <Dialog.Body>
@@ -108,8 +114,8 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedDistricts, districts, onClo
                                 <Tabs.ContentGroup>
                                     {tabs.map((tab) => (
                                         <Tabs.Content value={tab.id} key={tab.id}>
-                                            <DistrictEditForm
-                                                district={tab.district}
+                                            <AttendanceEditForm
+                                                attendance={tab.attendance}
                                                 onUpdate={(data) => handleTabUpdate(tab.id, data)}
                                                 onCancel={() => removeTab(tab.id)}
                                             />
@@ -135,4 +141,4 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedDistricts, districts, onClo
     )
 }
 
-export default BulkEditDialog;
+export default BulkEditDialog
