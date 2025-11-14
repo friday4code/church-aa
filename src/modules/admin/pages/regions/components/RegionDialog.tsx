@@ -83,6 +83,8 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     }
 
     const onSubmit = (data: RegionFormData) => {
+        console.log("sdata",data);
+        
         onSave(data)
         reset()
     }

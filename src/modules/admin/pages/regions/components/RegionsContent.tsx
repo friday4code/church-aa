@@ -214,17 +214,12 @@ const RegionsContent = () => {
     }
 
     const handleSaveRegion = (data: any) => {
-        // Transform data to match API structure
-        const apiData = {
-            name: data.regionName,
-            state: data.stateName,
-            leader: data.leader
-        }
+        console.log("save",data);
 
         if (dialogState.mode === 'add') {
-            createRegion(apiData)
+            createRegion(data)
         } else if (dialogState.region) {
-            updateRegion({ id: dialogState.region.id, data: apiData })
+            updateRegion({ id: dialogState.region.id, data: data })
         }
     }
 
