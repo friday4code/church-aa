@@ -15,10 +15,11 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import { Toaster } from "@/components/ui/toaster"
+import { toaster, Toaster } from "@/components/ui/toaster"
 import { useOldGroups } from "../../hooks/useOldGroup"
 import type { OldGroupFormData } from "../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
+import { delay } from "@/utils/helpers"
 
 // Lazy load components
 const OldGroupsHeader = lazy(() => import("./components/OldGroupsHeader"))
@@ -112,10 +113,14 @@ const Content = () => {
         isUpdating,
         isDeleting
     } = useOldGroups({
-        onCreateSuccess() {
+        async onCreateSuccess() {
+            toaster.success({ description: ` Old group created!` });
+            await delay(1000);
             setDialogState({ isOpen: false, mode: 'add' })
         },
-        onUpdateSuccess() {
+        async onUpdateSuccess() {
+            toaster.success({ description: `Old group updated!` });
+            await delay(1000);
             setDialogState({ isOpen: false, mode: 'edit' })
         },
     })
@@ -254,7 +259,7 @@ const Content = () => {
     const handleSaveGroup = (data: OldGroupFormData) => {
         // No transformation needed since form data matches API payload
         if (dialogState.mode === 'add') {
-            createOldGroup(data)
+            createOldGroup(data);
         } else if (dialogState.group) {
             updateOldGroup({ id: dialogState.group.id, data })
         }
