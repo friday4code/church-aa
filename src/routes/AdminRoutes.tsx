@@ -21,13 +21,15 @@
  * @since 2024
  */
 
+import React, { Suspense, lazy } from "react"
 import AttendanceType from "@/modules/admin/components/AttendanceType";
 import AdminLayout from "@/modules/admin/layouts/AdminLayout";
 import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
 import YouthAttendanceDashboard from "@/modules/admin/pages/attendance/youthAttendance/Index";
 import YouthAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthAttendance";
-import YouthRevivalAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthRevivalAttendance";
-import YouthWeeklyAttendancePage from "@/modules/admin/pages/attendance/youthAttendance/YouthWeeklyAttendance";
+// Lazy-loaded youth attendance pages (code-split)
+const YouthWeeklyAttendancePage = lazy(() => import("@/modules/admin/pages/attendance/youthAttendance/WeeklyPage"))
+const YouthRevivalAttendancePage = lazy(() => import("@/modules/admin/pages/attendance/youthAttendance/RevivalPage"))
 import Dashboard from "@/modules/admin/pages/dashboard/Dashboard";
 import Districts from "@/modules/admin/pages/districts/Districts";
 import Groups from "@/modules/admin/pages/groups/Group";
@@ -131,8 +133,16 @@ export default function AdminRoutes() {
           <Route path="youth_ministry">
             <Route element={<YouthAttendanceDashboard />} index />
             <Route path="attendance" element={<YouthAttendancePage />} />
-            <Route path="weekly_attendance" element={<YouthWeeklyAttendancePage />} />
-            <Route path="revival_attendance" element={<YouthRevivalAttendancePage />} />
+            <Route path="weekly_attendance" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <YouthWeeklyAttendancePage />
+              </Suspense>
+            } />
+            <Route path="revival_attendance" element={
+              <Suspense fallback={<div>Loading...</div>}>
+                <YouthRevivalAttendancePage />
+              </Suspense>
+            } />
           </Route>
 
           {/* Reports and Analytics:

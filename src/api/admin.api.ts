@@ -1,6 +1,7 @@
 import type { District, Districts } from "@/types/districts.type";
 import { axiosClient } from "../config/axios.config"
 import type { AttendanceRecord } from "@/types/attendance.type";
+import type { CreateYouthAttendanceData, UpdateYouthAttendanceData, YouthAttendanceFilters, YouthAttendanceResponse, YouthAttendancesResponse } from "@/types/youthAttendance.type";
 
 export const adminApi = {
     // Users
@@ -195,6 +196,55 @@ export const adminApi = {
 
     createOldGroup: async (oldGroupData: any): Promise<any> => {
         const { data } = await axiosClient.post<any>("/hierarchy/oldgroups", oldGroupData);
+        return data;
+    },
+    updateOldGroup: async (oldGroupId: string | number, groupData: any): Promise<any> => {
+        const { data } = await axiosClient.put<any>(`/hierarchy/oldgroups/${oldGroupId}`, groupData);
+        return data;
+    },
+
+    deleteOldGroup: async (groupId: string | number): Promise<any> => {
+        const { data } = await axiosClient.delete<any>(`/hierarchy/groups/${groupId}`);
+        return data;
+    },
+
+
+    // Youth Attendance
+    getYouthAttendance: async (filters?: YouthAttendanceFilters): Promise<YouthAttendancesResponse> => {
+        const params = new URLSearchParams();
+        if (filters?.attendance_type) params.append('attendance_type', filters.attendance_type);
+        if (filters?.year) params.append('year', filters.year.toString());
+        if (filters?.month) params.append('month', filters.month);
+        
+        const { data } = await axiosClient.get<YouthAttendancesResponse>(`/youth-attendance/youth-attendance?${params.toString()}`);
+        return data;
+    },
+
+    getYouthAttendanceById: async (yaId: string | number): Promise<YouthAttendanceResponse> => {
+        const { data } = await axiosClient.get<YouthAttendanceResponse>(`/youth-attendance/youth-attendance/${yaId}`);
+        return data;
+    },
+
+    createYouthAttendance: async (attendanceData: CreateYouthAttendanceData): Promise<YouthAttendanceResponse> => {
+        const { data } = await axiosClient.post<YouthAttendanceResponse>("/youth-attendance/youth-attendance", attendanceData);
+        return data;
+    },
+
+    updateYouthAttendance: async (yaId: string | number, attendanceData: UpdateYouthAttendanceData): Promise<YouthAttendanceResponse> => {
+        const { data } = await axiosClient.put<YouthAttendanceResponse>(`/youth-attendance/youth-attendance/${yaId}`, attendanceData);
+        return data;
+    },
+
+    deleteYouthAttendance: async (yaId: string | number): Promise<void> => {
+        await axiosClient.delete(`/youth-attendance/youth-attendance/${yaId}`);
+    },
+
+    uploadYouthAttendanceCSV: async (fileData: FormData, attendanceType: 'weekly' | 'revival'): Promise<any> => {
+        const { data } = await axiosClient.post<any>(`/youth-attendance/youth-attendance/upload?attendance_type=${attendanceType}`, fileData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return data;
     },
 }
