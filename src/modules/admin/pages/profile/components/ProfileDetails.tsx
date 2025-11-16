@@ -19,32 +19,41 @@ import {
     Logout,
     Location,
 } from "iconsax-reactjs"
-import { useAuthStore } from "@/store/auth.store"
-import { useAdminProfileStore } from "../../../stores/profile.store"
+import { useMe } from "@/hooks/useMe"
 
 interface ProfileDetailsProps {
     onLogout: () => void
 }
 
 export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
-    const { user } = useAuthStore()
-    const { profile } = useAdminProfileStore()
+    const { user } = useMe()
 
     const getAccessLevelLabel = () => {
-        if (!user) return 'User';
+        if (!user || !user.roles || user.roles.length === 0) return 'User';
 
-        switch (user.access_level) {
-            case 'admin':
-                return 'System Administrator';
-            case 'regional_admin':
-                return 'Regional Administrator';
-            case 'state_admin':
-                return 'State Administrator';
-            case 'district_admin':
-                return 'District Administrator';
-            default:
-                return 'User';
+        // Map roles to display labels
+        const roleLabels: Record<string, string> = {
+            'Super Admin': 'Super Administrator',
+            'admin': 'System Administrator',
+            'State Admin': 'State Administrator',
+            'Region Admin': 'Region Administrator',
+            'District Admin': 'District Administrator',
+            'Group Admin': 'Group Administrator',
+            'Viewer': 'Viewer',
+        };
+
+        // Priority order for roles (highest to lowest)
+        const rolePriority = ['Super Admin', 'admin', 'State Admin', 'Region Admin', 'District Admin', 'Group Admin', 'Viewer'];
+        
+        // Find the highest priority role the user has
+        for (const role of rolePriority) {
+            if (user.roles.includes(role as any)) {
+                return roleLabels[role] || role;
+            }
         }
+
+        // If no known role found, return the first role or 'User'
+        return user.roles[0] || 'User';
     };
 
     const getRegionInfo = () => {
@@ -72,7 +81,7 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
                             <VStack gap="1" align="start">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Full Name</Text>
                                 <Text fontSize="lg" fontWeight="semibold">
-                                    {user?.name || `${profile.firstName} ${profile.lastName}`}
+                                    {user?.name || 'N/A'}
                                 </Text>
                             </VStack>
 
@@ -134,7 +143,7 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
                 </Card.Header>
                 <Card.Body>
                     <Text fontSize="lg" lineHeight="1.6">
-                        {profile.bio}
+                        {user?.access_level ? `Access Level: ${user.access_level}` : 'No information available'}
                     </Text>
                 </Card.Body>
             </Card.Root>

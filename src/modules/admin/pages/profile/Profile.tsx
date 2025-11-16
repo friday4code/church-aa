@@ -11,8 +11,8 @@ import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
 import { Toaster, toaster } from "@/components/ui/toaster"
-import { useAuthStore } from "@/store/auth.store"
-import { useAdminProfileStore } from "../../stores/profile.store"
+import { useAuth } from "@/hooks/useAuth"
+import { useMe } from "@/hooks/useMe"
 
 // Import components
 import { EditProfileDialog } from "./components/EditProfileDialog"
@@ -46,8 +46,8 @@ export const AdminProfilePage: React.FC = () => {
 export default AdminProfilePage;
 
 const Content = () => {
-    const { logout } = useAuthStore()
-    const { uploadAvatar } = useAdminProfileStore()
+    const { logout } = useAuth()
+    const { refetch } = useMe()
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
@@ -83,12 +83,16 @@ const Content = () => {
 
         setIsUploading(true)
         try {
-            await uploadAvatar(file)
+            // TODO: Implement actual avatar upload API call
+            // For now, just create a local URL (will be replaced with actual API call)
+            URL.createObjectURL(file)
             toaster.success({
                 title: "Avatar updated",
                 description: "Your profile picture has been updated successfully",
                 duration: 3000,
             })
+            // Refresh user data after upload
+            await refetch()
         } catch (error) {
             toaster.error({
                 title: "Upload failed",

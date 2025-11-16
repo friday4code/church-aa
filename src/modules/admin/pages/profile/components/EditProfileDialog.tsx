@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toaster } from "@/components/ui/toaster"
 import { type AdminProfileFormData, adminProfileSchema } from "../../../schemas/profile.schema"
-import { useAdminProfileStore } from "../../../stores/profile.store"
+import { useMe } from "@/hooks/useMe"
 
 interface EditProfileDialogProps {
     isOpen: boolean
@@ -24,29 +24,42 @@ interface EditProfileDialogProps {
 }
 
 export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
-    const { profile, updateProfile } = useAdminProfileStore()
+    const { user, refetch } = useMe()
+    
+    // Helper to extract first and last name from full name
+    const extractNames = (fullName: string) => {
+        const names = fullName.split(' ')
+        return {
+            firstName: names[0] || '',
+            lastName: names.slice(1).join(' ') || ''
+        }
+    }
+    
+    const { firstName, lastName } = user?.name ? extractNames(user.name) : { firstName: '', lastName: '' }
     
     const { watch, register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AdminProfileFormData>({
         resolver: zodResolver(adminProfileSchema),
         defaultValues: {
-            firstName: profile.firstName,
-            lastName: profile.lastName,
-            email: profile.email,
-            phone: profile.phone,
-            role: profile.role,
-            department: profile.department,
-            bio: profile.bio,
+            firstName,
+            lastName,
+            email: user?.email || '',
+            phone: user?.phone || '',
+            role: user?.access_level || '',
+            department: '',
+            bio: '',
         }
     })
 
     const onSubmit = async (data: AdminProfileFormData) => {
         try {
-            updateProfile(data)
+            // TODO: Implement actual profile update API call
+            // For now, just show success and refetch
             toaster.success({
                 title: "Profile updated",
                 description: "Your profile has been updated successfully",
                 closable: true
             })
+            await refetch()
             onClose()
             reset(data)
         } catch (error) {

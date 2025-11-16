@@ -21,7 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { Link, useNavigate } from "react-router";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { delay } from "@/utils/helpers";
 import { ENV } from "@/config/env";
 import { Eye, EyeSlash, Lock, Sms } from "iconsax-reactjs";
@@ -36,7 +36,7 @@ export type LoginFormData = z.infer<typeof loginSchema>;
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const { setAuth, isAdmin, isUser } = useAuthStore();
+    const { setAuth } = useAuth();
     const navigate = useNavigate();
 
     // clear all queued toasts
@@ -46,17 +46,21 @@ const Login = () => {
         }
     }, []);
 
-    const getRedirectPath = () => {
+    const getRedirectPath = (userRoles: string[] = []) => {
+        // Check if user has any admin roles
+        const hasAdminRole = userRoles.includes('admin') || 
+                            userRoles.includes('Super Admin') ||
+                            userRoles.includes('State Admin') ||
+                            userRoles.includes('Region Admin') ||
+                            userRoles.includes('District Admin') ||
+                            userRoles.includes('Group Admin');
 
-        if (isUser()) {
-            return "/user/dashboard";
-        }
-        if (isAdmin()) {
+        if (hasAdminRole) {
             return "/admin/dashboard";
         }
 
-        // Default fallback
-        return "/dashboard";
+        // If no admin role, redirect to user dashboard
+        return "/user/dashboard";
     };
 
     const mutation = useMutation({
@@ -74,8 +78,8 @@ const Login = () => {
 
             await delay(1000);
 
-            // Get the appropriate redirect path based on user roles
-            const redirectPath = getRedirectPath();
+            // Get the appropriate redirect path based on user roles from the response
+            const redirectPath = getRedirectPath(response.user?.roles || []);
             navigate(redirectPath);
         }
     });

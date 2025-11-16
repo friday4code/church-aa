@@ -15,12 +15,8 @@ import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroup
 import type { OldGroup } from "@/types/oldGroups.type"
 import { useStates } from "../../../hooks/useState"
 import { useRegions } from "../../../hooks/useRegion"
-import { useDistricts } from "../../../hooks/useDistrict"
-import { useGroups } from "../../../hooks/useGroup"
 import StateIdCombobox from "../../../components/StateIdCombobox"
 import RegionIdCombobox from "../../../components/RegionIdCombobox"
-import DistrictIdCombobox from "../../../components/DistrictIdCombobox"
-import GroupIdCombobox from "../../../components/GroupIdCombobox"
 
 interface OldGroupEditFormProps {
     group: OldGroup
@@ -31,8 +27,6 @@ interface OldGroupEditFormProps {
 const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) => {
     const { states } = useStates()
     const { regions } = useRegions()
-    const { districts } = useDistricts()
-    const { groups } = useGroups()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
@@ -42,8 +36,6 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
             leader: group.leader,
             state_id: group.state_id,
             region_id: group.region_id,
-            district_id: group.district_id,
-            group_id: group.group_id
         }
     })
 
@@ -51,8 +43,6 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
     const currentCode = watch('code')
     const currentStateId = watch('state_id')
     const currentRegionId = watch('region_id')
-    const currentDistrictId = watch('district_id')
-    const currentGroupId = watch('group_id')
 
     const handleNameChange = (value: string) => {
         setValue('name', value)
@@ -65,6 +55,8 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
         if (state) {
             setValue('state_id', state.id, { shouldValidate: true })
             trigger('state_id')
+            // Clear dependent fields
+            setValue('region_id', 0)
         }
     }
 
@@ -76,21 +68,11 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
         }
     }
 
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        if (district) {
-            setValue('district_id', district.id, { shouldValidate: true })
-            trigger('district_id')
-        }
-    }
-
-    const handleGroupChange = (groupName: string) => {
-        const groupItem = groups?.find(g => g.name === groupName)
-        if (groupItem) {
-            setValue('group_id', groupItem.id, { shouldValidate: true })
-            trigger('group_id')
-        }
-    }
+    // Filter regions by selected state
+    const filteredRegions = regions?.filter(r => {
+        const stateName = states?.find(s => s.id === currentStateId)?.name
+        return stateName ? r.state === stateName : false
+    }) || []
 
     const generateGroupCode = (groupName: string): string => {
         if (!groupName) return ''
@@ -109,14 +91,6 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
 
     const getSelectedRegionName = () => {
         return regions?.find(r => r.id === currentRegionId)?.name || ''
-    }
-
-    const getSelectedDistrictName = () => {
-        return districts?.find(d => d.id === currentDistrictId)?.name || ''
-    }
-
-    const getSelectedGroupName = () => {
-        return groups?.find(g => g.id === currentGroupId)?.name || ''
     }
 
     return (
@@ -187,37 +161,15 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
                             onChange={handleRegionChange}
                             required
                             invalid={!!errors.region_id}
+                            items={filteredRegions}
+                            disabled={!currentStateId || currentStateId === 0}
                         />
                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    {/* District Selection */}
-                    <Field.Root required invalid={!!errors.district_id}>
-                        <DistrictIdCombobox
-                            value={getSelectedDistrictName()}
-                            onChange={handleDistrictChange}
-                            required
-                            invalid={!!errors.district_id}
-                        />
-                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    {/* Group Selection */}
-                    <Field.Root required invalid={!!errors.group_id}>
-                        <GroupIdCombobox
-                            value={getSelectedGroupName()}
-                            onChange={handleGroupChange}
-                            required
-                            invalid={!!errors.group_id}
-                        />
-                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
                     </Field.Root>
 
                     {/* Hidden inputs for React Hook Form validation */}
                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
-                    <input type="hidden" {...register('district_id', { valueAsNumber: true })} />
-                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
                 </VStack>
             </form>
 

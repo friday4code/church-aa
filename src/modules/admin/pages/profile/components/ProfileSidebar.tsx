@@ -16,8 +16,7 @@ import {
     Flex,
 } from "@chakra-ui/react"
 import { Camera, TickCircle, Activity, Shield, User } from "iconsax-reactjs"
-import { useAuthStore } from "@/store/auth.store"
-import { useAdminProfileStore } from "../../../stores/profile.store"
+import { useMe } from "@/hooks/useMe"
 
 interface ProfileSidebarProps {
     onAvatarClick: () => void
@@ -25,8 +24,7 @@ interface ProfileSidebarProps {
 }
 
 export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarProps) => {
-    const { user } = useAuthStore()
-    const { profile } = useAdminProfileStore()
+    const { user } = useMe()
 
     const getAccessLevelLabel = () => {
         if (!user) return 'User';
@@ -71,11 +69,11 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
                         <Box position="relative">
                             <Avatar.Root boxSize={"24"}>
                                 <Avatar.Image
-                                    src={profile.avatar}
-                                    alt={`${profile.firstName} ${profile.lastName}`}
+                                    src={undefined}
+                                    alt={user?.name || 'User'}
                                 />
                                 <Avatar.Fallback
-                                    name={`${profile.firstName} ${profile.lastName}`}
+                                    name={user?.name || 'User'}
                                 />
                             </Avatar.Root>
                             <IconButton
@@ -98,7 +96,7 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
 
                         <VStack gap="1">
                             <Heading size="xl" color="white">
-                                {profile.firstName} {profile.lastName}
+                                {user?.name || 'User'}
                             </Heading>
                             <Text opacity={0.9} fontSize="lg">
                                 {getAccessLevelLabel()}
@@ -116,16 +114,16 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
 
                         <HStack gap="4" justify="center" wrap="wrap">
                             <VStack gap="0">
-                                <Text fontSize="sm" opacity={0.8}>Member Since</Text>
+                                <Text fontSize="sm" opacity={0.8}>User ID</Text>
                                 <Text fontWeight="semibold">
-                                    {new Date(profile.joinDate)?.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                                    {user?.id || 'N/A'}
                                 </Text>
                             </VStack>
 
                             <VStack gap="0">
-                                <Text fontSize="sm" opacity={0.8}>Last Login</Text>
+                                <Text fontSize="sm" opacity={0.8}>Status</Text>
                                 <Text fontWeight="semibold">
-                                    {new Date(profile.lastLogin)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    {user?.is_active ? 'Active' : 'Inactive'}
                                 </Text>
                             </VStack>
                         </HStack>

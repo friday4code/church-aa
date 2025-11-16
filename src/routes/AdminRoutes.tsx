@@ -21,7 +21,7 @@
  * @since 2024
  */
 
-import React, { Suspense, lazy } from "react"
+import { Suspense, lazy } from "react"
 import AttendanceType from "@/modules/admin/components/AttendanceType";
 import AdminLayout from "@/modules/admin/layouts/AdminLayout";
 import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
@@ -49,7 +49,7 @@ import { Route, Routes } from "react-router";
  *
  * Defines the complete routing structure for the admin section of the application.
  * This component creates a protected routing system that ensures only authenticated
- * users with "Admin" role can access the admin functionality.
+ * users with admin roles (admin, Super Admin, State Admin, Region Admin, District Admin, Group Admin) can access the admin functionality.
  *
  * Route Structure:
  * - All routes are nested under AdminLayout for consistent UI structure
@@ -81,11 +81,11 @@ import { Route, Routes } from "react-router";
 export default function AdminRoutes() {
   return (
     // ProtectedRoute Wrapper:
-    // - Restricts access to users with "Admin" role only
+    // - Restricts access to users with admin roles (admin, Super Admin, State Admin, Region Admin, District Admin, Group Admin)
     // - Automatically redirects unauthenticated users to login
     // - Redirects unauthorized users to unauthorized page
     // - Preserves location state for post-login redirection
-    <ProtectedRoute allowedRoles={["admin"]}>
+    <ProtectedRoute allowedRoles={["admin", "Super Admin", "State Admin", "Region Admin", "District Admin", "Group Admin"]}>
       <Routes>
         {/* AdminLayout Wrapper:
             - Provides consistent admin UI structure (sidebar, header, etc.)

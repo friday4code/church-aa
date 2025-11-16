@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from "react-router";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index: React.FC = () => {
-    const { isAuthenticated, isAdmin } = useAuthStore();
+    const { isAuthenticated, isAdmin } = useAuth();
     const location = useLocation();
 
     // Show loading state while checking authentication

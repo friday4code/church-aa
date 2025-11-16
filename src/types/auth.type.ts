@@ -4,7 +4,7 @@ export interface User {
     name: string;
     phone: string | null;
     is_active: boolean;
-    roles: string[];
+    roles: ("admin" | "Super Admin" | "State Admin" | "Region Admin" | "District Admin" | "Group Admin" | "Viewer")[];
     access_level: string;
     region_id: number | null;
     state_id: number | null;
@@ -20,4 +20,8 @@ export interface LoginResponse {
 export interface Tokens {
     access_token: string;
     refresh_token: string;
+}
+
+export interface GetCurrentUserResponse {
+    user: User;
 }

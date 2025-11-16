@@ -28,7 +28,7 @@ import {
 import { useEffect, useState } from "react";
 import { Toaster, toaster } from "@/components/ui/toaster";
 import { authApi } from "@/api/auth.api";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { ENV } from "@/config/env";
 import { Link } from "react-router";
 
@@ -72,7 +72,7 @@ const Register = () => {
         }
     }, []);
 
-    const { setAuth } = useAuthStore();
+    const { setAuth } = useAuth();
     const { open, onClose, onOpen } = useDisclosure();
 
     const mutation = useMutation({

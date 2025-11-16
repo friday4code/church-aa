@@ -1,9 +1,10 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
+import { Spinner, Center } from "@chakra-ui/react";
 
 interface ProtectedRouteProps {
-    allowedRoles?: string[]; // e.g. ["admin", "user"]
+    allowedRoles?: string[]; // e.g. ["admin", "Super Admin", "State Admin"]
     children: React.ReactNode;
 }
 
@@ -11,8 +12,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     allowedRoles,
     children,
 }) => {
-    const { isAuthenticated, hasAnyRole } = useAuthStore();
+    const { isAuthenticated, hasAnyRole, loading } = useAuth();
     const location = useLocation();
+
+    // ⏳ Show loading state while checking authentication
+    if (loading) {
+        return (
+            <Center h="100vh">
+                <Spinner size="xl" color="accent.500" />
+            </Center>
+        );
+    }
 
     // 🚫 Redirect unauthenticated users
     if (!isAuthenticated()) {
