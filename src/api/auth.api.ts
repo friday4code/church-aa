@@ -2,7 +2,7 @@ import type { LoginFormData } from "@/modules/auth/pages/Login"
 import { axiosClient } from "../config/axios.config"
 import { useAuthStore } from "@/store/auth.store"
 import type { RefereeFormData } from "@/modules/auth/pages/RefereeForm"
-import type { LoginResponse } from "@/types/auth.type"
+import type { LoginResponse, GetCurrentUserResponse } from "@/types/auth.type"
 
 export const authApi = {
     login: async (credentials: LoginFormData): Promise<LoginResponse> => {
@@ -37,8 +37,8 @@ export const authApi = {
         return data;
     },
 
-    getCurrentUser: async () => {
-        const { data } = await axiosClient.get("/users/me");
+    getCurrentUser: async (): Promise<GetCurrentUserResponse> => {
+        const { data } = await axiosClient.get<GetCurrentUserResponse>("/auth/me");
         return data;
     },
 }
