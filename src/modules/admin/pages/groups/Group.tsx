@@ -136,7 +136,8 @@ const Content = () => {
         let filtered = groups.filter(group =>
             group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            group.leader.toLowerCase().includes(searchQuery.toLowerCase())
+            group.leader?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            group.old_group?.toLowerCase().includes(searchQuery.toLowerCase())
         )
 
         // Sorting
@@ -257,12 +258,17 @@ const Content = () => {
 
     const handleSaveGroup = (data: any) => {
         // Transform data to match API structure
-        const apiData = {
+        const apiData: any = {
             group_name: data.group_name,
             leader: data.leader,
             access_level: data.access_level,
             state_id: data.state_id,
             region_id: data.region_id,
+        }
+
+        // Add old_group_id if provided
+        if (data.old_group_id) {
+            apiData.old_group_id = data.old_group_id
         }
 
         if (dialogState.mode === 'add') {

@@ -78,6 +78,13 @@ const GroupsTable = ({
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
+                                onClick={() => onSort('old_group')}
+                            >
+                                Old Group Name {sortField === 'old_group' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
                                 onClick={() => onSort('name')}
                             >
                                 Group Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
@@ -88,13 +95,6 @@ const GroupsTable = ({
                                 onClick={() => onSort('leader')}
                             >
                                 Group Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader>
-                            <Table.ColumnHeader
-                                fontWeight={"bold"}
-                                cursor="pointer"
-                                onClick={() => onSort('access_level')}
-                            >
-                                Access Level {sortField === 'access_level' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -117,21 +117,9 @@ const GroupsTable = ({
                                     </Checkbox.Root>
                                 </Table.Cell>
                                 <Table.Cell>{index + 1}</Table.Cell>
+                                <Table.Cell>{group.old_group || '-'}</Table.Cell>
                                 <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
-                                <Table.Cell>{group.leader}</Table.Cell>
-                                <Table.Cell>
-                                    <span style={{
-                                        textTransform: 'capitalize',
-                                        padding: '4px 8px',
-                                        borderRadius: '6px',
-                                        fontSize: '12px',
-                                        fontWeight: '500',
-                                        backgroundColor: getAccessLevelColor(group?.access_level),
-                                        color: 'white'
-                                    }}>
-                                        {group?.access_level?.replace('-', ' ')}
-                                    </span>
-                                </Table.Cell>
+                                <Table.Cell>{group.leader || '-'}</Table.Cell>
                                 <Table.Cell textAlign="center">
                                     <Menu.Root>
                                         <Menu.Trigger asChild>
@@ -203,16 +191,5 @@ const GroupsTable = ({
     )
 }
 
-// Helper function to get color for access level badges
-const getAccessLevelColor = (accessLevel: string): string => {
-    const colors: { [key: string]: string } = {
-        'state-admin': '#3182CE',
-        'region-admin': '#38A169',
-        'district-admin': '#D69E2E',
-        'group-admin': '#805AD5',
-        'user': '#718096'
-    };
-    return colors[accessLevel] || '#718096';
-}
 
 export default GroupsTable;

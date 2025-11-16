@@ -16,8 +16,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useMe } from "@/hooks/useMe"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -41,6 +43,7 @@ const ACCESS_LEVELS = createListCollection({
 
 const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupDialogProps) => {
     const { user } = useMe()
+    const { oldGroups } = useOldGroups()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
@@ -50,10 +53,39 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             access_level: 'user',
             state_id: group?.state_id || 0,
             region_id: group?.region_id || 0,
+            old_group_id: group?.old_group_id || undefined,
         }
     })
 
     const currentAccessLevel = watch('access_level')
+    const currentOldGroupName = watch('old_group_name')
+
+    // Get old group name for display
+    const selectedOldGroupName = useMemo(() => {
+        // Prioritize the form value (user's current selection)
+        if (currentOldGroupName) {
+            return currentOldGroupName
+        }
+        // If no form value, use group's old_group directly
+        if (group?.old_group) {
+            return group.old_group
+        }
+        return ''
+    }, [currentOldGroupName, group?.old_group])
+
+    // Handle old group selection - convert name to ID
+    const handleOldGroupChange = (oldGroupName: string) => {
+        if (oldGroupName) {
+            const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+            if (oldGroup) {
+                setValue('old_group_id', oldGroup.id, { shouldValidate: true })
+                setValue('old_group_name', oldGroupName)
+            }
+        } else {
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
+        }
+    }
 
     const handleAccessLevelChange = (value: string[]) => {
         if (value.length > 0) {
@@ -75,12 +107,21 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
     useEffect(() => {
         if (isOpen) {
             if (group) {
+                // Find old_group_id from old_group name if needed
+                let oldGroupId: number | undefined = undefined
+                if (group.old_group && oldGroups) {
+                    const foundOldGroup = oldGroups.find(og => og.name === group.old_group)
+                    oldGroupId = foundOldGroup?.id
+                }
+                
                 reset({
                     group_name: group.name,
                     leader: group.leader || '',
                     access_level: group.access_level || 'user',
                     state_id: group.state_id || 0,
                     region_id: group.region_id || 0,
+                    old_group_id: oldGroupId,
+                    old_group_name: group.old_group || '',
                 })
             } else {
                 // For new groups, use logged in user's state_id and region_id
@@ -90,10 +131,12 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                     access_level: 'user',
                     state_id: user?.state_id || 0,
                     region_id: user?.region_id || 0,
+                    old_group_id: undefined,
+                    old_group_name: '',
                 })
             }
         }
-    }, [isOpen, group, reset, user])
+    }, [isOpen, group, reset, user, oldGroups])
 
     return (
         <Dialog.Root
@@ -177,9 +220,21 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                         <Field.ErrorText>{errors.access_level?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {/* Hidden inputs for state_id and region_id from logged in user */}
+                                    {/* Old Group Selection */}
+                                    <Field.Root invalid={!!errors.old_group_id}>
+                                        <OldGroupIdCombobox
+                                            value={selectedOldGroupName}
+                                            onChange={handleOldGroupChange}
+                                            invalid={!!errors.old_group_id}
+                                        />
+                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    {/* Hidden inputs for state_id, region_id, and old_group_id */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('old_group_name')} />
                                 </VStack>
                             </form>
                         </Dialog.Body>

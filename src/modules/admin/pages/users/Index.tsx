@@ -44,7 +44,7 @@ interface ChartDataItem {
 interface StatCardProps {
     title: string
     value: number
-    icon: React.ComponentType<any>
+    icon: React.ReactNode
     color: string
     link: string
     description?: string
@@ -156,13 +156,13 @@ const Content: React.FC = () => {
     const StatCard: React.FC<StatCardProps> = ({
         title,
         value,
-        icon: Icon,
+        icon,
         color,
         link,
         description
     }) => (
         <Card.Root
-            bg="white"
+            bg="bg"
             border="1px"
             borderColor="gray.200"
             rounded="xl"
@@ -193,11 +193,11 @@ const Content: React.FC = () => {
                     </VStack>
                     <Box
                         p="3"
-                        bg={`${color}.50`}
+                        bg={`${color}/10`}
                         rounded="lg"
                         color={color}
                     >
-                        <Icon size="24" />
+                        {icon}
                     </Box>
                 </Flex>
                 <Flex justify="space-between" align="center" mt="4">
@@ -338,7 +338,7 @@ const Content: React.FC = () => {
             </Flex>
 
             {/* Quick Actions */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                 <Card.Header pb="4">
                     <Heading size="lg">Quick Actions</Heading>
                 </Card.Header>
@@ -349,8 +349,8 @@ const Content: React.FC = () => {
                             cursor="pointer"
                             transition="all 0.2s"
                             _hover={{
-                                bg: 'blue.50',
-                                borderColor: 'blue.200'
+                                bg: 'blue/10',
+                                borderColor: 'blue/20'
                             }}
                             onClick={() => navigate('/admin/users/all')}
                         >
@@ -362,7 +362,7 @@ const Content: React.FC = () => {
                                             Add, edit, or remove users
                                         </Text>
                                     </VStack>
-                                    <ArrowRight size="20" color="blue" />
+                                    <ArrowRight variant="Bulk" size="20" color="blue" />
                                 </HStack>
                             </Card.Body>
                         </Card.Root>
@@ -372,8 +372,8 @@ const Content: React.FC = () => {
                             cursor="pointer"
                             transition="all 0.2s"
                             _hover={{
-                                bg: 'green.50',
-                                borderColor: 'green.200'
+                                bg: 'green/10',
+                                borderColor: 'green/20'
                             }}
                             onClick={() => navigate('/admin/users/rights')}
                         >
@@ -385,7 +385,7 @@ const Content: React.FC = () => {
                                             Configure user access levels
                                         </Text>
                                     </VStack>
-                                    <ArrowRight size="20" color="green" />
+                                    <ArrowRight size="20" variant="Bulk" color="green" />
                                 </HStack>
                             </Card.Body>
                         </Card.Root>
@@ -399,7 +399,7 @@ const Content: React.FC = () => {
                 <StatCard
                     title="Total Users"
                     value={stats.totalUsers}
-                    icon={Profile2User}
+                    icon={<Profile2User variant="Bulk" size="24" />}
                     color="blue"
                     link="/admin/users/all"
                     description="Registered users in system"
@@ -408,7 +408,7 @@ const Content: React.FC = () => {
                 <StatCard
                     title="User Rights"
                     value={stats.totalUserRights}
-                    icon={ProfileTick}
+                    icon={<ProfileTick variant="Bulk" size="24" />}
                     color="green"
                     link="/admin/users/rights"
                     description="Access rights configured"
@@ -417,7 +417,7 @@ const Content: React.FC = () => {
                 <StatCard
                     title="Super Admins"
                     value={stats.superAdmins}
-                    icon={Shield}
+                    icon={<Shield variant="Bulk" size="24" />}
                     color="purple"
                     link="/admin/users/rights"
                     description="Full system access"
@@ -426,7 +426,7 @@ const Content: React.FC = () => {
                 <StatCard
                     title="Active Users"
                     value={stats.activeUsers}
-                    icon={TrendUp}
+                    icon={<TrendUp variant="Bulk" size="24" />}
                     color="orange"
                     link="/admin/users/all"
                     description="Users with assigned rights"
@@ -434,7 +434,7 @@ const Content: React.FC = () => {
             </SimpleGrid>
 
             {/* Chart Section */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                 <Card.Header pb="4">
                     <Flex justify="space-between" align="center">
                         <VStack align="start" gap="1">
@@ -488,7 +488,7 @@ const Content: React.FC = () => {
 
                             {/* Summary Stats */}
                             <Box
-                                bg="gray.50"
+                                bg="bg"
                                 rounded="lg"
                                 p="4"
                                 w="full"

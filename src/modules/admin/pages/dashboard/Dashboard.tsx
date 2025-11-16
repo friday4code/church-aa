@@ -426,7 +426,7 @@ const Content = () => {
                         height="full"
                         variant="outline"
                         rounded="xl"
-                        bg="bg.subtle"
+                        bg="bg"
                         _hover={{
                             transform: "translateY(-2px)",
                             shadow: "md",
@@ -462,8 +462,8 @@ const Content = () => {
                                     <Box
                                         p="2"
                                         borderRadius="md"
-                                        bg={`${stat.color}.500`}
-                                        color={`${stat.color}.50`}
+                                        bg={`${stat.color}/10`}
+                                        color={`${stat.color}`}
                                         flexShrink={0}
                                     >
                                         {stat.icon}
