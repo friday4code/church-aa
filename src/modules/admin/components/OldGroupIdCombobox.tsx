@@ -67,6 +67,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
             closeOnSelect={true}
+            openOnClick
         >
             <Combobox.Label>Old Group Name
                 <Field.RequiredIndicator />

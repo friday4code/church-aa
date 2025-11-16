@@ -74,6 +74,7 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
             closeOnSelect={true}
+            openOnClick
         >
             <Combobox.Label>Group Name
                 <Field.RequiredIndicator />

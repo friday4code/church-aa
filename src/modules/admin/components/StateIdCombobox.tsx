@@ -72,6 +72,7 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
             closeOnSelect={true}
+            openOnClick
         >
             <Combobox.Label>State Name
                 <Field.RequiredIndicator />

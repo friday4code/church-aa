@@ -74,6 +74,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
             closeOnSelect={true}
+            openOnClick
         >
             <Combobox.Label>District Name
                 <Field.RequiredIndicator />

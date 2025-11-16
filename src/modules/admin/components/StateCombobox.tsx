@@ -52,6 +52,7 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
+            openOnClick
         >
             <Combobox.Label>State Name</Combobox.Label>
             <Combobox.Control>

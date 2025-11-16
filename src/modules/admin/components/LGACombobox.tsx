@@ -76,6 +76,7 @@ const LGACombobox = ({ stateName, value, onChange, invalid = false }: {
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             invalid={invalid}
             disabled={!stateName}
+            openOnClick
         >
             <Combobox.Label>State Code (LGA)</Combobox.Label>
             <Combobox.Control>
