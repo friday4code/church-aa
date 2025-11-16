@@ -11,7 +11,7 @@ import {
 import { NavLink, useLocation, useNavigate } from "react-router";
 import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
-import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { ColorModeButton } from "@/components/ui/color-mode";
 import { Tooltip } from "@/components/ui/tooltip";
 
@@ -19,12 +19,53 @@ import { Tooltip } from "@/components/ui/tooltip";
 const AdminSidebar: React.FC = () => {
     const { isCollapsed, toggle } = useSidebarStore();
     const location = useLocation();
+    const { hasRole } = useAuth();
 
     const isLinkActive = (href: string): boolean => {
         return location.pathname.includes(href);
     };
 
-    const links = [
+    // Determine if a link should be visible based on user role
+    const isLinkVisible = React.useCallback((href: string): boolean => {
+        // Super Admin sees everything
+        if (hasRole('Super Admin')) {
+            return true;
+        }
+
+        // State Admin sees everything
+        if (hasRole('State Admin')) {
+            return true;
+        }
+
+        // Region Admin - hide States
+        if (hasRole('Region Admin')) {
+            const hiddenLinks = ['/admin/states'];
+            return !hiddenLinks.some(hidden => href.includes(hidden));
+        }
+
+        // Group Admin - hide States and Regions
+        if (hasRole('Group Admin')) {
+            const hiddenLinks = ['/admin/states', '/admin/regions'];
+            return !hiddenLinks.some(hidden => href.includes(hidden));
+        }
+
+        // District Admin - hide States, Regions, Groups, and Old Groups
+        if (hasRole('District Admin')) {
+            const hiddenLinks = ['/admin/states', '/admin/regions', '/admin/groups', '/admin/old_groups', '/admin/old-groups'];
+            return !hiddenLinks.some(hidden => href.includes(hidden));
+        }
+
+        // Viewer - minimal access (only dashboard and attendance maybe)
+        if (hasRole('Viewer')) {
+            const visibleLinks = ['/admin/dashboard', '/admin/attendance'];
+            return visibleLinks.some(visible => href.includes(visible));
+        }
+
+        // Default: no access
+        return false;
+    }, [hasRole]);
+
+    const allLinks = [
         { name: "Dashboard", href: "/admin/dashboard", icon: <Chart2 variant="Bulk" /> },
         { name: "States", href: "/admin/states", icon: <Location variant="Bulk" /> },
         { name: "Regions", href: "/admin/regions", icon: <Map variant="Bulk" /> },
@@ -37,6 +78,11 @@ const AdminSidebar: React.FC = () => {
         { name: "Reports", href: "/admin/reports", icon: <Chart1 variant="Bulk" /> },
         // { name: "Profile", href: "/admin/profile", icon: <User variant="Bulk" /> },
     ];
+
+    // Filter links based on user role
+    const links = React.useMemo(() => {
+        return allLinks.filter(link => isLinkVisible(link.href));
+    }, [allLinks, isLinkVisible]);
 
 
     return <ScrollArea.Root bg="accent/70" backdropFilter={"blur(10px)"} rounded="xl" h="full" size={"xs"}>
@@ -129,7 +175,7 @@ export default AdminSidebar;
 
 
 const ProfileAvatar = () => {
-    const { user, logout } = useAuthStore();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
 
     return (
