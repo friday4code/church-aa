@@ -75,12 +75,11 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
 
     const downloadTemplate = () => {
         const templateData = data.map(group => ({
-            "GROUP NAME": group.group_name,
+            "GROUP NAME": group.name,
             "LEADER": group.leader,
             "ACCESS LEVEL": group.access_level,
             "STATE ID": group.state_id,
             "REGION ID": group.region_id,
-            "DISTRICT ID": group.district_id
         }))
 
         const worksheet = utils.json_to_sheet(templateData)
@@ -125,7 +124,6 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                     const accessLevel = row['Access Level'] || row['accessLevel'] || row['ACCESS LEVEL'] || row['access_level']
                     const stateId = parseInt(row['State ID'] || row['stateId'] || row['STATE ID'] || row['state_id'])
                     const regionId = parseInt(row['Region ID'] || row['regionId'] || row['REGION ID'] || row['region_id'])
-                    const districtId = parseInt(row['District ID'] || row['districtId'] || row['DISTRICT ID'] || row['district_id'])
 
                     // Validate required fields
                     if (!groupName) {
@@ -140,17 +138,16 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
 
                     // Check if group already exists (by name or other identifier)
                     const existingGroup = data.find(
-                        group => group.group_name.toLowerCase() === groupName.toLowerCase() ||
-                            group.group_id === index + 1 // Using index as fallback identifier
+                        group => group.name.toLowerCase() === groupName.toLowerCase() ||
+                            group.id === index + 1 // Using index as fallback identifier
                     )
 
                     const groupData: CreateGroupData = {
                         group_name: groupName,
                         leader: leader || '',
-                        access_level: accessLevel || 'basic', // Default value
+                        access_level: accessLevel || 'user', // Default value
                         state_id: stateId,
                         region_id: regionId || 0, // Default value
-                        district_id: districtId || 0 // Default value
                     }
 
                     if (existingGroup) {

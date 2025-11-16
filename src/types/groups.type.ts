@@ -7,6 +7,9 @@ export interface Group {
     state: string;
     region: string;
     district: string;
+    access_level?: string;
+    state_id?: number;
+    region_id?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -19,7 +22,6 @@ export interface CreateGroupData {
     access_level: string;
     state_id: number;
     region_id: number;
-    district_id: number;
 }
 
 export interface UpdateGroupData {

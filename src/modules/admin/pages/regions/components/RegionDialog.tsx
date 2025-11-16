@@ -14,9 +14,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { regionSchema, type RegionFormData } from "../../../schemas/region.schema"
 import type { Region } from "@/types/regions.type"
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { useStates } from "../../../hooks/useState"
-import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import { useEffect } from "react"
+import { useMe } from "@/hooks/useMe"
 
 interface RegionDialogProps {
     isLoading?: boolean
@@ -28,15 +27,13 @@ interface RegionDialogProps {
 }
 
 const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: RegionDialogProps) => {
-    const { states = [] } = useStates()
-    const [selectedStateName, setSelectedStateName] = useState<string>(region?.state || '')
-    const [_, setSelectedStateId] = useState<number>(0)
+    const { user } = useMe()
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<RegionFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<RegionFormData>({
         resolver: zodResolver(regionSchema),
         defaultValues: {
             name: region?.name || '',
-            state_id: 0,
+            state_id: user?.state_id || 0,
             leader: region?.leader || '',
             code: region?.code || ''
         }
@@ -44,34 +41,6 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
 
     const currentName = watch('name')
     const currentCode = watch('code')
-    const currentStateId = watch('state_id')
-
-    // Create state mapping for lookup using useMemo
-    const stateMapping = useMemo(() => {
-        const mapping = new Map<string, number>()
-        console.log("states", states);
-
-        if (states.length > 0) {
-            states.forEach(state => {
-                mapping.set(state.name, state.id)
-            })
-        }
-        return mapping
-    }, [states])
-
-    // Handle state selection from combobox
-    const handleStateChange = useCallback((stateName: string) => {
-        setSelectedStateName(stateName)
-        const stateId = stateMapping.get(stateName) || 0
-
-        setSelectedStateId(stateId)
-        setValue('state_id', stateId, { shouldValidate: true })
-
-        // Force validation immediately after setting the value
-        setTimeout(() => {
-            trigger('state_id')
-        }, 100)
-    }, [stateMapping, setValue, trigger]);
 
     // Helper function to generate state code from state name
     const generateRegionCode = (stateName: string): string => {
@@ -92,8 +61,6 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     const handleClose = () => {
         onClose()
         reset()
-        setSelectedStateName('')
-        setSelectedStateId(0)
     }
 
     // Auto-generate code when name changes
@@ -108,32 +75,22 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     useEffect(() => {
         if (isOpen) {
             if (region) {
-                // For edit mode, set the state name and find the corresponding ID
-                const stateName = region.state
-                const stateId = stateMapping.get(stateName) || 0
-
-                setSelectedStateName(stateName)
-                setSelectedStateId(stateId)
-
                 reset({
                     name: region.name,
-                    state_id: stateId,
+                    state_id: region.state_id,
                     leader: region.leader,
                     code: region.code
                 })
             } else {
-                // For add mode, reset everything
-                setSelectedStateName('')
-                setSelectedStateId(0)
                 reset({
                     name: '',
-                    state_id: 0,
+                    state_id: user?.state_id || 0,
                     leader: '',
                     code: ''
                 })
             }
         }
-    }, [isOpen, region, reset, states])
+    }, [isOpen, region, reset, user])
 
     return (
         <>
@@ -168,26 +125,6 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                                                 {...register('name')}
                                             />
                                             <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
-                                        </Field.Root>
-
-                                        {/* State Selection Field */}
-                                        <Field.Root required invalid={!!errors.state_id}>
-                                            <StateIdCombobox
-                                                value={selectedStateName}
-                                                onChange={handleStateChange}
-                                                required
-                                                invalid={!!errors.state_id}
-                                                disabled={mode === 'edit'}
-                                            />
-                                            <Field.HelperText>
-                                                {mode === 'edit'
-                                                    ? 'State cannot be changed for existing regions'
-                                                    : 'Select the state for this region'
-                                                }
-                                            </Field.HelperText>
-                                            <Field.ErrorText>
-                                                {errors.state_id?.message || (currentStateId === 0 && selectedStateName ? 'Please select a valid state from the list' : '')}
-                                            </Field.ErrorText>
                                         </Field.Root>
 
                                         {/* Hidden input for state_id that React Hook Form can validate */}

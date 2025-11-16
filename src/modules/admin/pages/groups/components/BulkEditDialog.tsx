@@ -39,7 +39,7 @@ const BulkEditDialog = ({ isOpen, selectedGroups, groups, onClose, onUpdate }: B
                 return {
                     id: uuid(),
                     group: group!,
-                    title: group?.group_name || 'Group'
+                    title: group?.name || 'Group'
                 }
             })
             setTabs(initialTabs)

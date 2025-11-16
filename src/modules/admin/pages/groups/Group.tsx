@@ -92,7 +92,7 @@ export default Groups;
 
 const Content = () => {
     const [searchParams, setSearchParams] = useSearchParams()
-    const [sortField, setSortField] = useState<keyof Group>('group_name')
+    const [sortField, setSortField] = useState<keyof Group>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
@@ -260,9 +260,9 @@ const Content = () => {
         const apiData = {
             group_name: data.group_name,
             leader: data.leader,
+            access_level: data.access_level,
             state_id: data.state_id,
             region_id: data.region_id,
-            district_id: data.district_id
         }
 
         if (dialogState.mode === 'add') {

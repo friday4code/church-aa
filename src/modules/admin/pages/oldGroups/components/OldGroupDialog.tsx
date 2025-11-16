@@ -14,11 +14,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
-import { useEffect, useMemo } from "react"
-import { useStates } from "../../../hooks/useState"
-import { useRegions } from "../../../hooks/useRegion"
-import StateIdCombobox from "../../../components/StateIdCombobox"
-import RegionIdCombobox from "../../../components/RegionIdCombobox"
+import { useEffect } from "react"
+import { useMe } from "@/hooks/useMe"
 
 interface OldGroupDialogProps {
     isLoading?: boolean
@@ -30,10 +27,9 @@ interface OldGroupDialogProps {
 }
 
 const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: OldGroupDialogProps) => {
-    const { states } = useStates()
-    const { regions } = useRegions()
+    const { user } = useMe()
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<OldGroupFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
         defaultValues: {
             name: group?.name || '',
@@ -46,45 +42,12 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
 
     const currentName = watch('name')
     const currentCode = watch('code')
-    const currentStateId = watch('state_id')
-    const currentRegionId = watch('region_id')
-
-    // Get the selected state name by ID
-    const getStateNameById = (stateId: number) => {
-        return states?.find(s => s.id === stateId)?.name || ''
-    }
-
-    // Filter regions by selected state name
-    const filteredRegions = useMemo(() => {
-        if (!currentStateId || currentStateId === 0) return []
-        const stateName = getStateNameById(currentStateId)
-        if (!stateName) return []
-        return regions?.filter(r => r.state === stateName) || []
-    }, [regions, currentStateId, states])
 
     const handleNameChange = (value: string) => {
         setValue('name', value)
         // Generate code from name
         const generatedCode = value ? generateGroupCode(value) : ''
         setValue('code', generatedCode)
-    }
-
-    const handleStateChange = (stateName: string) => {
-        const state = states?.find(s => s.name === stateName)
-        if (state) {
-            setValue('state_id', state.id, { shouldValidate: true })
-            trigger('state_id')
-            // Clear dependent fields
-            setValue('region_id', 0)
-        }
-    }
-
-    const handleRegionChange = (regionName: string) => {
-        const region = filteredRegions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
     }
 
     const generateGroupCode = (groupName: string): string => {
@@ -103,27 +66,29 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
         reset()
     }
 
-    // Reset form when dialog opens with group data
+    // Reset form when dialog opens with group data or set from logged in user
     useEffect(() => {
-        if (isOpen && group) {
-            reset({
-                name: group.name,
-                code: group.code,
-                leader: group.leader,
-                state_id: group.state_id,
-                region_id: group.region_id,
-            })
+        if (isOpen) {
+            if (group) {
+                reset({
+                    name: group.name,
+                    code: group.code,
+                    leader: group.leader,
+                    state_id: group.state_id,
+                    region_id: group.region_id,
+                })
+            } else {
+                // For new groups, use logged in user's state_id and region_id
+                reset({
+                    name: '',
+                    code: '',
+                    leader: '',
+                    state_id: user?.state_id || 0,
+                    region_id: user?.region_id || 0,
+                })
+            }
         }
-    }, [isOpen, group, reset])
-
-    // Get display names for selected IDs
-    const getSelectedStateName = () => {
-        return states?.find(s => s.id === currentStateId)?.name || ''
-    }
-
-    const getSelectedRegionName = () => {
-        return regions?.find(r => r.id === currentRegionId)?.name || ''
-    }
+    }, [isOpen, group, reset, user])
 
     return (
         <>
@@ -191,31 +156,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                         </Field.Root>
 
-                                        {/* State Selection */}
-                                        <Field.Root required invalid={!!errors.state_id}>
-                                            <StateIdCombobox
-                                                value={getSelectedStateName()}
-                                                onChange={handleStateChange}
-                                                required
-                                                invalid={!!errors.state_id}
-                                            />
-                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                        </Field.Root>
-
-                                        {/* Region Selection */}
-                                        <Field.Root required invalid={!!errors.region_id}>
-                                            <RegionIdCombobox
-                                                value={getSelectedRegionName()}
-                                                onChange={handleRegionChange}
-                                                required
-                                                invalid={!!errors.region_id}
-                                                items={filteredRegions}
-                                                disabled={!currentStateId || currentStateId === 0}
-                                            />
-                                            <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                        </Field.Root>
-
-                                        {/* Hidden inputs for React Hook Form validation */}
+                                        {/* Hidden inputs for state_id and region_id from logged in user */}
                                         <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                         <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                     </VStack>

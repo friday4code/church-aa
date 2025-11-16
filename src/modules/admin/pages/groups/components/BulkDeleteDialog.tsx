@@ -23,7 +23,7 @@ interface BulkDeleteDialogProps {
 const BulkDeleteDialog = ({ isOpen, selectedGroups, groups, onClose, onConfirm }: BulkDeleteDialogProps) => {
     const selectedGroupNames = groups
         .filter(group => selectedGroups.includes(group.id))
-        .map(group => group.group_name)
+        .map(group => group.name)
 
     const handleConfirm = () => {
         onConfirm(selectedGroups)

@@ -14,13 +14,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { districtSchema, type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
-import { useEffect, useMemo } from "react"
-import { useStates } from "@/modules/admin/hooks/useState"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
-import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
-import type { States } from "@/types/states.type"
-import type { Regions } from "@/types/regions.type"
-import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import { useEffect } from "react"
+import { useMe } from "@/hooks/useMe"
 
 interface DistrictDialogProps {
     isLoading?: boolean
@@ -32,48 +27,18 @@ interface DistrictDialogProps {
 }
 
 const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: DistrictDialogProps) => {
-    const { states } = useStates()
-    const { regions } = useRegions()
+    const { user } = useMe()
 
-    const stateId = useMemo(() => {
-        return (states as States).find(s => s.name === district?.state)?.id;
-    }, [states, district?.state]);
-
-    const regionId = useMemo(() => {
-        return (regions as Regions).find(r => r.name === district?.region)?.id;
-    }, [regions, district?.region]);
-
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<DistrictFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
         resolver: zodResolver(districtSchema),
         defaultValues: {
-            state_id: stateId || 0,
-            region_id: regionId || 0,
+            state_id: district?.state_id || 0,
+            region_id: district?.region_id || 0,
             name: district?.name || '',
             leader: district?.leader || '',
             code: district?.code || ''
         }
     })
-
-    const currentStateId = watch('state_id')
-    const currentRegionId = watch('region_id')
-
-    const handleStateChange = (stateName: string) => {
-        const state = states?.find(s => s.name === stateName)
-        if (state) {
-            setValue('state_id', state.id, { shouldValidate: true })
-            trigger('state_id')
-            // Clear region when state changes
-            setValue('region_id', 0)
-        }
-    }
-
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
-    }
 
     // Helper function to generate district code from district name
     const generateDistrictCode = (districtName: string): string => {
@@ -109,36 +74,29 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         reset()
     }
 
-    // Reset form when dialog opens with district data
+    // Reset form when dialog opens with district data or set from logged in user
     useEffect(() => {
-        if (isOpen && district) {
-            reset({
-                state_id: stateId,
-                region_id: regionId,
-                name: district.name,
-                leader: district.leader,
-                code: district.code
-            })
-        } else if (isOpen && mode === 'add') {
-            // Reset form for add mode
-            reset({
-                state_id: 0,
-                region_id: 0,
-                name: '',
-                leader: '',
-                code: ''
-            })
+        if (isOpen) {
+            if (district) {
+                reset({
+                    state_id: district.state_id || 0,
+                    region_id: district.region_id || 0,
+                    name: district.name,
+                    leader: district.leader || '',
+                    code: district.code || ''
+                })
+            } else {
+                // For new districts, use logged in user's state_id and region_id
+                reset({
+                    state_id: user?.state_id || 0,
+                    region_id: user?.region_id || 0,
+                    name: '',
+                    leader: '',
+                    code: ''
+                })
+            }
         }
-    }, [isOpen, district, reset, mode, stateId, regionId])
-
-    // Get display names for selected IDs
-    const getSelectedStateName = () => {
-        return states?.find(s => s.id === currentStateId)?.name || ''
-    }
-
-    const getSelectedRegionName = () => {
-        return regions?.find(r => r.id === currentRegionId)?.name || ''
-    }
+    }, [isOpen, district, reset, mode, user])
 
     return (
         <Dialog.Root
@@ -184,7 +142,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                             placeholder="District code will be auto-generated"
                                             value={watch('code')}
                                             readOnly={mode === 'add'}
-                                            bg={mode === 'add' ? "gray.50" : "white"}
+                                            // bg={mode === 'add' ? "gray.50" : "white"}
                                             {...register('code')}
                                         />
                                         <Field.HelperText>
@@ -207,29 +165,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {/* State Selection */}
-                                    <Field.Root required invalid={!!errors.state_id}>
-                                        <StateIdCombobox
-                                            value={getSelectedStateName()}
-                                            onChange={handleStateChange}
-                                            required
-                                            invalid={!!errors.state_id}
-                                        />
-                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Region Selection */}
-                                    <Field.Root required invalid={!!errors.region_id}>
-                                        <RegionIdCombobox
-                                            value={getSelectedRegionName()}
-                                            onChange={handleRegionChange}
-                                            required
-                                            invalid={!!errors.region_id}
-                                        />
-                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Hidden inputs for React Hook Form validation */}
+                                    {/* Hidden inputs for state_id and region_id from logged in user */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                 </VStack>

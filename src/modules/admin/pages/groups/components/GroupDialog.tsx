@@ -17,12 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
 import { useEffect } from "react"
-import { useStates } from "../../../hooks/useState"
-import { useRegions } from "../../../hooks/useRegion"
-import { useDistricts } from "../../../hooks/useDistrict"
-import DistrictIdCombobox from "@/modules/admin/components/DistrictIdCombobox"
-import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
-import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import { useMe } from "@/hooks/useMe"
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -45,55 +40,24 @@ const ACCESS_LEVELS = createListCollection({
 })
 
 const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupDialogProps) => {
-    const { states } = useStates()
-    const { regions } = useRegions()
-    const { districts } = useDistricts()
+    const { user } = useMe()
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<GroupFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
-            group_name: group?.group_name || '',
+            group_name: group?.name || '',
             leader: group?.leader || '',
-            access_level: group?.access_level || 'user',
+            access_level: 'user',
             state_id: group?.state_id || 0,
             region_id: group?.region_id || 0,
-            district_id: group?.district_id || 0,
         }
     })
 
-    const currentStateId = watch('state_id')
-    const currentRegionId = watch('region_id')
-    const currentDistrictId = watch('district_id')
     const currentAccessLevel = watch('access_level')
-
-    const handleStateChange = (stateName: string) => {
-        const state = states?.find(s => s.name === stateName)
-        if (state) {
-            setValue('state_id', state.id, { shouldValidate: true })
-            trigger('state_id')
-        }
-    }
-
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
-    }
-
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        if (district) {
-            setValue('district_id', district.id, { shouldValidate: true })
-            trigger('district_id')
-        }
-    }
 
     const handleAccessLevelChange = (value: string[]) => {
         if (value.length > 0) {
             setValue('access_level', value[0], { shouldValidate: true })
-            trigger('access_level')
         }
     }
 
@@ -107,32 +71,29 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
         reset()
     }
 
-    // Reset form when dialog opens with group data
+    // Reset form when dialog opens with group data or set from logged in user
     useEffect(() => {
-        if (isOpen && group) {
-            reset({
-                group_name: group.group_name,
-                leader: group.leader,
-                access_level: group.access_level,
-                state_id: group.state_id,
-                region_id: group.region_id,
-                district_id: group.district_id,
-            })
+        if (isOpen) {
+            if (group) {
+                reset({
+                    group_name: group.name,
+                    leader: group.leader || '',
+                    access_level: group.access_level || 'user',
+                    state_id: group.state_id || 0,
+                    region_id: group.region_id || 0,
+                })
+            } else {
+                // For new groups, use logged in user's state_id and region_id
+                reset({
+                    group_name: '',
+                    leader: '',
+                    access_level: 'user',
+                    state_id: user?.state_id || 0,
+                    region_id: user?.region_id || 0,
+                })
+            }
         }
-    }, [isOpen, group, reset])
-
-    // Get display names for selected IDs
-    const getSelectedStateName = () => {
-        return states?.find(s => s.id === currentStateId)?.name || ''
-    }
-
-    const getSelectedRegionName = () => {
-        return regions?.find(r => r.id === currentRegionId)?.name || ''
-    }
-
-    const getSelectedDistrictName = () => {
-        return districts?.find(d => d.id === currentDistrictId)?.name || ''
-    }
+    }, [isOpen, group, reset, user])
 
     return (
         <Dialog.Root
@@ -192,7 +153,6 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                             size="md"
                                         >
                                             <Select.HiddenSelect {...register('access_level')} />
-                                            <Select.Label>Select Access Level</Select.Label>
                                             <Select.Control>
                                                 <Select.Trigger cursor={"pointer"} rounded="lg">
                                                     <Select.ValueText placeholder="Select access level" />
@@ -217,43 +177,9 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                         <Field.ErrorText>{errors.access_level?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {/* State Selection */}
-                                    <Field.Root required invalid={!!errors.state_id}>
-                                        <StateIdCombobox
-                                            value={getSelectedStateName()}
-                                            onChange={handleStateChange}
-                                            required
-                                            invalid={!!errors.state_id}
-                                        />
-                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Region Selection */}
-                                    <Field.Root required invalid={!!errors.region_id}>
-                                        <RegionIdCombobox
-                                            value={getSelectedRegionName()}
-                                            onChange={handleRegionChange}
-                                            required
-                                            invalid={!!errors.region_id}
-                                        />
-                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* District Selection */}
-                                    <Field.Root required invalid={!!errors.district_id}>
-                                        <DistrictIdCombobox
-                                            value={getSelectedDistrictName()}
-                                            onChange={handleDistrictChange}
-                                            required
-                                            invalid={!!errors.district_id}
-                                        />
-                                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Hidden inputs for React Hook Form validation */}
+                                    {/* Hidden inputs for state_id and region_id from logged in user */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
-                                    <input type="hidden" {...register('district_id', { valueAsNumber: true })} />
                                 </VStack>
                             </form>
                         </Dialog.Body>

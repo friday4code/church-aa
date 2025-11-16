@@ -7,7 +7,6 @@ export const groupSchema = z.object({
     access_level: z.string().min(1, "Access level is required"),
     state_id: z.number().min(1, "State is required"),
     region_id: z.number().min(1, "Region is required"),
-    district_id: z.number().min(1, "District is required"),
 });
 
 export type GroupFormData = z.infer<typeof groupSchema>;

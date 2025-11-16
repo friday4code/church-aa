@@ -30,7 +30,7 @@ const DeleteConfirmationDialog = ({ isLoading, isOpen, group, onClose, onConfirm
                         </Dialog.Header>
                         <Dialog.Body>
                             <Text>
-                                Are you sure you want to delete <strong>{group?.group_name}</strong>?
+                                Are you sure you want to delete <strong>{group?.name}</strong>?
                                 This action cannot be undone and will permanently remove this group from the system.
                             </Text>
                         </Dialog.Body>

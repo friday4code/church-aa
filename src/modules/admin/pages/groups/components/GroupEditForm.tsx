@@ -13,8 +13,10 @@ import {
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect } from "react"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
+import { useMe } from "@/hooks/useMe"
 
 interface GroupEditFormProps {
     group: Group
@@ -34,17 +36,26 @@ const ACCESS_LEVELS = createListCollection({
 })
 
 const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<GroupFormData>({
+    const { user } = useMe()
+    
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
-            group_name: group.group_name,
-            leader: group.leader,
-            access_level: group.access_level,
-            state_id: group.state_id,
-            region_id: group.region_id,
-            district_id: group.district_id,
+            group_name: group.name,
+            leader: group.leader || '',
+            access_level: group.access_level || 'user',
+            state_id: user?.state_id || group.state_id || 0,
+            region_id: user?.region_id || group.region_id || 0,
         }
     })
+
+    // Set state_id and region_id from logged in user when form initializes
+    useEffect(() => {
+        if (user) {
+            setValue('state_id', user.state_id || 0)
+            setValue('region_id', user.region_id || 0)
+        }
+    }, [user, setValue])
 
     const currentAccessLevel = watch('access_level')
 
@@ -61,7 +72,7 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{group.group_name}</strong>
+                Editing: <strong>{group.name}</strong>
             </Text>
 
             <form id={`group-form-${group.id}`} onSubmit={handleSubmit(onSubmit)}>
@@ -124,44 +135,9 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                         <Field.ErrorText>{errors.access_level?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root required invalid={!!errors.state_id}>
-                        <Field.Label>State ID
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            type="number"
-                            rounded="lg"
-                            placeholder="Enter state ID"
-                            {...register('state_id', { valueAsNumber: true })}
-                        />
-                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    <Field.Root required invalid={!!errors.region_id}>
-                        <Field.Label>Region ID
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            type="number"
-                            rounded="lg"
-                            placeholder="Enter region ID"
-                            {...register('region_id', { valueAsNumber: true })}
-                        />
-                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    <Field.Root required invalid={!!errors.district_id}>
-                        <Field.Label>District ID
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            type="number"
-                            rounded="lg"
-                            placeholder="Enter district ID"
-                            {...register('district_id', { valueAsNumber: true })}
-                        />
-                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                    </Field.Root>
+                    {/* Hidden inputs for state_id and region_id from logged in user */}
+                    <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                 </VStack>
             </form>
 
