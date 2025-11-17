@@ -39,7 +39,8 @@ import { copyUserRightsToClipboard, exportUserRightsToExcel, exportUserRightsToC
 import NaijaStates from 'naija-state-local-government'
 import { userRightSchema, type UserRightFormData } from "../../schemas/userRights.scheme"
 import { type UserRight, useUserRightsStore } from "../../stores/userRights.store"
-import { useUsersStore } from "../../stores/users.store"
+import { useUsers } from "../../hooks/useUser"
+import type { User } from "@/types/users.type"
 
 // UUID generator function
 const uuid = () => {
@@ -224,33 +225,37 @@ const LGACombobox = ({ stateName, value, onChange, invalid = false }: {
 }
 
 // User Combobox Component
-const UserCombobox = ({ value, onChange, invalid = false }: {
+const UserCombobox = ({ users, value, onChange, invalid = false, isLoading = false }: {
+    users: User[];
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
     invalid?: boolean;
+    isLoading?: boolean;
 }) => {
     const [inputValue, setInputValue] = useState("")
-    const { users } = useUsersStore()
 
     const { collection, set } = useListCollection({
-        initialItems: users.map(user => ({
-            label: `${user.firstName} ${user.lastName}`,
-            value: user.id.toString()
-        })) as { label: string, value: string }[],
+        initialItems: [] as { label: string, value: string }[],
         itemToString: (item) => item.label,
         itemToValue: (item) => item.value,
     })
 
-    // Filter users based on input
+    // Populate and filter users based on input
     useEffect(() => {
+        if (!users) {
+            set([])
+            return
+        }
+
         const filtered = users
-            .filter(user =>
-                `${user.firstName} ${user.lastName}`.toLowerCase().includes(inputValue.toLowerCase()) ||
-                user.email.toLowerCase().includes(inputValue.toLowerCase())
-            )
+            .filter(user => {
+                const fullName = user.name?.toLowerCase() || ''
+                const email = user.email?.toLowerCase() || ''
+                return fullName.includes(inputValue.toLowerCase()) || email.includes(inputValue.toLowerCase())
+            })
             .map(user => ({
-                label: `${user.firstName} ${user.lastName}`,
+                label: user.name || user.email || `User ${user.id}`,
                 value: user.id.toString()
             }))
 
@@ -284,7 +289,9 @@ const UserCombobox = ({ value, onChange, invalid = false }: {
 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
-                    {collection.items.length === 0 ? (
+                    {isLoading ? (
+                        <Combobox.Empty>Loading users...</Combobox.Empty>
+                    ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No users found</Combobox.Empty>
                     ) : (
                         collection.items.map((item) => (
@@ -364,11 +371,13 @@ interface BulkEditDialogProps {
     isOpen: boolean
     selectedUserRights: number[]
     userRights: UserRight[]
+    users: User[]
+    isUsersLoading: boolean
     onClose: () => void
     onUpdate: (id: number, data: Partial<UserRightFormData>) => void
 }
 
-const BulkEditDialog = ({ isOpen, selectedUserRights, userRights, onClose, onUpdate }: BulkEditDialogProps) => {
+const BulkEditDialog = ({ isOpen, selectedUserRights, userRights, users, isUsersLoading, onClose, onUpdate }: BulkEditDialogProps) => {
     const [tabs, setTabs] = useState<Array<{ id: string; userRight: UserRight; title: string }>>([])
     const [selectedTab, setSelectedTab] = useState<string | null>(null)
 
@@ -448,6 +457,8 @@ const BulkEditDialog = ({ isOpen, selectedUserRights, userRights, onClose, onUpd
                                         <Tabs.Content value={tab.id} key={tab.id}>
                                             <UserRightEditForm
                                                 userRight={tab.userRight}
+                                                users={users}
+                                                isUsersLoading={isUsersLoading}
                                                 onUpdate={(data) => handleTabUpdate(tab.id, data)}
                                                 onCancel={() => removeTab(tab.id)}
                                             />

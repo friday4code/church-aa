@@ -14,8 +14,16 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { districtSchema, type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useMe } from "@/hooks/useMe"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
+import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
 interface DistrictDialogProps {
     isLoading?: boolean
@@ -28,6 +36,10 @@ interface DistrictDialogProps {
 
 const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: DistrictDialogProps) => {
     const { user } = useMe()
+    const { oldGroups } = useOldGroups()
+    const { groups: allGroups } = useGroups()
+    const { states } = useStates()
+    const { regions } = useRegions()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
         resolver: zodResolver(districtSchema),
@@ -36,9 +48,144 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
             region_id: district?.region_id || 0,
             name: district?.name || '',
             leader: district?.leader || '',
-            code: district?.code || ''
+            code: district?.code || '',
+            old_group_id: district?.old_group_id || 0,
+            group_id: district?.group_id || 0,
         }
     })
+
+    const currentStateName = watch('state_name')
+    const currentRegionName = watch('region_name')
+    const currentOldGroupName = watch('old_group_name')
+    const currentGroupName = watch('group_name')
+
+    // Filter groups based on selected old group
+    const filteredGroups = useMemo(() => {
+        if (!currentOldGroupName || !oldGroups || !allGroups) {
+            return []
+        }
+
+        const selectedOldGroup = oldGroups.find(og => og.name === currentOldGroupName)
+
+        if (!selectedOldGroup) {
+            return []
+        }
+
+        // Filter groups that belong to the selected old group
+        return allGroups.filter(group => group.old_group === selectedOldGroup.name)
+    }, [currentOldGroupName, oldGroups, allGroups])
+
+    // Get state name for display
+    const selectedStateName = useMemo(() => {
+        if (currentStateName) {
+            return currentStateName
+        }
+        if (district?.state) {
+            return district.state
+        }
+        return ''
+    }, [currentStateName, district?.state])
+
+    // Get region name for display
+    const selectedRegionName = useMemo(() => {
+        if (currentRegionName) {
+            return currentRegionName
+        }
+        if (district?.region) {
+            return district.region
+        }
+        return ''
+    }, [currentRegionName, district?.region])
+
+    // Get old group name for display
+    const selectedOldGroupName = useMemo(() => {
+        if (currentOldGroupName) {
+            return currentOldGroupName
+        }
+        if (district?.old_group) {
+            return district.old_group
+        }
+        return ''
+    }, [currentOldGroupName, district?.old_group])
+
+    // Get group name for display
+    const selectedGroupName = useMemo(() => {
+        if (currentGroupName) {
+            return currentGroupName
+        }
+        if (district?.group) {
+            return district.group
+        }
+        return ''
+    }, [currentGroupName, district?.group])
+
+    // Handle state selection - convert name to ID
+    const handleStateChange = (stateName: string) => {
+        if (stateName) {
+            const state = states?.find(s => s.name === stateName)
+            if (state) {
+                setValue('state_id', state.id, { shouldValidate: true })
+                setValue('state_name', stateName)
+                // Clear region when state changes
+                setValue('region_id', undefined as any)
+                setValue('region_name', '')
+            }
+        } else {
+            setValue('state_id', undefined as any)
+            setValue('state_name', '')
+            setValue('region_id', undefined as any)
+            setValue('region_name', '')
+        }
+    }
+
+    // Handle region selection - convert name to ID
+    const handleRegionChange = (regionName: string) => {
+        if (regionName) {
+            const region = regions?.find(r => r.name === regionName)
+            if (region) {
+                setValue('region_id', region.id, { shouldValidate: true })
+                setValue('region_name', regionName)
+            }
+        } else {
+            setValue('region_id', undefined as any)
+            setValue('region_name', '')
+        }
+    }
+
+    // Handle old group selection - convert name to ID
+    const handleOldGroupChange = (oldGroupName: string) => {
+        if (oldGroupName) {
+            const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+            if (oldGroup) {
+                setValue('old_group_id', oldGroup.id, { shouldValidate: true })
+                setValue('old_group_name', oldGroupName)
+                // Clear group when old group changes
+                setValue('group_id', undefined as any)
+                setValue('group_name', '')
+            }
+        } else {
+            setValue('old_group_id', undefined as any)
+            setValue('old_group_name', '')
+            setValue('group_id', undefined as any)
+            setValue('group_name', '')
+        }
+    }
+
+    // Handle group selection - convert name to ID
+    const handleGroupChange = (groupName: string) => {
+        if (groupName) {
+            const group = filteredGroups.find(g => g.name === groupName)
+            if (group) {
+                setValue('group_id', group.id, { shouldValidate: true })
+                setValue('group_name', groupName)
+            }
+        } else {
+            setValue('group_id', undefined as any)
+            setValue('group_name', '')
+        }
+    }
+
+
 
     // Helper function to generate district code from district name
     const generateDistrictCode = (districtName: string): string => {
@@ -69,6 +216,11 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         reset()
     }
 
+    const handleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        handleSubmit(onSubmit)(e)
+    }
+
     const handleClose = () => {
         onClose()
         reset()
@@ -78,12 +230,31 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     useEffect(() => {
         if (isOpen) {
             if (district) {
+                // Use IDs directly if available, otherwise find from names
+                let oldGroupId: number | undefined = district.old_group_id
+                let groupId: number | undefined = district.group_id
+
+                // Fallback to lookup from names if IDs are not available
+                if (!oldGroupId && district.old_group && oldGroups) {
+                    const foundOldGroup = oldGroups.find(og => og.name === district.old_group)
+                    oldGroupId = foundOldGroup?.id
+                }
+
+                if (!groupId && district.group && allGroups) {
+                    const foundGroup = allGroups.find(g => g.name === district.group)
+                    groupId = foundGroup?.id
+                }
+
                 reset({
                     state_id: district.state_id || 0,
                     region_id: district.region_id || 0,
                     name: district.name,
                     leader: district.leader || '',
-                    code: district.code || ''
+                    code: district.code || '',
+                    old_group_id: oldGroupId || 0,
+                    group_id: groupId || 0,
+                    old_group_name: district.old_group || '',
+                    group_name: district.group || '',
                 })
             } else {
                 // For new districts, use logged in user's state_id and region_id
@@ -92,11 +263,15 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                     region_id: user?.region_id || 0,
                     name: '',
                     leader: '',
-                    code: ''
+                    code: '',
+                    old_group_id: 0,
+                    group_id: 0,
+                    old_group_name: '',
+                    group_name: '',
                 })
             }
         }
-    }, [isOpen, district, reset, mode, user])
+    }, [isOpen, district, reset, mode, user, oldGroups, allGroups])
 
     return (
         <Dialog.Root
@@ -119,7 +294,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                         </Dialog.Header>
 
                         <Dialog.Body>
-                            <form noValidate id="district-form" onSubmit={handleSubmit(onSubmit)}>
+                            <form noValidate id="district-form" onSubmit={handleFormSubmit}>
                                 <VStack gap="4" colorPalette={"accent"}>
 
                                     <Field.Root required invalid={!!errors.name}>
@@ -135,8 +310,10 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    <Field.Root invalid={!!errors.code}>
-                                        <Field.Label>District Code</Field.Label>
+                                    <Field.Root required invalid={!!errors.code}>
+                                        <Field.Label>District Code
+                                            <Field.RequiredIndicator />
+                                        </Field.Label>
                                         <Input
                                             rounded="lg"
                                             placeholder="District code will be auto-generated"
@@ -165,9 +342,57 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {/* Hidden inputs for state_id and region_id from logged in user */}
-                                    <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
-                                    <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                                    {/* State Selection */}
+                                    <Field.Root required invalid={!!errors.state_id}>
+                                        <StateIdCombobox
+                                            value={selectedStateName}
+                                            onChange={handleStateChange}
+                                            invalid={!!errors.state_id}
+                                        />
+                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    {/* Region Selection - filtered by selected state */}
+                                    <Field.Root required invalid={!!errors.region_id}>
+                                        <RegionIdCombobox
+                                            value={selectedRegionName}
+                                            onChange={handleRegionChange}
+                                            invalid={!!errors.region_id}
+                                            items={regions?.filter(r => r.state_id === watch('state_id')) || []}
+                                            disabled={!currentStateName}
+                                        />
+                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    {/* Old Group Selection */}
+                                    <Field.Root required invalid={!!errors.old_group_id}>
+                                        <OldGroupIdCombobox
+                                            value={selectedOldGroupName}
+                                            onChange={handleOldGroupChange}
+                                            invalid={!!errors.old_group_id}
+                                        />
+                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    {/* Group Selection - filtered by selected old group */}
+                                    <Field.Root required invalid={!!errors.group_id}>
+                                        <GroupIdCombobox
+                                            value={selectedGroupName}
+                                            onChange={handleGroupChange}
+                                            invalid={!!errors.group_id}
+                                            items={filteredGroups}
+                                            disabled={!currentOldGroupName}
+                                        />
+                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    {/* Hidden inputs for state_id, region_id, old_group_id, and group_id */}
+                                    <input type="hidden" {...register('state_id')} />
+                                    <input type="hidden" {...register('region_id')} />
+                                    <input type="hidden" {...register('old_group_id')} />
+                                    <input type="hidden" {...register('group_id')} />
+                                    <input type="hidden" {...register('old_group_name')} />
+                                    <input type="hidden" {...register('group_name')} />
                                 </VStack>
                             </form>
                         </Dialog.Body>

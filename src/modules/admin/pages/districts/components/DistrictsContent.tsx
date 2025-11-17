@@ -226,10 +226,21 @@ export const DistrictsContent = () => {
     }
 
     const handleSaveDistrict = (data: DistrictFormData) => {
+        console.log("handleSaveDistrict called with data:", data);
+        console.log("dialogState:", dialogState);
+
+        // Remove temporary UI fields that are not part of the API payload
+        const { old_group_name, group_name, ...apiData } = data
+        console.log("Filtered API data:", apiData);
+
         if (dialogState.mode === 'add') {
-            createDistrict(data as District)
+            console.log("Creating district with data:", apiData);
+            createDistrict(apiData as District)
         } else if (dialogState.district) {
-            updateDistrict({ id: dialogState.district.id, data })
+            console.log("Updating district", dialogState.district.id, "with data:", apiData);
+            updateDistrict({ id: dialogState.district.id, data: apiData })
+        } else {
+            console.error("No district to update - dialogState.district is undefined");
         }
     }
 

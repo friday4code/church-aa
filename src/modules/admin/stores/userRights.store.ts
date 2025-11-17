@@ -1,7 +1,6 @@
 // stores/userRights.store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useUsersStore } from './users.store';
 import type { UserRightFormData } from '../schemas/userRights.scheme';
 
 export interface UserRight {
@@ -21,8 +20,8 @@ export interface UserRight {
 
 interface UserRightsStore {
     userRights: UserRight[];
-    addUserRight: (data: UserRightFormData) => void;
-    updateUserRight: (id: number, data: Partial<UserRightFormData>) => void;
+    addUserRight: (data: UserRightFormData, options?: { userName?: string }) => void;
+    updateUserRight: (id: number, data: Partial<UserRightFormData>, options?: { userName?: string }) => void;
     deleteUserRight: (id: number) => void;
     setUserRights: (userRights: UserRight[]) => void;
 }
@@ -78,10 +77,8 @@ export const useUserRightsStore = create<UserRightsStore>()(
                 },
                 // Add more sample user rights as needed
             ],
-            addUserRight: (data) => {
-                const { users } = useUsersStore.getState();
-                const user = users.find(u => u.id.toString() === data.userId);
-                const userName = user ? `${user.firstName} ${user.lastName}` : 'Unknown User';
+            addUserRight: (data, options) => {
+                const userName = options?.userName || 'Unknown User';
 
                 // Determine access scope based on the data
                 let accessScope = 'All States';
@@ -95,9 +92,12 @@ export const useUserRightsStore = create<UserRightsStore>()(
                     accessScope = data.stateName;
                 }
 
+                const parsedUserId = parseInt(data.userId, 10);
+                const safeUserId = Number.isNaN(parsedUserId) ? 0 : parsedUserId;
+
                 const newUserRight: UserRight = {
                     id: Date.now(),
-                    userId: parseInt(data.userId),
+                    userId: safeUserId,
                     userName,
                     stateName: data.stateName,
                     regionName: data.regionName,
@@ -111,33 +111,37 @@ export const useUserRightsStore = create<UserRightsStore>()(
                 };
                 set((state) => ({ userRights: [...state.userRights, newUserRight] }));
             },
-            updateUserRight: (id, data) => {
-                const { users } = useUsersStore.getState();
-
+            updateUserRight: (id, data, options) => {
                 set((state) => ({
                     userRights: state.userRights.map((userRight) => {
                         if (userRight.id === id) {
                             const updatedData = { ...userRight, ...data, updatedAt: new Date() };
 
-                            //     // Update userName if userId changed
+                            // Update user reference if supplied
                             if (data.userId) {
-                                const user = users.find(u => u.id.toString() === data.userId);
-                                updatedData.userName = user ? `${user.firstName} ${user.lastName}` : userRight.userName;
-                                updatedData.userId = parseInt(data.userId);
+                                const parsedUserId = parseInt(data.userId);
+                                if (!Number.isNaN(parsedUserId)) {
+                                    updatedData.userId = parsedUserId;
+                                }
                             }
 
-                            //     // Update access scope
-                            if (data.districtName) {
-                                updatedData.accessScope = data.districtName;
-                            } else if (data.groupName) {
-                                updatedData.accessScope = data.groupName;
-                            } else if (data.regionName) {
-                                updatedData.accessScope = data.regionName;
-                            } else if (data.stateName) {
-                                updatedData.accessScope = data.stateName;
-                            } else {
-                                updatedData.accessScope = 'All States';
+                            if (options?.userName) {
+                                updatedData.userName = options.userName;
                             }
+
+                            // Update access scope
+                            let nextAccessScope = userRight.accessScope;
+                            if (data.districtName) {
+                                nextAccessScope = data.districtName;
+                            } else if (data.groupName) {
+                                nextAccessScope = data.groupName;
+                            } else if (data.regionName) {
+                                nextAccessScope = data.regionName;
+                            } else if (data.stateName) {
+                                nextAccessScope = data.stateName;
+                            }
+
+                            updatedData.accessScope = nextAccessScope;
 
                             return updatedData as UserRight;
                         }
