@@ -14,8 +14,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { regionSchema, type RegionFormData } from "../../../schemas/region.schema"
 import type { Region } from "@/types/regions.type"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useMe } from "@/hooks/useMe"
+import { useStates } from "@/modules/admin/hooks/useState"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 
 interface RegionDialogProps {
     isLoading?: boolean
@@ -28,6 +30,7 @@ interface RegionDialogProps {
 
 const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: RegionDialogProps) => {
     const { user } = useMe()
+    const { states } = useStates()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<RegionFormData>({
         resolver: zodResolver(regionSchema),
@@ -41,6 +44,22 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
 
     const currentName = watch('name')
     const currentCode = watch('code')
+    const currentStateId = watch('state_id')
+
+    const isSuperAdmin = user?.roles?.includes('Super Admin')
+
+    const selectedStateName = useMemo(() => {
+        if (states && currentStateId) {
+            const match = states.find(state => state.id === currentStateId)
+            if (match) {
+                return match.name
+            }
+        }
+        if (region?.state) {
+            return region.state
+        }
+        return ''
+    }, [states, currentStateId, region?.state])
 
     // Helper function to generate state code from state name
     const generateRegionCode = (stateName: string): string => {
@@ -51,9 +70,19 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
         return cleanName.substring(0, 3).toUpperCase()
     }
 
+    const handleStateChange = (stateName: string) => {
+        if (!stateName) {
+            setValue('state_id', 0, { shouldValidate: true })
+            return
+        }
+
+        const selectedState = states?.find(state => state.name === stateName)
+        if (selectedState) {
+            setValue('state_id', selectedState.id, { shouldValidate: true })
+        }
+    }
+
     const onSubmit = (data: RegionFormData) => {
-        console.log("sdata",data);
-        
         onSave(data)
         reset()
     }
@@ -77,7 +106,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             if (region) {
                 reset({
                     name: region.name,
-                    state_id: region.state_id,
+                    state_id: region.state_id ?? 0,
                     leader: region.leader,
                     code: region.code
                 })
@@ -95,6 +124,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     return (
         <>
             <Dialog.Root
+                role="alertdialog"
                 open={isOpen}
                 onOpenChange={(e) => {
                     if (!e.open) {
@@ -126,6 +156,36 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                                             />
                                             <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
                                         </Field.Root>
+
+                                        {isSuperAdmin ? (
+                                            <Field.Root required invalid={!!errors.state_id}>
+                                                <StateIdCombobox
+                                                    value={selectedStateName}
+                                                    onChange={handleStateChange}
+                                                    invalid={!!errors.state_id}
+                                                />
+                                                <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+                                        ) : (
+                                            <Field.Root required invalid={!!errors.state_id}>
+                                                <Field.Label>
+                                                    State
+                                                    <Field.RequiredIndicator />
+                                                </Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    value={selectedStateName || 'State will be auto-selected'}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                                {!selectedStateName && (
+                                                    <Field.HelperText>
+                                                        State will be taken from your profile
+                                                    </Field.HelperText>
+                                                )}
+                                                <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+                                        )}
 
                                         {/* Hidden input for state_id that React Hook Form can validate */}
                                         <input

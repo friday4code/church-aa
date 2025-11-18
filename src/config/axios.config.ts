@@ -206,11 +206,13 @@ axiosClient.interceptors.response.use(
         // Token refresh failed → force logout
         useAuthStore.getState().logout();
 
-        toaster.error({
-          title: "Session Expired",
-          description: "Your session has expired. Please login again.",
-          closable: true
-        });
+        if (!isPublicEndpoint(originalRequest.url)) {
+          toaster.error({
+            title: "Session Expired",
+            description: "Your session has expired. Please login again.",
+            closable: true
+          });
+        }
 
         return Promise.reject(refreshError);
       }

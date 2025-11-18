@@ -14,8 +14,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useMe } from "@/hooks/useMe"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
 interface OldGroupDialogProps {
     isLoading?: boolean
@@ -28,6 +32,8 @@ interface OldGroupDialogProps {
 
 const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: OldGroupDialogProps) => {
     const { user } = useMe()
+    const { states } = useStates()
+    const { regions } = useRegions()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
@@ -42,12 +48,59 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
 
     const currentName = watch('name')
     const currentCode = watch('code')
+    const currentStateId = watch('state_id')
+    const currentRegionId = watch('region_id')
+
+    const isSuperAdmin = user?.roles?.includes('Super Admin')
+
+    const selectedStateName = useMemo(() => {
+        if (states && currentStateId) {
+            const match = states.find(state => state.id === currentStateId)
+            if (match) return match.name
+        }
+        return ''
+    }, [states, currentStateId])
+
+    const selectedRegionName = useMemo(() => {
+        if (regions && currentRegionId) {
+            const match = regions.find(region => region.id === currentRegionId)
+            if (match) return match.name
+        }
+        return ''
+    }, [regions, currentRegionId])
 
     const handleNameChange = (value: string) => {
         setValue('name', value)
         // Generate code from name
         const generatedCode = value ? generateGroupCode(value) : ''
         setValue('code', generatedCode)
+    }
+
+    const handleStateChange = (stateName: string) => {
+        if (!stateName) {
+            setValue('state_id', 0, { shouldValidate: true })
+            setValue('region_id', 0)
+            return
+        }
+
+        const selectedState = states?.find(state => state.name === stateName)
+        if (selectedState) {
+            setValue('state_id', selectedState.id, { shouldValidate: true })
+            // Reset region when state changes
+            setValue('region_id', 0, { shouldValidate: true })
+        }
+    }
+
+    const handleRegionChange = (regionName: string) => {
+        if (!regionName) {
+            setValue('region_id', 0, { shouldValidate: true })
+            return
+        }
+
+        const selectedRegion = regions?.find(region => region.name === regionName)
+        if (selectedRegion) {
+            setValue('region_id', selectedRegion.id, { shouldValidate: true })
+        }
     }
 
     const generateGroupCode = (groupName: string): string => {
@@ -156,7 +209,55 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                         </Field.Root>
 
-                                        {/* Hidden inputs for state_id and region_id from logged in user */}
+                                        {isSuperAdmin ? (
+                                            <>
+                                                <Field.Root required invalid={!!errors.state_id}>
+                                                    <StateIdCombobox
+                                                        value={selectedStateName}
+                                                        onChange={handleStateChange}
+                                                        invalid={!!errors.state_id}
+                                                    />
+                                                    <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                                </Field.Root>
+
+                                                <Field.Root required invalid={!!errors.region_id}>
+                                                    <RegionIdCombobox
+                                                        value={selectedRegionName}
+                                                        onChange={handleRegionChange}
+                                                        invalid={!!errors.region_id}
+                                                        items={regions?.filter(region => region.state_id === currentStateId) || []}
+                                                        disabled={!currentStateId}
+                                                    />
+                                                    <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                                </Field.Root>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Field.Root required invalid={!!errors.state_id}>
+                                                    <Field.Label>State</Field.Label>
+                                                    <Input
+                                                        rounded="lg"
+                                                        value={selectedStateName || 'State will be auto-selected'}
+                                                        readOnly
+                                                        disabled
+                                                    />
+                                                    <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                                </Field.Root>
+
+                                                <Field.Root required invalid={!!errors.region_id}>
+                                                    <Field.Label>Region</Field.Label>
+                                                    <Input
+                                                        rounded="lg"
+                                                        value={selectedRegionName || 'Region will be auto-selected'}
+                                                        readOnly
+                                                        disabled
+                                                    />
+                                                    <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                                </Field.Root>
+                                            </>
+                                        )}
+
+                                        {/* Hidden inputs for state_id and region_id */}
                                         <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                         <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                     </VStack>

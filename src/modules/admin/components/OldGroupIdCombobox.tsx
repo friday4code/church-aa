@@ -10,16 +10,18 @@ import {
 import { useState, useEffect } from "react"
 
 
-const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
+const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
     onChange: (value: string) => void;
     required?: boolean;
     invalid?: boolean;
     disabled?: boolean;
+    items?: OldGroup[];
 }) => {
     const [inputValue, setInputValue] = useState("")
     const { oldGroups: data, isLoading } = useOldGroups()
-    const oldGroups: OldGroup[] = data || [];
+    const oldGroups: OldGroup[] = items || data || [];
+    const shouldShowLoading = !items && isLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -29,7 +31,10 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
 
     // Update collection when oldGroups data loads or input changes
     useEffect(() => {
-        if (!oldGroups || oldGroups.length === 0) return
+        if (!oldGroups || oldGroups.length === 0) {
+            set([])
+            return
+        }
 
         const filtered = oldGroups
             .filter(g => g.name.toLowerCase().includes(inputValue.toLowerCase()))
@@ -59,7 +64,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
     return (
         <Combobox.Root
             required={required}
-            disabled={disabled || isLoading}
+            disabled={disabled || shouldShowLoading}
             collection={collection}
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
@@ -75,7 +80,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={isLoading ? "Loading old groups..." : "Select old group"}
+                    placeholder={shouldShowLoading ? "Loading old groups..." : "Select old group"}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -85,7 +90,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
 
             <Combobox.Positioner>
                 <Combobox.Content rounded="xl">
-                    {isLoading ? (
+                    {shouldShowLoading ? (
                         <Combobox.Empty>Loading old groups...</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No old groups found</Combobox.Empty>

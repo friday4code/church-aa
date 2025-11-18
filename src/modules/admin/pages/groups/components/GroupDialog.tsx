@@ -20,6 +20,10 @@ import { useEffect, useMemo } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -44,6 +48,8 @@ const ACCESS_LEVELS = createListCollection({
 const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupDialogProps) => {
     const { user } = useMe()
     const { oldGroups } = useOldGroups()
+    const { states } = useStates()
+    const { regions } = useRegions()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
@@ -59,6 +65,11 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
 
     const currentAccessLevel = watch('access_level')
     const currentOldGroupName = watch('old_group_name')
+    const currentStateId = watch('state_id')
+    const currentRegionId = watch('region_id')
+    const currentOldGroupId = watch('old_group_id')
+
+    const isSuperAdmin = user?.roles?.includes('Super Admin')
 
     // Get old group name for display
     const selectedOldGroupName = useMemo(() => {
@@ -73,10 +84,37 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
         return ''
     }, [currentOldGroupName, group?.old_group])
 
+    const selectedStateName = useMemo(() => {
+        if (states && currentStateId) {
+            const match = states.find(state => state.id === currentStateId)
+            if (match) return match.name
+        }
+        return ''
+    }, [states, currentStateId])
+
+    const selectedRegionName = useMemo(() => {
+        if (regions && currentRegionId) {
+            const match = regions.find(region => region.id === currentRegionId)
+            if (match) return match.name
+        }
+        return ''
+    }, [regions, currentRegionId])
+
+    const availableOldGroups = useMemo(() => {
+        if (!oldGroups || oldGroups.length === 0) return []
+        if (currentRegionId) {
+            return oldGroups.filter(og => og.region_id === currentRegionId)
+        }
+        if (currentStateId) {
+            return oldGroups.filter(og => og.state_id === currentStateId)
+        }
+        return oldGroups
+    }, [oldGroups, currentRegionId, currentStateId])
+
     // Handle old group selection - convert name to ID
     const handleOldGroupChange = (oldGroupName: string) => {
         if (oldGroupName) {
-            const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+            const oldGroup = availableOldGroups?.find(og => og.name === oldGroupName) || oldGroups?.find(og => og.name === oldGroupName)
             if (oldGroup) {
                 setValue('old_group_id', oldGroup.id, { shouldValidate: true })
                 setValue('old_group_name', oldGroupName)
@@ -90,6 +128,40 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
     const handleAccessLevelChange = (value: string[]) => {
         if (value.length > 0) {
             setValue('access_level', value[0], { shouldValidate: true })
+        }
+    }
+
+    const handleStateChange = (stateName: string) => {
+        if (!stateName) {
+            setValue('state_id', 0, { shouldValidate: true })
+            setValue('region_id', 0)
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
+            return
+        }
+
+        const selectedState = states?.find(state => state.name === stateName)
+        if (selectedState) {
+            setValue('state_id', selectedState.id, { shouldValidate: true })
+            setValue('region_id', 0, { shouldValidate: true })
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
+        }
+    }
+
+    const handleRegionChange = (regionName: string) => {
+        if (!regionName) {
+            setValue('region_id', 0, { shouldValidate: true })
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
+            return
+        }
+
+        const selectedRegion = regions?.find(region => region.name === regionName)
+        if (selectedRegion) {
+            setValue('region_id', selectedRegion.id, { shouldValidate: true })
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
         }
     }
 
@@ -137,6 +209,18 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             }
         }
     }, [isOpen, group, reset, user, oldGroups])
+
+    // Auto-select old group for non super admins during creation
+    useEffect(() => {
+        if (isSuperAdmin || mode !== 'add' || group) return
+        if (!currentRegionId || !oldGroups || oldGroups.length === 0) return
+
+        const matchingOldGroup = oldGroups.find(og => og.region_id === currentRegionId)
+        if (matchingOldGroup && currentOldGroupId !== matchingOldGroup.id) {
+            setValue('old_group_id', matchingOldGroup.id, { shouldValidate: true })
+            setValue('old_group_name', matchingOldGroup.name)
+        }
+    }, [isSuperAdmin, mode, group, currentRegionId, oldGroups, currentOldGroupId, setValue])
 
     return (
         <Dialog.Root
@@ -220,15 +304,75 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                         <Field.ErrorText>{errors.access_level?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {/* Old Group Selection */}
-                                    <Field.Root invalid={!!errors.old_group_id}>
-                                        <OldGroupIdCombobox
-                                            value={selectedOldGroupName}
-                                            onChange={handleOldGroupChange}
-                                            invalid={!!errors.old_group_id}
-                                        />
-                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {isSuperAdmin ? (
+                                        <>
+                                            <Field.Root required invalid={!!errors.state_id}>
+                                                <StateIdCombobox
+                                                    value={selectedStateName}
+                                                    onChange={handleStateChange}
+                                                    invalid={!!errors.state_id}
+                                                />
+                                                <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+
+                                            <Field.Root required invalid={!!errors.region_id}>
+                                                <RegionIdCombobox
+                                                    value={selectedRegionName}
+                                                    onChange={handleRegionChange}
+                                                    invalid={!!errors.region_id}
+                                                    items={regions?.filter(region => region.state_id === currentStateId) || []}
+                                                    disabled={!currentStateId}
+                                                />
+                                                <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+
+                                            <Field.Root invalid={!!errors.old_group_id}>
+                                                <OldGroupIdCombobox
+                                                    value={selectedOldGroupName}
+                                                    onChange={handleOldGroupChange}
+                                                    invalid={!!errors.old_group_id}
+                                                    items={availableOldGroups}
+                                                    disabled={!currentRegionId}
+                                                />
+                                                <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Field.Root required invalid={!!errors.state_id}>
+                                                <Field.Label>State</Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    value={selectedStateName || 'State will be auto-selected'}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                                <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+
+                                            <Field.Root required invalid={!!errors.region_id}>
+                                                <Field.Label>Region</Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    value={selectedRegionName || 'Region will be auto-selected'}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                                <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+
+                                            <Field.Root invalid={!!errors.old_group_id}>
+                                                <Field.Label>Old Group</Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    value={selectedOldGroupName || 'Old group will be auto-selected'}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                                <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                            </Field.Root>
+                                        </>
+                                    )}
 
                                     {/* Hidden inputs for state_id, region_id, and old_group_id */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
