@@ -261,7 +261,6 @@ const Content = () => {
         const apiData: any = {
             group_name: data.group_name,
             leader: data.leader,
-            access_level: data.access_level,
             state_id: data.state_id,
             region_id: data.region_id,
         }

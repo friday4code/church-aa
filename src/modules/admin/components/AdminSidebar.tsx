@@ -9,7 +9,7 @@ import {
     Center
 } from "@chakra-ui/react";
 import { NavLink, useLocation, useNavigate } from "react-router";
-import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
+import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, Notepad, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuth } from "@/hooks/useAuth";
 import { ColorModeButton } from "@/components/ui/color-mode";
@@ -74,6 +74,7 @@ const AdminSidebar: React.FC = () => {
         { name: "Districts", href: "/admin/districts", icon: <Map1 variant="Bulk" /> },
         { name: "Users and Rights", href: "/admin/users", icon: <People variant="Bulk" /> },
         { name: "Attendance", href: "/admin/attendance", icon: <NoteText variant="Bulk" /> },
+        { name: "Attendance Logs", href: "/admin/attendance-logs", icon: <Notepad variant="Bulk" /> },
         { name: "Youth Ministry", href: "/admin/youth_ministry", icon: <House variant="Bulk" /> },
         { name: "Reports", href: "/admin/reports", icon: <Chart1 variant="Bulk" /> },
         // { name: "Profile", href: "/admin/profile", icon: <User variant="Bulk" /> },

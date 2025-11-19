@@ -5,6 +5,7 @@ import {
     useListCollection,
 } from "@chakra-ui/react"
 import { useState, useEffect } from "react"
+import type { KeyboardEvent } from "react"
 import NaijaStates from 'naija-state-local-government'
 
 // Get all Nigerian states
@@ -33,14 +34,67 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
             )
             .map(state => ({ label: state, value: state }))
 
+        // Add custom value if it doesn't already exist
+        if (
+            inputValue.trim() &&
+            !filtered.some(item => item.value.toLowerCase() === inputValue.toLowerCase())
+        ) {
+            filtered.push({
+                label: inputValue,
+                value: inputValue,
+            })
+        }
+
         set(filtered)
     }, [inputValue, set])
+
+    // Keep input value in sync with external value
+    useEffect(() => {
+        if (value) {
+            setInputValue(value)
+        } else {
+            setInputValue("")
+        }
+    }, [value])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
             onChange(details.value[0])
         } else {
             onChange('')
+        }
+    }
+
+    const ensureCustomValue = () => {
+        const trimmedValue = inputValue.trim()
+
+        if (!trimmedValue) {
+            return
+        }
+
+        if (!collection.items.some(item => item.value.toLowerCase() === trimmedValue.toLowerCase())) {
+            set([
+                ...collection.items,
+                {
+                    label: trimmedValue,
+                    value: trimmedValue,
+                }
+            ])
+        }
+
+        onChange(trimmedValue)
+    }
+
+    const handleBlur = () => {
+        if (inputValue.trim() && inputValue !== value) {
+            ensureCustomValue()
+        }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            event.preventDefault()
+            ensureCustomValue()
         }
     }
 
@@ -51,12 +105,17 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
             value={value ? [value] : []}
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInteractOutside={handleBlur}
             invalid={invalid}
             openOnClick
         >
             <Combobox.Label>State Name</Combobox.Label>
             <Combobox.Control>
-                <Combobox.Input rounded="xl" placeholder="Select state" />
+                <Combobox.Input
+                    rounded="xl"
+                    placeholder="Select state"
+                    onKeyDown={handleKeyDown}
+                />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
                     <Combobox.Trigger />

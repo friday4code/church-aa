@@ -77,7 +77,6 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
         const templateData = data.map(group => ({
             "GROUP NAME": group.name,
             "LEADER": group.leader,
-            "ACCESS LEVEL": group.access_level,
             "STATE ID": group.state_id,
             "REGION ID": group.region_id,
         }))
@@ -121,7 +120,6 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                 try {
                     const groupName = row['Group Name'] || row['groupName'] || row['GROUP NAME'] || row['group_name']
                     const leader = row['Leader'] || row['leader'] || row['LEADER']
-                    const accessLevel = row['Access Level'] || row['accessLevel'] || row['ACCESS LEVEL'] || row['access_level']
                     const stateId = parseInt(row['State ID'] || row['stateId'] || row['STATE ID'] || row['state_id'])
                     const regionId = parseInt(row['Region ID'] || row['regionId'] || row['REGION ID'] || row['region_id'])
 
@@ -145,7 +143,6 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                     const groupData: CreateGroupData = {
                         group_name: groupName,
                         leader: leader || '',
-                        access_level: accessLevel || 'user', // Default value
                         state_id: stateId,
                         region_id: regionId || 0, // Default value
                     }

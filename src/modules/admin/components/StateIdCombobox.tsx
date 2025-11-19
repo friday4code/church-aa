@@ -29,7 +29,18 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
 
     // Update collection when states data loads or input changes
     useEffect(() => {
-        if (!states || states.length === 0) return
+        if (!states || states.length === 0) {
+            // Allow custom value even when no states are loaded
+            if (inputValue.trim()) {
+                set([{
+                    label: inputValue,
+                    value: inputValue
+                }])
+            } else {
+                set([])
+            }
+            return
+        }
 
         const filteredStates = states
             .filter(state =>
@@ -40,6 +51,14 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
                 value: state.name
             }))
 
+        // Add custom value if input doesn't match any existing state
+        if (inputValue.trim() && !filteredStates.some(s => s.value.toLowerCase() === inputValue.toLowerCase())) {
+            filteredStates.push({
+                label: inputValue,
+                value: inputValue
+            })
+        }
+
         set(filteredStates)
     }, [states, inputValue, set])
 
@@ -49,6 +68,13 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             onChange(selectedState)
         } else {
             onChange('')
+        }
+    }
+
+    // Handle blur to accept custom value
+    const handleBlur = () => {
+        if (inputValue.trim() && inputValue !== value) {
+            onChange(inputValue.trim())
         }
     }
 
@@ -70,6 +96,7 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInteractOutside={handleBlur}
             invalid={invalid}
             closeOnSelect={true}
             openOnClick

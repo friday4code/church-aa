@@ -7,7 +7,6 @@ export interface Group {
     state: string;
     region: string;
     district: string;
-    access_level?: string;
     state_id?: number;
     region_id?: number;
     old_group_id?: number;
@@ -21,7 +20,6 @@ export type Groups = Group[];
 export interface CreateGroupData {
     group_name: string;
     leader: string;
-    access_level: string;
     state_id: number;
     region_id: number;
     old_group_id?: number;
