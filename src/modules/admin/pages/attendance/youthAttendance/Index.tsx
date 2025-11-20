@@ -1,7 +1,7 @@
 // components/dashboard/YouthAttendanceDashboard.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link, useNavigate } from "react-router"
 import {
     Box,
@@ -73,10 +73,10 @@ const Content = () => {
     // Get all youth attendance data from API
     const { data: weeklyData, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
     const { data: revivalData, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
-    
-    const youthWeeklyAttendances: YouthAttendance[] = weeklyData?.data || []
-    const youthRevivalAttendances: YouthAttendance[] = revivalData?.data || []
-    const youthAttendance: YouthAttendance[] = [] // This appears to be a different type, keeping empty for now
+
+    const youthWeeklyAttendances: YouthAttendance[] = useMemo(() => weeklyData?.data ?? [], [weeklyData])
+    const youthRevivalAttendances: YouthAttendance[] = useMemo(() => revivalData?.data ?? [], [revivalData])
+    const youthAttendance: YouthAttendance[] = useMemo(() => [], [])
 
     const [stats, setStats] = useState({
         totalRecords: 0,
@@ -154,8 +154,8 @@ const Content = () => {
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
         const recentActivity = allYouthRecords.filter(record => {
             if (!record.createdAt) return false
-            const createdAt = typeof record.createdAt === 'string' || record.createdAt instanceof Date 
-                ? new Date(record.createdAt) 
+            const createdAt = typeof record.createdAt === 'string' || record.createdAt instanceof Date
+                ? new Date(record.createdAt)
                 : null
             return createdAt && createdAt > oneWeekAgo
         }).length
@@ -193,7 +193,7 @@ const Content = () => {
         const monthlyYouthAttendance = calculateMonthlyYouthAttendance()
         setMonthlyData(monthlyYouthAttendance)
 
-    }, [youthAttendance, youthWeeklyAttendances, youthRevivalAttendances, isLoadingWeekly, isLoadingRevival])
+    }, [youthWeeklyAttendances, youthRevivalAttendances, isLoadingWeekly, isLoadingRevival])
 
     // Helper function to calculate service-specific statistics
     const getServiceStats = (serviceType: YouthAttendanceType): YouthServiceStats => {
@@ -329,7 +329,7 @@ const Content = () => {
         trend?: number
     }) => (
         <Card.Root
-            bg="white"
+            bg="bg"
             border="1px"
             borderColor="gray.200"
             rounded="xl"
@@ -346,7 +346,7 @@ const Content = () => {
             <Card.Body p="0">
                 <Flex justify="space-between" align="start">
                     <VStack align="start" gap="2">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        <Text fontSize="sm" color="fg" fontWeight="medium">
                             {title}
                         </Text>
                         <Heading size="2xl" color={color}>
@@ -369,25 +369,12 @@ const Content = () => {
                     </VStack>
                     <Box
                         p="3"
-                        bg={`${color}.50`}
+                        bg={`${color}/5`}
                         rounded="lg"
                         color={color}
                     >
                         <Icon size="24" />
                     </Box>
-                </Flex>
-                <Flex justify="space-between" align="center" mt="4">
-                    <Box
-                        asChild
-                        fontSize="sm"
-                        color={color}
-                        fontWeight="medium"
-                    >
-                        <Link to={link}>
-                            View details
-                        </Link>
-                    </Box>
-                    <ArrowRight size="16" color="currentColor" />
                 </Flex>
             </Card.Body>
         </Card.Root>
@@ -402,7 +389,7 @@ const Content = () => {
         const totalRecords = serviceDistribution.reduce((sum, item) => sum + item.value, 0)
 
         return (
-            <Chart.Root boxSize="200px" chart={chart} mx="auto">
+            <Chart.Root bg="bg" boxSize="200px" chart={chart} mx="auto">
                 <PieChart>
                     <Tooltip
                         cursor={false}
@@ -439,7 +426,7 @@ const Content = () => {
     // Monthly Youth Attendance Bar Chart
     const MonthlyYouthAttendanceChart = () => {
         return (
-            <Box width="100%" height="300px">
+            <Box bg="bg" width="100%" height="300px">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -499,7 +486,7 @@ const Content = () => {
                     value={stats.totalRecords}
                     icon={Calendar}
                     color="blue"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="All youth attendance records"
                 />
 
@@ -508,7 +495,7 @@ const Content = () => {
                     value={stats.totalYouthAttendance}
                     icon={Profile2User}
                     color="green"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Combined youth attendance"
                 />
 
@@ -517,7 +504,7 @@ const Content = () => {
                     value={stats.averageYouthAttendance}
                     icon={TrendUp}
                     color="purple"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Average youth per record"
                 />
 
@@ -526,7 +513,7 @@ const Content = () => {
                     value={stats.activeServices}
                     icon={ChartSquare}
                     color="orange"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Youth services with data"
                 />
 
@@ -535,15 +522,58 @@ const Content = () => {
                     value={stats.recentActivity}
                     icon={UserOctagon}
                     color="red"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Youth records last 7 days"
                 />
             </SimpleGrid>
 
+
+            {/* Quick Actions for Youth */}
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Header pb="4">
+                    <Heading size="lg">Youth Quick Actions</Heading>
+                </Card.Header>
+                <Card.Body pt="0">
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                        {Object.entries(YOUTH_SERVICE_TYPES).map(([serviceType, config]) => (
+                            <Link key={serviceType} to={`/admin/youth_ministry/${config.route}`}>
+                                <Card.Root
+                                    bg="bg"
+                                    variant="outline"
+                                    cursor="pointer"
+                                    transition="all 0.2s"
+                                    _hover={{
+                                        bg: `${config.color.replace('.solid', '')}/5`,
+                                        borderColor: `${config.color.replace('.solid', '')}/50`
+                                    }}
+                                >
+                                    <Card.Body>
+                                        <HStack justify="space-between">
+                                            <VStack align="start" gap="1">
+                                                <Text fontWeight="medium">{config.name}</Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    Manage youth attendance records
+                                                </Text>
+                                            </VStack>
+                                            <ArrowRight size="20" color={config.color.replace('.solid', '')} />
+                                        </HStack>
+                                    </Card.Body>
+                                </Card.Root>
+                            </Link>
+                        ))}
+                    </SimpleGrid>
+                </Card.Body>
+            </Card.Root>
+
+
+
+
+
+
             {/* Charts Section */}
-            <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
+            <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8" bg="bg" rounded="xl">
                 {/* Youth Service Distribution Chart */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -558,7 +588,7 @@ const Content = () => {
                         </Flex>
                     </Card.Header>
 
-                    <Card.Body pt="0">
+                    <Card.Body pt="0" bg="bg" rounded='xl'>
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap="8" alignItems="center">
                             {/* Donut Chart */}
                             <Box display="flex" justifyContent="center" alignItems="center">
@@ -597,7 +627,7 @@ const Content = () => {
 
                                 {/* Summary Stats */}
                                 <Box
-                                    bg="gray.50"
+                                    bg="bg.subtle"
                                     rounded="lg"
                                     p="4"
                                     w="full"
@@ -634,7 +664,7 @@ const Content = () => {
                 </Card.Root>
 
                 {/* Monthly Youth Attendance Trend */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -656,7 +686,7 @@ const Content = () => {
             </SimpleGrid>
 
             {/* Youth Service Type Breakdown */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                 <Card.Header pb="4">
                     <Heading size="lg">Youth Service Type Breakdown</Heading>
                     <Text color="gray.600" mt="1">
@@ -679,7 +709,7 @@ const Content = () => {
                                         transform: 'translateY(-2px)',
                                         shadow: 'md'
                                     }}
-                                    onClick={() => navigate(config.route)}
+                                    onClick={() => navigate(`/admin/youth_ministry/${config.route}`)}
                                 >
                                     <Card.Body>
                                         <VStack align="start" gap="3">
@@ -761,41 +791,7 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
 
-            {/* Quick Actions for Youth */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
-                <Card.Header pb="4">
-                    <Heading size="lg">Youth Quick Actions</Heading>
-                </Card.Header>
-                <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
-                        {Object.entries(YOUTH_SERVICE_TYPES).map(([serviceType, config]) => (
-                            <Link key={serviceType} to={config.route}>
-                                <Card.Root
-                                    variant="outline"
-                                    cursor="pointer"
-                                    transition="all 0.2s"
-                                    _hover={{
-                                        bg: `${config.color.replace('.solid', '')}.50`,
-                                        borderColor: `${config.color.replace('.solid', '')}.200`
-                                    }}
-                                >
-                                    <Card.Body>
-                                        <HStack justify="space-between">
-                                            <VStack align="start" gap="1">
-                                                <Text fontWeight="medium">{config.name}</Text>
-                                                <Text fontSize="sm" color="gray.600">
-                                                    Manage youth attendance records
-                                                </Text>
-                                            </VStack>
-                                            <ArrowRight size="20" color={config.color.replace('.solid', '')} />
-                                        </HStack>
-                                    </Card.Body>
-                                </Card.Root>
-                            </Link>
-                        ))}
-                    </SimpleGrid>
-                </Card.Body>
-            </Card.Root>
+
         </VStack>
     )
 }

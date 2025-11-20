@@ -38,10 +38,13 @@ import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
 import NaijaStates from 'naija-state-local-government'
 
-import { youthAttendanceSchema, type YouthAttendanceFormData } from "@/modules/admin/schemas/youthMinistry/youthAttendance.schema"
-import { type YouthAttendance, useYouthAttendanceStore } from "@/modules/admin/stores/youthMinistry/youthAttendance.store"
+import { youthAttendanceLocalSchema, type YouthAttendanceLocalFormData } from "@/modules/admin/schemas/youthMinistry/youthAttendanceLocal.schema"
+import { useYouthAttendance, useCreateYouthAttendance, useUpdateYouthAttendance, useDeleteYouthAttendance } from "@/modules/admin/hooks/useYouthAttendance"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { YouthAttendanceDialog } from "./components/YouthAttendanceDialog"
 import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
 import UploadStatesFromFile from "@/modules/admin/components/PortingFile"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 // UUID generator function
 const uuid = () => {
@@ -343,7 +346,7 @@ interface BulkEditDialogProps {
     selectedAttendance: number[]
     youthAttendance: YouthAttendance[]
     onClose: () => void
-    onUpdate: (id: number, data: Partial<YouthAttendanceFormData>) => void
+    onUpdate: (id: number, data: Partial<YouthAttendanceLocalFormData>) => void
 }
 
 const BulkEditDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose, onUpdate }: BulkEditDialogProps) => {
@@ -378,7 +381,7 @@ const BulkEditDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose, 
         }
     }
 
-    const handleTabUpdate = (tabId: string, data: Partial<YouthAttendanceFormData>) => {
+    const handleTabUpdate = (tabId: string, data: Partial<YouthAttendanceLocalFormData>) => {
         const tab = tabs.find(t => t.id === tabId)
         if (tab) {
             onUpdate(tab.attendance.id, data)
@@ -529,13 +532,13 @@ const BulkDeleteDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose
 // Individual Youth Attendance Edit Form
 interface YouthAttendanceEditFormProps {
     attendance: YouthAttendance
-    onUpdate: (data: Partial<YouthAttendanceFormData>) => void
+    onUpdate: (data: Partial<YouthAttendanceLocalFormData>) => void
     onCancel: () => void
 }
 
 const YouthAttendanceEditForm = ({ attendance, onUpdate, onCancel }: YouthAttendanceEditFormProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<YouthAttendanceFormData>({
-        resolver: zodResolver(youthAttendanceSchema),
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<YouthAttendanceLocalFormData>({
+        resolver: zodResolver(youthAttendanceLocalSchema),
         defaultValues: {
             stateName: attendance.stateName,
             regionName: attendance.regionName,
@@ -568,7 +571,7 @@ const YouthAttendanceEditForm = ({ attendance, onUpdate, onCancel }: YouthAttend
         setValue('year', value)
     }
 
-    const onSubmit = (data: YouthAttendanceFormData) => {
+    const onSubmit = (data: YouthAttendanceLocalFormData) => {
         onUpdate(data)
     }
 
@@ -725,6 +728,15 @@ export const YouthAttendancePage: React.FC = () => {
 
 export default YouthAttendancePage;
 
+type DisplayAttendance = {
+    id: number
+    groupName: string
+    month: string
+    yhsfMale: number
+    yhsfFemale: number
+    attendance_type: 'weekly' | 'revival'
+}
+
 const Content = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof YouthAttendance>('groupName')
@@ -737,8 +749,40 @@ const Content = () => {
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
     const navigate = useNavigate();
 
+    const { data: weeklyRes } = useYouthAttendance({ attendance_type: 'weekly' })
+    const { data: revivalRes } = useYouthAttendance({ attendance_type: 'revival' })
+    const weekly = weeklyRes?.data ?? []
+    const revival = revivalRes?.data ?? []
 
-    const { youthAttendance, addYouthAttendance, updateYouthAttendance, deleteYouthAttendance } = useYouthAttendanceStore()
+    const { groups } = useGroups()
+
+    const normalizedAttendance: DisplayAttendance[] = useMemo(() => {
+        const getGroupNameById = (id?: number | null) => {
+            if (!id) return ''
+            return groups?.find(g => g.id === id)?.name || `Group #${id}`
+        }
+        const weeklyRows = weekly.map(att => ({
+            id: att.id,
+            groupName: getGroupNameById(att.group_id),
+            month: att.month,
+            yhsfMale: (att.member_boys || 0) + (att.visitor_boys || 0),
+            yhsfFemale: (att.member_girls || 0) + (att.visitor_girls || 0),
+            attendance_type: 'weekly' as const,
+        }))
+        const revivalRows = revival.map(att => ({
+            id: att.id,
+            groupName: getGroupNameById(att.group_id),
+            month: att.month,
+            yhsfMale: att.male || 0,
+            yhsfFemale: att.female || 0,
+            attendance_type: 'revival' as const,
+        }))
+        return [...weeklyRows, ...revivalRows]
+    }, [weekly, revival, groups])
+
+    const { mutate: createYA } = useCreateYouthAttendance()
+    const { mutate: updateYA } = useUpdateYouthAttendance()
+    const { mutate: deleteYA } = useDeleteYouthAttendance()
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -754,13 +798,12 @@ const Content = () => {
 
     // Filter and sort youth attendance
     const filteredAndSortedAttendance = useMemo(() => {
-        let filtered = youthAttendance.filter(attendance =>
+        let filtered = normalizedAttendance.filter(attendance =>
             attendance.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             attendance.oldGroupName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             attendance.month.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            attendance.year.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            attendance.regionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            attendance.stateName.toLowerCase().includes(searchQuery.toLowerCase())
+            attendance.yhsfMale.toString().includes(searchQuery.toLowerCase()) ||
+            attendance.yhsfFemale.toString().includes(searchQuery.toLowerCase())
         )
 
         // Sorting
@@ -782,7 +825,7 @@ const Content = () => {
         })
 
         return filtered
-    }, [youthAttendance, searchQuery, sortField, sortOrder])
+    }, [normalizedAttendance, searchQuery, sortField, sortOrder])
 
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedAttendance.length / pageSize)
@@ -839,13 +882,13 @@ const Content = () => {
         }
     }
 
-    const handleDeleteAttendance = (attendance: YouthAttendance) => {
+    const handleDeleteAttendance = (attendance: DisplayAttendance) => {
         setDeleteDialogState({ isOpen: true, attendance })
     }
 
     const confirmDelete = () => {
         if (deleteDialogState.attendance) {
-            deleteYouthAttendance(deleteDialogState.attendance.id)
+            deleteYA(deleteDialogState.attendance.id)
             setDeleteDialogState({ isOpen: false })
         }
     }
@@ -856,27 +899,15 @@ const Content = () => {
     }
 
     const confirmBulkDelete = (ids: number[]) => {
-        ids.forEach(id => deleteYouthAttendance(id))
+        ids.forEach(id => deleteYA(id))
         setSelectedAttendance([])
         setIsActionBarOpen(false)
         setIsBulkDeleteOpen(false)
     }
 
-    const handleBulkEdit = () => {
-        setIsBulkEditOpen(true)
-    }
-
-    const handleBulkUpdate = (id: number, data: Partial<YouthAttendanceFormData>) => {
-        updateYouthAttendance(id, data)
-        setSelectedAttendance(prev => prev.filter(attendanceId => attendanceId !== id))
-    }
-
-    const handleBulkEditClose = () => {
-        setIsBulkEditOpen(false)
-        if (selectedAttendance.length === 0) {
-            setIsActionBarOpen(false)
-        }
-    }
+    const handleBulkEdit = () => {}
+    const handleBulkUpdate = (id: number, data: Partial<YouthAttendanceLocalFormData>) => {}
+    const handleBulkEditClose = () => {}
 
     // Close action bar when no items are selected
     useEffect(() => {
@@ -907,11 +938,11 @@ const Content = () => {
                 >
                     <HStack>
                         <Heading size="3xl">Youth Attendance Data</Heading>
-                        <Badge colorPalette={"accent"}>{youthAttendance.length}</Badge>
+                        <Badge colorPalette={"accent"}>{normalizedAttendance.length}</Badge>
                     </HStack>
 
                     <HStack gap="4">
-                        <UploadStatesFromFile />
+                        <UploadStatesFromFile data={[]} />
                         <Button
                             colorPalette="accent"
                             rounded="xl"
@@ -936,7 +967,7 @@ const Content = () => {
                                         color="accent"
                                         _hover={{ bg: "white" }}
                                         size="sm"
-                                        onClick={async () => await copyYouthAttendanceToClipboard(youthAttendance)}
+                                        onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
                                     >
                                         <Copy />
                                         Copy
@@ -948,7 +979,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportYouthAttendanceToExcel(youthAttendance)}
+                                        onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
                                     >
                                         <DocumentDownload />
                                         Excel
@@ -960,7 +991,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportYouthAttendanceToCSV(youthAttendance)}
+                                        onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
                                     >
                                         <DocumentText />
                                         CSV
@@ -972,7 +1003,7 @@ const Content = () => {
                                         _hover={{ bg: "white" }}
                                         size="sm"
                                         rounded="xl"
-                                        onClick={() => exportYouthAttendanceToPDF(youthAttendance)}
+                                        onClick={() => exportYouthAttendanceToPDF(normalizedAttendance)}
                                     >
                                         <ReceiptText />
                                         PDF
@@ -1194,13 +1225,15 @@ const Content = () => {
             <Box>
                 {/* Add/Edit Dialog */}
                 <YouthAttendanceDialog
-                    {...dialogState}
+                    isOpen={dialogState.isOpen}
+                    mode={dialogState.mode}
+                    attendanceType={dialogState.attendance?.attendance_type || 'weekly'}
                     onClose={() => setDialogState({ isOpen: false, mode: 'add' })}
                     onSave={(data) => {
                         if (dialogState.mode === 'add') {
-                            addYouthAttendance(data)
+                            createYA(data)
                         } else if (dialogState.attendance) {
-                            updateYouthAttendance(dialogState.attendance.id, data)
+                            updateYA({ yaId: dialogState.attendance.id, data })
                         }
                         setDialogState({ isOpen: false, mode: 'add' })
                     }}
@@ -1218,19 +1251,13 @@ const Content = () => {
                 <BulkDeleteDialog
                     isOpen={isBulkDeleteOpen}
                     selectedAttendance={selectedAttendance}
-                    youthAttendance={youthAttendance}
+                    youthAttendance={filteredAndSortedAttendance}
                     onClose={() => setIsBulkDeleteOpen(false)}
                     onConfirm={confirmBulkDelete}
                 />
 
                 {/* Bulk Edit Dialog */}
-                <BulkEditDialog
-                    isOpen={isBulkEditOpen}
-                    selectedAttendance={selectedAttendance}
-                    youthAttendance={youthAttendance}
-                    onClose={handleBulkEditClose}
-                    onUpdate={handleBulkUpdate}
-                />
+                
             </Box >
         </>
     )
@@ -1284,191 +1311,7 @@ interface YouthAttendanceDialogProps {
     attendance?: YouthAttendance
     mode: 'add' | 'edit'
     onClose: () => void
-    onSave: (data: YouthAttendanceFormData) => void
+    onSave: (data: YouthAttendanceLocalFormData) => void
 }
 
-const YouthAttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave }: YouthAttendanceDialogProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<YouthAttendanceFormData>({
-        resolver: zodResolver(youthAttendanceSchema),
-        defaultValues: {
-            stateName: attendance?.stateName || '',
-            regionName: attendance?.regionName || '',
-            oldGroupName: attendance?.oldGroupName || '',
-            groupName: attendance?.groupName || '',
-            month: attendance?.month || '',
-            year: attendance?.year || '',
-            yhsfMale: attendance?.yhsfMale || 0,
-            yhsfFemale: attendance?.yhsfFemale || 0
-        }
-    })
-
-    const currentStateName = watch('stateName')
-
-    const handleStateChange = (value: string) => {
-        setValue('stateName', value)
-        // Clear LGA when state changes
-        setValue('regionName', '')
-    }
-
-    const handleLGAChange = (value: string) => {
-        setValue('regionName', value)
-    }
-
-    const handleMonthChange = (value: string) => {
-        setValue('month', value)
-    }
-
-    const handleYearChange = (value: string) => {
-        setValue('year', value)
-    }
-
-    const onSubmit = (data: YouthAttendanceFormData) => {
-        onSave(data)
-        reset()
-    }
-
-    return (
-        <Dialog.Root
-            open={isOpen}
-            onOpenChange={(e) => {
-                if (!e.open) {
-                    onClose()
-                    reset();
-                }
-            }}
-        >
-            <Portal>
-                <Dialog.Backdrop />
-                <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="2xl">
-                        <Dialog.Header>
-                            <Dialog.Title>
-                                {mode === 'add' ? 'Add Youth Attendance' : 'Update Youth Attendance'}
-                            </Dialog.Title>
-                        </Dialog.Header>
-
-                        <Dialog.Body>
-                            <form noValidate id="youth-attendance-form" onSubmit={handleSubmit(onSubmit)}>
-                                <VStack gap="4" colorPalette={"accent"}>
-                                    <Field.Root required invalid={!!errors.stateName}>
-                                        <StateCombobox
-                                            value={currentStateName}
-                                            onChange={handleStateChange}
-                                            required
-                                            invalid={!!errors.stateName}
-                                        />
-                                        <Field.ErrorText>{errors.stateName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    <Field.Root required invalid={!!errors.regionName}>
-                                        <LGACombobox
-                                            stateName={currentStateName}
-                                            value={watch('regionName')}
-                                            onChange={handleLGAChange}
-                                            required
-                                            invalid={!!errors.regionName}
-                                        />
-                                        <Field.ErrorText>{errors.regionName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    <Field.Root invalid={!!errors.oldGroupName}>
-                                        <Field.Label>Select Old Group</Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            placeholder="Enter old group name (optional)"
-                                            {...register('oldGroupName')}
-                                        />
-                                        <Field.ErrorText>{errors.oldGroupName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    <Field.Root required invalid={!!errors.groupName}>
-                                        <Field.Label>Select Group
-                                            <Field.RequiredIndicator />
-                                        </Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            placeholder="Enter group name"
-                                            {...register('groupName')}
-                                        />
-                                        <Field.ErrorText>{errors.groupName?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    <HStack gap="4" w="full">
-                                        <Field.Root required invalid={!!errors.month} flex="1">
-                                            <MonthCombobox
-                                                value={watch('month')}
-                                                onChange={handleMonthChange}
-                                                required
-                                                invalid={!!errors.month}
-                                            />
-                                            <Field.ErrorText>{errors.month?.message}</Field.ErrorText>
-                                        </Field.Root>
-
-                                        <Field.Root required invalid={!!errors.year} flex="1">
-                                            <YearCombobox
-                                                value={watch('year')}
-                                                onChange={handleYearChange}
-                                                required
-                                                invalid={!!errors.year}
-                                            />
-                                            <Field.ErrorText>{errors.year?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    </HStack>
-
-                                    <HStack gap="4" w="full">
-                                        <Field.Root required invalid={!!errors.yhsfMale} flex="1">
-                                            <Field.Label>Enter YHSF Male
-                                                <Field.RequiredIndicator />
-                                            </Field.Label>
-                                            <NumberInput.Root
-                                                min={0}
-                                                value={watch('yhsfMale').toString()}
-                                                onValueChange={(e) => setValue('yhsfMale', e.valueAsNumber)}
-                                            >
-                                                <NumberInput.Input
-                                                    rounded="lg"
-                                                    placeholder="Enter YHSF Male count"
-                                                />
-                                            </NumberInput.Root>
-                                            <Field.ErrorText>{errors.yhsfMale?.message}</Field.ErrorText>
-                                        </Field.Root>
-
-                                        <Field.Root required invalid={!!errors.yhsfFemale} flex="1">
-                                            <Field.Label>Enter YHSF Female
-                                                <Field.RequiredIndicator />
-                                            </Field.Label>
-                                            <NumberInput.Root
-                                                min={0}
-                                                value={watch('yhsfFemale').toString()}
-                                                onValueChange={(e) => setValue('yhsfFemale', e.valueAsNumber)}
-                                            >
-                                                <NumberInput.Input
-                                                    rounded="lg"
-                                                    placeholder="Enter YHSF Female count"
-                                                />
-                                            </NumberInput.Root>
-                                            <Field.ErrorText>{errors.yhsfFemale?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    </HStack>
-                                </VStack>
-                            </form>
-                        </Dialog.Body>
-
-                        <Dialog.Footer>
-                            <Dialog.ActionTrigger asChild>
-                                <Button rounded="xl" variant="outline">Cancel</Button>
-                            </Dialog.ActionTrigger>
-                            <Button rounded="xl" type="submit" form="youth-attendance-form" colorPalette="accent">
-                                {mode === 'add' ? 'Add Attendance' : 'Update Attendance'}
-                            </Button>
-                        </Dialog.Footer>
-
-                        <Dialog.CloseTrigger asChild>
-                            <CloseButton size="sm" />
-                        </Dialog.CloseTrigger>
-                    </Dialog.Content>
-                </Dialog.Positioner>
-            </Portal>
-        </Dialog.Root>
-    )
-}
+// removed local dialog in favor of shared YouthAttendanceDialog component

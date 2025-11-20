@@ -30,10 +30,10 @@ interface PortingResult {
 }
 
 interface UploadStatesFromFileProps {
-    data: State[]
+    data?: State[]
 }
 
-const UploadStatesFromFile = ({ data }: UploadStatesFromFileProps) => {
+const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
     const { open, onOpen, onClose } = useDisclosure()
     const [isProcessing, setIsProcessing] = useState(false)
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
