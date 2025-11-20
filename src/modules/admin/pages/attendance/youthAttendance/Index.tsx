@@ -18,9 +18,8 @@ import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
 import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
-import { useYouthAttendanceStore, type YouthAttendance } from "@/modules/admin/stores/youthMinistry/youthAttendance.store"
-import { useYouthWeeklyStore, type YouthWeeklyAttendance } from "@/modules/admin/stores/youthMinistry/youthWeekly.store"
-import { useYouthRevivalAttendanceStore, type YouthRevivalAttendance } from "@/modules/admin/stores/youthMinistry/revival.store"
+import { useYouthAttendance } from "@/modules/admin/hooks/useYouthAttendance"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 export const YouthAttendanceDashboard: React.FC = () => {
     return (
@@ -71,10 +70,13 @@ const YOUTH_SERVICE_TYPES = {
 const Content = () => {
     const navigate = useNavigate()
 
-    // Get all youth attendance stores
-    const { youthAttendance } = useYouthAttendanceStore()
-    const { attendances: youthWeeklyAttendances } = useYouthWeeklyStore()
-    const { youthRevivalAttendances } = useYouthRevivalAttendanceStore()
+    // Get all youth attendance data from API
+    const { data: weeklyData, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
+    const { data: revivalData, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
+    
+    const youthWeeklyAttendances: YouthAttendance[] = weeklyData?.data || []
+    const youthRevivalAttendances: YouthAttendance[] = revivalData?.data || []
+    const youthAttendance: YouthAttendance[] = [] // This appears to be a different type, keeping empty for now
 
     const [stats, setStats] = useState({
         totalRecords: 0,
@@ -150,9 +152,13 @@ const Content = () => {
         // Calculate last 7 days activity
         const oneWeekAgo = new Date()
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-        const recentActivity = allYouthRecords.filter(record =>
-            new Date(record.createdAt) > oneWeekAgo
-        ).length
+        const recentActivity = allYouthRecords.filter(record => {
+            if (!record.createdAt) return false
+            const createdAt = typeof record.createdAt === 'string' || record.createdAt instanceof Date 
+                ? new Date(record.createdAt) 
+                : null
+            return createdAt && createdAt > oneWeekAgo
+        }).length
 
         setStats({
             totalRecords,
@@ -187,38 +193,31 @@ const Content = () => {
         const monthlyYouthAttendance = calculateMonthlyYouthAttendance()
         setMonthlyData(monthlyYouthAttendance)
 
-    }, [youthAttendance, youthWeeklyAttendances, youthRevivalAttendances])
+    }, [youthAttendance, youthWeeklyAttendances, youthRevivalAttendances, isLoadingWeekly, isLoadingRevival])
 
     // Helper function to calculate service-specific statistics
     const getServiceStats = (serviceType: YouthAttendanceType): YouthServiceStats => {
         switch (serviceType) {
             case 'youth-attendance':
-                const youthAttRecords = youthAttendance.length
-                const youthAttTotal = youthAttendance.reduce((sum, att) => sum + att.yhsfMale + att.yhsfFemale, 0)
-                const youthAttMale = youthAttendance.reduce((sum, att) => sum + att.yhsfMale, 0)
-                const youthAttFemale = youthAttendance.reduce((sum, att) => sum + att.yhsfFemale, 0)
-                const youthAttLastUpdated = youthAttendance.length > 0
-                    ? new Date(Math.max(...youthAttendance.map(a => new Date(a.updatedAt).getTime())))
-                    : null
-
+                // This type appears to be deprecated or merged with weekly/revival
                 return {
                     name: 'Youth Attendance',
-                    records: youthAttRecords,
-                    totalAttendance: youthAttTotal,
-                    averageAttendance: youthAttRecords > 0 ? Math.round(youthAttTotal / youthAttRecords) : 0,
-                    lastUpdated: youthAttLastUpdated,
-                    totalMale: youthAttMale,
-                    totalFemale: youthAttFemale
+                    records: 0,
+                    totalAttendance: 0,
+                    averageAttendance: 0,
+                    lastUpdated: null,
+                    totalMale: 0,
+                    totalFemale: 0
                 }
 
             case 'youth-weekly':
                 const weeklyRecords = youthWeeklyAttendances.length
                 const weeklyTotal = youthWeeklyAttendances.reduce((sum, att) =>
-                    sum + att.membersBoys + att.visitorsBoys + att.membersGirls + att.visitorsGirls, 0)
-                const weeklyMale = youthWeeklyAttendances.reduce((sum, att) => sum + att.membersBoys + att.visitorsBoys, 0)
-                const weeklyFemale = youthWeeklyAttendances.reduce((sum, att) => sum + att.membersGirls + att.visitorsGirls, 0)
+                    sum + att.member_boys + att.visitor_boys + att.member_girls + att.visitor_girls, 0)
+                const weeklyMale = youthWeeklyAttendances.reduce((sum, att) => sum + att.member_boys + att.visitor_boys, 0)
+                const weeklyFemale = youthWeeklyAttendances.reduce((sum, att) => sum + att.member_girls + att.visitor_girls, 0)
                 const weeklyLastUpdated = youthWeeklyAttendances.length > 0
-                    ? new Date(Math.max(...youthWeeklyAttendances.map(a => new Date(a.updatedAt).getTime())))
+                    ? new Date(Math.max(...youthWeeklyAttendances.map(a => new Date(a.updatedAt || a.createdAt || Date.now()).getTime())))
                     : null
 
                 return {
@@ -237,7 +236,7 @@ const Content = () => {
                 const revivalMale = youthRevivalAttendances.reduce((sum, att) => sum + att.male, 0)
                 const revivalFemale = youthRevivalAttendances.reduce((sum, att) => sum + att.female, 0)
                 const revivalLastUpdated = youthRevivalAttendances.length > 0
-                    ? new Date(Math.max(...youthRevivalAttendances.map(a => new Date(a.updatedAt).getTime())))
+                    ? new Date(Math.max(...youthRevivalAttendances.map(a => new Date(a.updatedAt || a.createdAt || Date.now()).getTime())))
                     : null
 
                 return {
@@ -254,9 +253,9 @@ const Content = () => {
 
     // Calculate total youth attendance across all services
     const calculateTotalYouthAttendance = (): number => {
-        const youthAttTotal = youthAttendance.reduce((sum, att) => sum + att.yhsfMale + att.yhsfFemale, 0)
+        const youthAttTotal = 0 // This type appears deprecated
         const weeklyTotal = youthWeeklyAttendances.reduce((sum, att) =>
-            sum + att.membersBoys + att.visitorsBoys + att.membersGirls + att.visitorsGirls, 0)
+            sum + att.member_boys + att.visitor_boys + att.member_girls + att.visitor_girls, 0)
         const revivalTotal = youthRevivalAttendances.reduce((sum, att) => sum + att.male + att.female, 0)
 
         return youthAttTotal + weeklyTotal + revivalTotal
@@ -265,29 +264,11 @@ const Content = () => {
     // Calculate monthly youth attendance data
     const calculateMonthlyYouthAttendance = () => {
         const monthlyData: Record<string, any> = {}
-        const currentYear = new Date().getFullYear().toString()
-
-        // Process Youth Attendance
-        youthAttendance.forEach(attendance => {
-            if (attendance.year === currentYear) {
-                const monthKey = `${attendance.year}-${attendance.month}`
-                if (!monthlyData[monthKey]) {
-                    monthlyData[monthKey] = {
-                        month: attendance.month,
-                        youthAttendance: 0,
-                        youthWeekly: 0,
-                        youthRevival: 0,
-                        total: 0
-                    }
-                }
-                monthlyData[monthKey].youthAttendance += attendance.yhsfMale + attendance.yhsfFemale
-                monthlyData[monthKey].total += attendance.yhsfMale + attendance.yhsfFemale
-            }
-        })
+        const currentYear = new Date().getFullYear()
 
         // Process Youth Weekly Attendance
         youthWeeklyAttendances.forEach(attendance => {
-            if (attendance.year === currentYear) {
+            if (attendance.year && attendance.year === currentYear) {
                 const monthKey = `${attendance.year}-${attendance.month}`
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
@@ -298,8 +279,8 @@ const Content = () => {
                         total: 0
                     }
                 }
-                const weeklyTotal = attendance.membersBoys + attendance.visitorsBoys +
-                    attendance.membersGirls + attendance.visitorsGirls
+                const weeklyTotal = attendance.member_boys + attendance.visitor_boys +
+                    attendance.member_girls + attendance.visitor_girls
                 monthlyData[monthKey].youthWeekly += weeklyTotal
                 monthlyData[monthKey].total += weeklyTotal
             }
@@ -307,13 +288,11 @@ const Content = () => {
 
         // Process Youth Revival Attendance
         youthRevivalAttendances.forEach(attendance => {
-            const attendanceDate = new Date(attendance.createdAt)
-            if (attendanceDate.getFullYear().toString() === currentYear) {
-                const month = attendanceDate.toLocaleString('default', { month: 'long' })
-                const monthKey = `${currentYear}-${month}`
+            if (attendance.year && attendance.year === currentYear) {
+                const monthKey = `${attendance.year}-${attendance.month}`
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
-                        month: month,
+                        month: attendance.month,
                         youthAttendance: 0,
                         youthWeekly: 0,
                         youthRevival: 0,

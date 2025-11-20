@@ -22,8 +22,12 @@ import { useRegions } from "@/modules/admin/hooks/useRegion"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import DistrictIdCombobox from "@/modules/admin/components/DistrictIdCombobox"
+import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import { useMemo } from "react"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 
 interface YouthAttendanceDialogProps {
     isOpen: boolean
@@ -52,6 +56,8 @@ export const YouthAttendanceDialog = ({
 }: YouthAttendanceDialogProps) => {
     const { states } = useStates()
     const { regions } = useRegions()
+    const { districts } = useDistricts()
+    const { groups } = useGroups()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<YouthAttendanceFormData>({
         resolver: zodResolver(youthAttendanceSchema),
@@ -59,6 +65,8 @@ export const YouthAttendanceDialog = ({
             attendance_type: attendanceType,
             state_id: 0,
             region_id: 0,
+            district_id: 0,
+            group_id: 0,
             old_group_id: 0,
             year: currentYear,
             month: '',
@@ -73,6 +81,8 @@ export const YouthAttendanceDialog = ({
 
     const currentStateId = watch('state_id')
     const currentRegionId = watch('region_id')
+    const currentDistrictId = watch('district_id')
+    const currentGroupId = watch('group_id')
     const currentOldGroupId = watch('old_group_id')
 
     // Setup month and year collections for Select
@@ -99,9 +109,27 @@ export const YouthAttendanceDialog = ({
         return regions?.filter(r => r.state === stateName) || []
     }, [regions, currentStateId, states])
 
+    const filteredDistricts = useMemo(() => {
+        if (!currentRegionId || currentRegionId === 0) return []
+        return districts?.filter(d => d.region_id === currentRegionId) || []
+    }, [districts, currentRegionId])
 
+    const filteredGroups = useMemo(() => {
+        if (!currentDistrictId || currentDistrictId === 0) return []
+        return groups?.filter(g => g.district_id === currentDistrictId) || []
+    }, [groups, currentDistrictId])
 
     const { oldGroups } = useOldGroups()
+
+    const getDistrictNameById = (districtId?: number | null) => {
+        if (!districtId) return ''
+        return districts?.find(d => d.id === districtId)?.name || ''
+    }
+
+    const getGroupNameById = (groupId?: number | null) => {
+        if (!groupId) return ''
+        return groups?.find(g => g.id === groupId)?.name || ''
+    }
 
     const getOldGroupNameById = (oldGroupId?: number | null) => {
         if (!oldGroupId) return ''
@@ -114,6 +142,8 @@ export const YouthAttendanceDialog = ({
             setValue('state_id', state.id, { shouldValidate: true })
             trigger('state_id')
             setValue('region_id', 0)
+            setValue('district_id', 0)
+            setValue('group_id', 0)
             setValue('old_group_id', 0)
         }
     }
@@ -123,6 +153,27 @@ export const YouthAttendanceDialog = ({
         if (region) {
             setValue('region_id', region.id, { shouldValidate: true })
             trigger('region_id')
+            setValue('district_id', 0)
+            setValue('group_id', 0)
+            setValue('old_group_id', 0)
+        }
+    }
+
+    const handleDistrictChange = (districtName: string) => {
+        const district = filteredDistricts?.find(d => d.name === districtName)
+        if (district) {
+            setValue('district_id', district.id, { shouldValidate: true })
+            trigger('district_id')
+            setValue('group_id', 0)
+            setValue('old_group_id', 0)
+        }
+    }
+
+    const handleGroupChange = (groupName: string) => {
+        const group = filteredGroups?.find(g => g.name === groupName)
+        if (group) {
+            setValue('group_id', group.id, { shouldValidate: true })
+            trigger('group_id')
             setValue('old_group_id', 0)
         }
     }
@@ -136,9 +187,11 @@ export const YouthAttendanceDialog = ({
         const selected = oldGroups?.find(g => g.name === oldGroupName)
         if (selected) {
             setValue('old_group_id', selected.id, { shouldValidate: true })
-            // also ensure state/region reflect selected old group
+            // also ensure state/region/district/group reflect selected old group
             setValue('state_id', selected.state_id)
             setValue('region_id', selected.region_id)
+            setValue('district_id', selected.district_id || 0)
+            setValue('group_id', selected.group_id || 0)
             trigger('old_group_id')
         }
     }
@@ -154,7 +207,9 @@ export const YouthAttendanceDialog = ({
     }
 
     const getSelectedStateName = () => states?.find(s => s.id === watch('state_id'))?.name || ''
-    const getSelectedRegionName = () => regions?.find(r => r.id === watch('region_id'))?.name || ''
+    const getSelectedRegionName = () => filteredRegions?.find(r => r.id === watch('region_id'))?.name || ''
+    const getSelectedDistrictName = () => filteredDistricts?.find(d => d.id === watch('district_id'))?.name || ''
+    const getSelectedGroupName = () => filteredGroups?.find(g => g.id === watch('group_id'))?.name || ''
 
     return (
         <Dialog.Root
@@ -197,12 +252,36 @@ export const YouthAttendanceDialog = ({
                                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                     </Field.Root>
 
+                                    <Field.Root required invalid={!!errors.district_id}>
+                                        <DistrictIdCombobox
+                                            value={getSelectedDistrictName()}
+                                            onChange={handleDistrictChange}
+                                            required
+                                            invalid={!!errors.district_id}
+                                            items={filteredDistricts}
+                                            disabled={!currentRegionId || currentRegionId === 0}
+                                        />
+                                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root required invalid={!!errors.group_id}>
+                                        <GroupIdCombobox
+                                            value={getSelectedGroupName()}
+                                            onChange={handleGroupChange}
+                                            required
+                                            invalid={!!errors.group_id}
+                                            items={filteredGroups}
+                                            disabled={!currentDistrictId || currentDistrictId === 0}
+                                        />
+                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
                                     <Field.Root invalid={!!errors.old_group_id}>
                                         <OldGroupIdCombobox
                                             value={getOldGroupNameById(currentOldGroupId)}
                                             onChange={handleOldGroupChange}
                                             invalid={!!errors.old_group_id}
-                                            disabled={!currentStateId || currentStateId === 0 || !currentRegionId || currentRegionId === 0}
+                                            disabled={!currentStateId || currentStateId === 0 || !currentRegionId || currentRegionId === 0 || !currentDistrictId || currentDistrictId === 0 || !currentGroupId || currentGroupId === 0}
                                         />
                                         <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
                                     </Field.Root>
@@ -214,7 +293,8 @@ export const YouthAttendanceDialog = ({
                                             <Select.Root
                                                 collection={monthCollection}
                                                 size="md"
-                                                {...register('month')}
+                                                value={watch('month') ? [watch('month')] : []}
+                                                onValueChange={(value) => setValue('month', value.value[0] || '', { shouldValidate: true })}
                                             >
                                                 <Select.HiddenSelect />
                                                 <Select.Control>
@@ -243,7 +323,8 @@ export const YouthAttendanceDialog = ({
                                             <Select.Root
                                                 collection={yearCollection}
                                                 size="md"
-                                                {...register('year', { valueAsNumber: true })}
+                                                value={watch('year') ? [watch('year').toString()] : []}
+                                                onValueChange={(value) => setValue('year', parseInt(value.value[0] || currentYear.toString(), 10), { shouldValidate: true })}
                                             >
                                                 <Select.HiddenSelect />
                                                 <Select.Control>
@@ -375,6 +456,8 @@ export const YouthAttendanceDialog = ({
                                     <input type="hidden" {...register('attendance_type')} />
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('district_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
                                 </VStack>
                             </form>
