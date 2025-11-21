@@ -15,18 +15,15 @@ import {
     Badge,
     Link,
 } from "@chakra-ui/react"
-import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip } from "recharts"
-import { Profile2User, ProfileTick, Shield, TrendUp, ArrowRight } from "iconsax-reactjs"
+import { Profile2User, Shield, TrendUp, ArrowRight } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
 import { useUsers } from "../../hooks/useUser"
-import { useUserRights } from "../../hooks/useUserRight"
 
 
 // Define types for the component props and state
 interface DashboardStats {
     totalUsers: number
-    totalUserRights: number
     superAdmins: number
     groupAdmins: number
     districtAdmins: number
@@ -68,11 +65,10 @@ export default Index
 const Content: React.FC = () => {
     const navigate = useNavigate()
     const { data: users, isLoading: usersLoading, error: usersError } = useUsers()
-    const { data: userRights, isLoading: rightsLoading, error: rightsError } = useUserRights()
+    console.log(users)
 
     const [stats, setStats] = useState<DashboardStats>({
         totalUsers: 0,
-        totalUserRights: 0,
         superAdmins: 0,
         groupAdmins: 0,
         districtAdmins: 0,
@@ -83,31 +79,71 @@ const Content: React.FC = () => {
 
     const [chartData, setChartData] = useState<ChartDataItem[]>([])
 
+    // Helper function to map access_level string to admin type
+    const getAdminTypeFromAccessLevel = (accessLevel: string): string | null => {
+        if (!accessLevel) return null
+        
+        const level = accessLevel.toLowerCase().trim()
+        
+        // Check for exact snake_case format first
+        if (level === 'super_admin' || level === 'group_admin' || 
+            level === 'district_admin' || level === 'region_admin' || 
+            level === 'state_admin') {
+            return level
+        }
+        
+        // Map descriptive access_level strings to admin types
+        // Check for super admin patterns first (most specific)
+        if (level.includes('global') || level.includes('all states') || 
+            (level.includes('super') && level.includes('admin'))) {
+            return 'super_admin'
+        }
+        // Check for group admin
+        if (level.includes('group') && level.includes('admin')) {
+            return 'group_admin'
+        }
+        // Check for district admin
+        if (level.includes('district') && level.includes('admin')) {
+            return 'district_admin'
+        }
+        // Check for region admin (but not "regional" which might be different)
+        if (level.includes('region') && level.includes('admin')) {
+            return 'region_admin'
+        }
+        // Check for state admin (but not "all states" which is already handled above)
+        if (level.includes('state') && level.includes('admin') && !level.includes('all states')) {
+            return 'state_admin'
+        }
+        
+        return null
+    }
+
     useEffect(() => {
-        if (usersLoading || rightsLoading) return
+        if (usersLoading) return
 
         // Calculate statistics
         const totalUsers = users?.length || 0
-        const totalUserRights = userRights?.length || 0
 
-        const accessLevelCounts = (userRights || []).reduce((acc, right) => {
-            acc[right.accessLevel] = (acc[right.accessLevel] || 0) + 1
+        const adminTypeCounts = (users || []).reduce((acc, user) => {
+            if (user.access_level) {
+                const adminType = getAdminTypeFromAccessLevel(user.access_level)
+                if (adminType) {
+                    acc[adminType] = (acc[adminType] || 0) + 1
+                }
+            }
             return acc
         }, {} as Record<string, number>)
 
-        const superAdmins = accessLevelCounts['super_admin'] || 0
-        const groupAdmins = accessLevelCounts['group_admin'] || 0
-        const districtAdmins = accessLevelCounts['district_admin'] || 0
-        const regionAdmins = accessLevelCounts['region_admin'] || 0
-        const stateAdmins = accessLevelCounts['state_admin'] || 0
+        const superAdmins = adminTypeCounts['super_admin'] || 0
+        const groupAdmins = adminTypeCounts['group_admin'] || 0
+        const districtAdmins = adminTypeCounts['district_admin'] || 0
+        const regionAdmins = adminTypeCounts['region_admin'] || 0
+        const stateAdmins = adminTypeCounts['state_admin'] || 0
 
-        const activeUsers = (users || []).filter(user =>
-            (userRights || []).some(right => right.userId === user.id)
-        ).length
+        const activeUsers = (users || []).filter(user => user.access_level).length
 
         setStats({
             totalUsers,
-            totalUserRights,
             superAdmins,
             groupAdmins,
             districtAdmins,
@@ -151,7 +187,7 @@ const Content: React.FC = () => {
         ].filter(item => item.value > 0)
 
         setChartData(chartData)
-    }, [users, userRights, usersLoading, rightsLoading])
+    }, [users, usersLoading])
 
     const StatCard: React.FC<StatCardProps> = ({
         title,
@@ -183,7 +219,7 @@ const Content: React.FC = () => {
                             {title}
                         </Text>
                         <Heading size="2xl" color={color}>
-                            {usersLoading || rightsLoading ? "-" : value}
+                            {usersLoading ? "-" : value}
                         </Heading>
                         {description && (
                             <Text fontSize="xs" color="gray.500">
@@ -221,15 +257,11 @@ const Content: React.FC = () => {
 
     // Donut Chart Component using Recharts
     const UserRightsDonutChart: React.FC = () => {
-        const chart = useChart({
-            data: chartData,
-        })
-
         const totalUsersWithRights = chartData
             .filter(item => item.name !== 'No Rights')
             .reduce((sum, item) => sum + item.value, 0)
 
-        if (usersLoading || rightsLoading) {
+        if (usersLoading) {
             return (
                 <Box boxSize="200px" display="flex" alignItems="center" justifyContent="center">
                     <Text color="gray.500">Loading chart...</Text>
@@ -237,43 +269,40 @@ const Content: React.FC = () => {
             )
         }
 
+        const colorMap: Record<string, string> = {
+            "blue.solid": "#3182CE",
+            "green.solid": "#38A169",
+            "purple.solid": "#805AD5",
+            "orange.solid": "#DD6B20",
+            "red.solid": "#E53E3E",
+            "gray.solid": "#A0AEC0",
+        }
+
         return (
-            <Chart.Root boxSize="200px" chart={chart} mx="auto">
+            <Box boxSize="200px" mx="auto">
                 <PieChart>
-                    <Tooltip
-                        cursor={false}
-                        animationDuration={100}
-                        content={<Chart.Tooltip hideLabel />}
-                    />
-                    <Pie
-                        innerRadius={60}
-                        outerRadius={80}
-                        isAnimationActive={true}
-                        animationDuration={500}
-                        data={chart.data as any}
-                        dataKey={chart.key("value")}
-                        nameKey="name"
-                    >
-                        <Label
-                            content={({ viewBox }) => (
-                                <Chart.RadialText
-                                    viewBox={viewBox}
-                                    title={totalUsersWithRights.toLocaleString()}
-                                    description="with rights"
-                                />
-                            )}
-                        />
-                        {chart.data.map((item) => (
-                            <Cell key={item.color} fill={chart.color(item.color)} />
+                    <Tooltip cursor={false} animationDuration={100} />
+                    <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={chartData} dataKey="value" nameKey="name">
+                        <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
+                            const { cx, cy } = viewBox
+                            return (
+                                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
+                                    <tspan fontSize="18" fontWeight="600">{totalUsersWithRights.toLocaleString()}</tspan>
+                                    <tspan x={cx} dy="20" fontSize="12" fill="#718096">with rights</tspan>
+                                </text>
+                            )
+                        }} />
+                        {chartData.map((item) => (
+                            <Cell key={item.name} fill={colorMap[item.color] || item.color} />
                         ))}
                     </Pie>
                 </PieChart>
-            </Chart.Root>
+            </Box>
         )
     }
 
     // Show loading state
-    if (usersLoading || rightsLoading) {
+    if (usersLoading) {
         return (
             <VStack gap="8" align="stretch">
                 <Flex justify="space-between" align="center">
@@ -310,7 +339,7 @@ const Content: React.FC = () => {
     }
 
     // Show error state
-    if (usersError || rightsError) {
+    if (usersError) {
         return (
             <VStack gap="8" align="stretch">
                 <Flex justify="space-between" align="center">
@@ -403,15 +432,6 @@ const Content: React.FC = () => {
                     color="blue"
                     link="/admin/users/all"
                     description="Registered users in system"
-                />
-
-                <StatCard
-                    title="User Rights"
-                    value={stats.totalUserRights}
-                    icon={<ProfileTick variant="Bulk" size="24" />}
-                    color="green"
-                    link="/admin/users/rights"
-                    description="Access rights configured"
                 />
 
                 <StatCard

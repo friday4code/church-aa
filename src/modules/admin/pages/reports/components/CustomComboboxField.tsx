@@ -50,7 +50,7 @@ export const CustomComboboxField = ({
                             <Combobox.Input
                                 placeholder={placeholder}
                                 rounded="xl"
-                                bg={{ base: "white", _dark: "gray.700" }}
+                                bg="bg"
                                 color={{ base: "gray.800", _dark: "white" }}
                                 _placeholder={{ color: "gray.500" }}
                             />
@@ -61,7 +61,7 @@ export const CustomComboboxField = ({
                         </Combobox.Control>
                         <Portal>
                             <Combobox.Positioner>
-                                <Combobox.Content bg={{ base: "white", _dark: "gray.700" }}>
+                                <Combobox.Content bg="bg" border="xs" borderColor={"border"} rounded="xl">
                                     <Combobox.Empty>No items found</Combobox.Empty>
                                     {collection.items.map((item) => (
                                         <Combobox.Item item={item} key={item.value}>

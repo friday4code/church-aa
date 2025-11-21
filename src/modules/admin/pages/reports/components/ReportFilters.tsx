@@ -76,29 +76,29 @@ export const ReportFilters = ({ onFiltersChange, isLoading = false }: ReportFilt
         { label: "December", value: "12" },
     ]
 
-    const stateOptions = states.map((state: any) => ({
+    const stateOptions = states.map((state) => ({
         label: state.name || "",
-        value: state.id,
+        value: String(state.id),
     }))
 
-    const regionOptions = regions.map((region: any) => ({
+    const regionOptions = regions.map((region) => ({
         label: region.name || "",
-        value: region.id,
+        value: String(region.id),
     }))
 
-    const districtOptions = districts.map((district: any) => ({
+    const districtOptions = districts.map((district) => ({
         label: district.name || "",
-        value: district.id,
+        value: String(district.id),
     }))
 
-    const groupOptions = groups.map((group: any) => ({
+    const groupOptions = groups.map((group) => ({
         label: group.name || "",
-        value: group.id,
+        value: String(group.id),
     }))
 
-    const oldGroupOptions = oldGroups.map((oldGroup: any) => ({
+    const oldGroupOptions = oldGroups.map((oldGroup) => ({
         label: oldGroup.name || "",
-        value: oldGroup.id,
+        value: String(oldGroup.id),
     }))
 
     return (

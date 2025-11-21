@@ -5,7 +5,7 @@ import { Box, Card, Flex, VStack, Text, Heading, Badge } from "@chakra-ui/react"
 interface StatCardProps {
     title: string
     value: number | string
-    icon: any
+    icon: React.ComponentType<{ size?: string | number }>
     color: string
     description?: string
     trend?: number
@@ -20,7 +20,7 @@ export const StatCard = ({
     trend
 }: StatCardProps) => (
     <Card.Root
-        bg={{ base: "white", _dark: "gray.800" }}
+        bg="bg"
         border="1px"
         borderColor={{ base: "gray.200", _dark: "gray.700" }}
         rounded="xl"
@@ -35,6 +35,16 @@ export const StatCard = ({
         <Card.Body p="0">
             <Flex justify="space-between" align="start">
                 <VStack align="start" gap="2">
+                    <Box
+                        p="3"
+                        bg={`${color}.50`}
+                        rounded="lg"
+                        color={color}
+                        _dark={{ bg: `${color}.900/20` }}
+                    >
+                        <Icon size="20" />
+                    </Box>
+
                     <Text fontSize="sm" color={{ base: "gray.600", _dark: "gray.400" }} fontWeight="medium">
                         {title}
                     </Text>
@@ -56,15 +66,6 @@ export const StatCard = ({
                         </Badge>
                     )}
                 </VStack>
-                <Box
-                    p="3"
-                    bg={`${color}.50`}
-                    rounded="lg"
-                    color={color}
-                    _dark={{ bg: `${color}.900/20` }}
-                >
-                    <Icon size="20" />
-                </Box>
             </Flex>
         </Card.Body>
     </Card.Root>

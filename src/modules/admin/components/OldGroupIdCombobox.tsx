@@ -19,7 +19,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
     items?: OldGroup[];
 }) => {
     const [inputValue, setInputValue] = useState("")
-    const { oldGroups: data, isLoading } = useOldGroups()
+    const { oldGroups: data = [], isLoading } = useOldGroups()
     const oldGroups: OldGroup[] = items || data || [];
     const shouldShowLoading = !items && isLoading
 

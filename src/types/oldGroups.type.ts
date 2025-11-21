@@ -4,8 +4,10 @@ export interface OldGroup {
     name: string
     code: string
     leader: string
-    state_id: number
-    region_id: number
+    state: string
+    region: string
+    state_id?: number | null
+    region_id?: number | null
 }
 
 // For form data (camelCase for frontend)

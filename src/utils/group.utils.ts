@@ -5,12 +5,12 @@ import 'jspdf-autotable';
 import type { Group } from '@/types/groups.type';
 
 export const copyGroupsToClipboard = async (groups: Group[]): Promise<void> => {
-    const header = 'S/N\tGroup Name\tGroup Leader\tAccess Level\tState ID\tRegion ID\tDistrict ID\n';
+    const header = 'S/N\tGroup Name\tGroup Leader\tState ID\tRegion ID\tDistrict ID\n';
 
     const text = groups
         .map(
             (group, index) =>
-                `${index + 1}\t${group.group_name}\t${group.leader}\t${group.access_level}\t${group.state_id}\t${group.region_id}\t${group.district_id}`
+                `${index + 1}\t${group.group_name}\t${group.leader}\t${group.state_id}\t${group.region_id}\t${group.district_id}`
         )
         .join('\n');
 
@@ -39,7 +39,6 @@ export const exportGroupsToExcel = (groups: Group[]): void => {
             'S/N': index + 1,
             'Group Name': group.group_name,
             'Group Leader': group.leader,
-            'Access Level': group.access_level,
             'State ID': group.state_id,
             'Region ID': group.region_id,
             'District ID': group.district_id,
@@ -59,7 +58,6 @@ export const exportGroupsToExcel = (groups: Group[]): void => {
             { wch: 8 },  // S/N
             { wch: 25 }, // Group Name
             { wch: 25 }, // Group Leader
-            { wch: 20 }, // Access Level
             { wch: 10 }, // State ID
             { wch: 12 }, // Region ID
             { wch: 12 }, // District ID
@@ -79,14 +77,13 @@ export const exportGroupsToExcel = (groups: Group[]): void => {
 export const exportGroupsToCSV = (groups: Group[]): void => {
     try {
         // CSV headers
-        const headers = ['S/N', 'Group Name', 'Group Leader', 'Access Level', 'State ID', 'Region ID', 'District ID', 'Created Date', 'Updated Date'];
+        const headers = ['S/N', 'Group Name', 'Group Leader', 'State ID', 'Region ID', 'District ID', 'Created Date', 'Updated Date'];
 
         // CSV data rows
         const csvRows = groups.map((group, index) => [
             (index + 1).toString(),
             `"${group.group_name.replace(/"/g, '""')}"`,
             `"${group.leader.replace(/"/g, '""')}"`,
-            `"${group.access_level.replace(/"/g, '""')}"`,
             group.state_id.toString(),
             group.region_id.toString(),
             group.district_id.toString(),
@@ -142,7 +139,6 @@ export const exportGroupsToPDF = (groups: Group[]): void => {
             (index + 1).toString(),
             group.group_name,
             group.leader,
-            group.access_level,
             group.state_id.toString(),
             group.region_id.toString(),
             group.district_id.toString()
@@ -153,7 +149,6 @@ export const exportGroupsToPDF = (groups: Group[]): void => {
             'S/N',
             'Group Name',
             'Group Leader',
-            'Access Level',
             'State ID',
             'Region ID',
             'District ID'
@@ -217,7 +212,6 @@ export const formatGroupsForExport = (groups: Group[]) => {
     return groups.map(group => ({
         group_name: group.group_name,
         leader: group.leader,
-        access_level: group.access_level,
         state_id: group.state_id,
         region_id: group.region_id,
         district_id: group.district_id,

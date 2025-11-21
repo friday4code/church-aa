@@ -16,7 +16,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AttendanceSchema, type AttendanceFormData } from "../../../schemas/attendance.schema"
 import type { AttendanceRecord } from "@/types/attendance.type"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { createListCollection } from "@chakra-ui/react"
 import { getMonthOptions, getWeekOptions, getYearOptions } from "@/utils/attendance.utils"
 import { useStates } from "../../../hooks/useState"
@@ -86,6 +86,8 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 
     const onSubmit = (data: AttendanceFormData) => {
         onSave(data)
+        console.log("payload", data);
+
         reset()
     }
 
@@ -148,50 +150,163 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     const currentGroupId = watch('group_id')
     const currentOldGroupId = watch('old_group_id')
 
-    const getSelectedStateName = () => states?.find(s => s.id === currentStateId)?.name || ''
-    const getSelectedRegionName = () => regions?.find(r => r.id === currentRegionId)?.name || ''
-    const getSelectedDistrictName = () => districts?.find(d => d.id === currentDistrictId)?.name || ''
-    const getSelectedGroupName = () => groups?.find(g => g.id === currentGroupId)?.name || ''
-    const getSelectedOldGroupName = () => oldGroups?.find(g => g.id === currentOldGroupId)?.name || ''
+    const selectedStateName = useMemo(
+        () => states?.find(s => s.id === currentStateId)?.name || '',
+        [states, currentStateId]
+    )
+    const selectedRegionName = useMemo(
+        () => regions?.find(r => r.id === currentRegionId)?.name || '',
+        [regions, currentRegionId]
+    )
+    const selectedDistrictName = useMemo(
+        () => districts?.find(d => d.id === currentDistrictId)?.name || '',
+        [districts, currentDistrictId]
+    )
+    const selectedOldGroupName = useMemo(
+        () => oldGroups?.find(g => g.id === currentOldGroupId)?.name || '',
+        [oldGroups, currentOldGroupId]
+    )
+    const selectedGroupName = useMemo(
+        () => groups?.find(g => g.id === currentGroupId)?.name || '',
+        [groups, currentGroupId]
+    )
+
+    const filteredRegions = useMemo(() => {
+        if (!regions || regions.length === 0) return []
+        if (!currentStateId) return regions
+        return regions.filter(region => {
+            if (region.state_id != null) {
+                return Number(region.state_id) === Number(currentStateId)
+            }
+            if (!selectedStateName) return false
+            return region.state?.toLowerCase() === selectedStateName.toLowerCase()
+        })
+    }, [regions, currentStateId, selectedStateName])
+
+    const filteredOldGroups = useMemo(() => {
+        if (!oldGroups || oldGroups.length === 0) return []
+        return oldGroups.filter(oldGroup => {
+            const matchesState = currentStateId
+                ? oldGroup.state_id != null
+                    ? Number(oldGroup.state_id) === Number(currentStateId)
+                    : oldGroup.state?.toLowerCase() === selectedStateName.toLowerCase()
+                : true
+
+            const matchesRegion = currentRegionId
+                ? oldGroup.region_id != null
+                    ? Number(oldGroup.region_id) === Number(currentRegionId)
+                    : oldGroup.region?.toLowerCase() === selectedRegionName.toLowerCase()
+                : true
+
+            return matchesState && matchesRegion
+        })
+    }, [oldGroups, currentStateId, currentRegionId, selectedStateName, selectedRegionName])
+
+    const filteredGroups = useMemo(() => {
+        if (!groups || groups.length === 0) return []
+        return groups.filter(group => {
+            const matchesState = currentStateId
+                ? group.state_id != null
+                    ? Number(group.state_id) === Number(currentStateId)
+                    : group.state?.toLowerCase() === selectedStateName.toLowerCase()
+                : true
+
+            const matchesRegion = currentRegionId
+                ? group.region_id != null
+                    ? Number(group.region_id) === Number(currentRegionId)
+                    : group.region?.toLowerCase() === selectedRegionName.toLowerCase()
+                : true
+
+            const matchesOldGroup = currentOldGroupId
+                ? group.old_group_id != null
+                    ? Number(group.old_group_id) === Number(currentOldGroupId)
+                    : group.old_group?.toLowerCase() === selectedOldGroupName.toLowerCase()
+                : true
+
+            return matchesState && matchesRegion && matchesOldGroup
+        })
+    }, [groups, currentStateId, currentRegionId, currentOldGroupId, selectedStateName, selectedRegionName, selectedOldGroupName])
+
+    const filteredDistricts = useMemo(() => {
+        if (!districts || districts.length === 0) return []
+        return districts.filter(district => {
+            const matchesState = currentStateId
+                ? district.state_id != null
+                    ? Number(district.state_id) === Number(currentStateId)
+                    : district.state?.toLowerCase() === selectedStateName.toLowerCase()
+                : true
+
+            const matchesRegion = currentRegionId
+                ? district.region_id != null
+                    ? Number(district.region_id) === Number(currentRegionId)
+                    : district.region?.toLowerCase() === selectedRegionName.toLowerCase()
+                : true
+
+            const matchesGroup = currentGroupId
+                ? district.group_id != null
+                    ? Number(district.group_id) === Number(currentGroupId)
+                    : district.group?.toLowerCase() === selectedGroupName.toLowerCase()
+                : true
+
+            return matchesState && matchesRegion && matchesGroup
+        })
+    }, [districts, currentStateId, currentRegionId, currentGroupId, selectedStateName, selectedRegionName, selectedGroupName])
+
+    const clearBelowDistrict = () => {
+        setValue('district_id', 0, { shouldValidate: true })
+        trigger('district_id')
+    }
+
+    const clearBelowGroup = () => {
+        setValue('group_id', 0, { shouldValidate: true })
+        trigger('group_id')
+        clearBelowDistrict()
+    }
+
+    const clearBelowOldGroup = () => {
+        setValue('old_group_id', undefined, { shouldValidate: true })
+        trigger('old_group_id')
+        clearBelowGroup()
+    }
+
+    const clearBelowRegion = () => {
+        setValue('region_id', 0, { shouldValidate: true })
+        trigger('region_id')
+        clearBelowOldGroup()
+    }
 
     const handleStateChange = (stateName: string) => {
         const state = states?.find(s => s.name === stateName)
-        if (state) {
-            setValue('state_id', state.id, { shouldValidate: true })
-            trigger('state_id')
-        }
+        setValue('state_id', state?.id || 0, { shouldValidate: true })
+        trigger('state_id')
+        clearBelowRegion()
     }
 
     const handleRegionChange = (regionName: string) => {
         const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
-    }
-
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        if (district) {
-            setValue('district_id', district.id, { shouldValidate: true })
-            trigger('district_id')
-        }
-    }
-
-    const handleGroupChange = (groupName: string) => {
-        const group = groups?.find(g => g.name === groupName)
-        if (group) {
-            setValue('group_id', group.id, { shouldValidate: true })
-            trigger('group_id')
-        }
+        setValue('region_id', region?.id || 0, { shouldValidate: true })
+        trigger('region_id')
+        clearBelowOldGroup()
     }
 
     const handleOldGroupChange = (oldGroupName: string) => {
         const oldGroup = oldGroups?.find(g => g.name === oldGroupName)
-        if (oldGroup) {
-            setValue('old_group_id', oldGroup.id, { shouldValidate: true })
-            trigger('old_group_id')
-        }
+        setValue('old_group_id', oldGroup?.id, { shouldValidate: true })
+        trigger('old_group_id')
+        clearBelowGroup()
+    }
+
+    const handleGroupChange = (groupName: string) => {
+        const group = groups?.find(g => g.name === groupName)
+        setValue('group_id', group?.id || 0, { shouldValidate: true })
+        trigger('group_id')
+        clearBelowDistrict()
+    }
+
+    const handleDistrictChange = (districtName: string) => {
+        const district = districts?.find(d => d.name === districtName)
+        setValue('district_id', district?.id || 0, { shouldValidate: true })
+        trigger('district_id')
     }
 
     return (
@@ -219,7 +334,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     <HStack gap="4" w="full">
                                         <Field.Root required invalid={!!errors.state_id}>
                                             <StateIdCombobox
-                                                value={getSelectedStateName()}
+                                                value={selectedStateName}
                                                 onChange={handleStateChange}
                                                 required
                                                 invalid={!!errors.state_id}
@@ -229,45 +344,53 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 
                                         <Field.Root required invalid={!!errors.region_id}>
                                             <RegionIdCombobox
-                                                value={getSelectedRegionName()}
+                                                value={selectedRegionName}
                                                 onChange={handleRegionChange}
                                                 required
                                                 invalid={!!errors.region_id}
+                                                items={filteredRegions}
+                                                disabled={!currentStateId}
                                             />
                                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                         </Field.Root>
                                     </HStack>
 
                                     <HStack gap="4" w="full">
-                                        <Field.Root required invalid={!!errors.district_id}>
-                                            <DistrictIdCombobox
-                                                value={getSelectedDistrictName()}
-                                                onChange={handleDistrictChange}
-                                                required
-                                                invalid={!!errors.district_id}
+                                        <Field.Root invalid={!!errors.old_group_id}>
+                                            <OldGroupIdCombobox
+                                                value={selectedOldGroupName}
+                                                onChange={handleOldGroupChange}
+                                                invalid={!!errors.old_group_id}
+                                                items={filteredOldGroups}
+                                                disabled={!currentRegionId}
                                             />
-                                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
                                         </Field.Root>
 
                                         <Field.Root required invalid={!!errors.group_id}>
                                             <GroupIdCombobox
-                                                value={getSelectedGroupName()}
+                                                value={selectedGroupName}
                                                 onChange={handleGroupChange}
                                                 required
                                                 invalid={!!errors.group_id}
+                                                items={filteredGroups}
+                                                disabled={!currentOldGroupId}
                                             />
                                             <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
                                         </Field.Root>
                                     </HStack>
 
                                     <HStack gap="4" w="full">
-                                        <Field.Root invalid={!!errors.old_group_id}>
-                                            <OldGroupIdCombobox
-                                                value={getSelectedOldGroupName()}
-                                                onChange={handleOldGroupChange}
-                                                invalid={!!errors.old_group_id}
+                                        <Field.Root required invalid={!!errors.district_id}>
+                                            <DistrictIdCombobox
+                                                value={selectedDistrictName}
+                                                onChange={handleDistrictChange}
+                                                required
+                                                invalid={!!errors.district_id}
+                                                items={filteredDistricts}
+                                                disabled={!currentGroupId}
                                             />
-                                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
                                         </Field.Root>
 
                                         <Field.Root required invalid={!!errors.month}>
@@ -467,10 +590,10 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                             <Dialog.ActionTrigger asChild>
                                 <Button rounded="xl" variant="outline" disabled={isLoading}>Cancel</Button>
                             </Dialog.ActionTrigger>
-                            <Button 
-                                rounded="xl" 
-                                type="submit" 
-                                form="attendance-form" 
+                            <Button
+                                rounded="xl"
+                                type="submit"
+                                form="attendance-form"
                                 colorPalette="accent"
                                 loading={isLoading}
                                 loadingText={mode === 'add' ? 'Adding Attendance' : 'Updating Attendance'}

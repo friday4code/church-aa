@@ -8,8 +8,6 @@ import {
     Input,
     Button,
     Text,
-    Select,
-    createListCollection,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -24,26 +22,14 @@ interface GroupEditFormProps {
     onCancel: () => void
 }
 
-// Access level options
-const ACCESS_LEVELS = createListCollection({
-    items: [
-        { label: 'State Admin', value: 'state-admin' },
-        { label: 'Region Admin', value: 'region-admin' },
-        { label: 'District Admin', value: 'district-admin' },
-        { label: 'Group Admin', value: 'group-admin' },
-        { label: 'User', value: 'user' },
-    ],
-})
-
 const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     const { user } = useMe()
     
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
             group_name: group.name,
             leader: group.leader || '',
-            access_level: group.access_level || 'user',
             state_id: user?.state_id || group.state_id || 0,
             region_id: user?.region_id || group.region_id || 0,
         }
@@ -56,14 +42,6 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
             setValue('region_id', user.region_id || 0)
         }
     }, [user, setValue])
-
-    const currentAccessLevel = watch('access_level')
-
-    const handleAccessLevelChange = (value: string[]) => {
-        if (value.length > 0) {
-            setValue('access_level', value[0], { shouldValidate: true })
-        }
-    }
 
     const onSubmit = (data: GroupFormData) => {
         onUpdate(data)
@@ -99,40 +77,6 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    <Field.Root required invalid={!!errors.access_level}>
-                        <Field.Label>Access Level
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Select.Root
-                            collection={ACCESS_LEVELS}
-                            value={currentAccessLevel ? [currentAccessLevel] : []}
-                            onValueChange={(e) => handleAccessLevelChange(e.value)}
-                            size="md"
-                        >
-                            <Select.HiddenSelect {...register('access_level')} />
-                            <Select.Label>Select Access Level</Select.Label>
-                            <Select.Control>
-                                <Select.Trigger rounded="lg">
-                                    <Select.ValueText placeholder="Select access level" />
-                                </Select.Trigger>
-                                <Select.IndicatorGroup>
-                                    <Select.Indicator />
-                                </Select.IndicatorGroup>
-                            </Select.Control>
-                            <Select.Positioner>
-                                <Select.Content>
-                                    {ACCESS_LEVELS.items.map((level) => (
-                                        <Select.Item item={level} key={level.value}>
-                                            {level.label}
-                                            <Select.ItemIndicator />
-                                        </Select.Item>
-                                    ))}
-                                </Select.Content>
-                            </Select.Positioner>
-                        </Select.Root>
-                        <Field.ErrorText>{errors.access_level?.message}</Field.ErrorText>
                     </Field.Root>
 
                     {/* Hidden inputs for state_id and region_id from logged in user */}

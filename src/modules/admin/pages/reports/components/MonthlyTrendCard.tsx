@@ -13,7 +13,7 @@ interface MonthlyTrendChartProps {
 
 export const MonthlyTrendCard = ({ data }: MonthlyTrendChartProps) => {
     return (
-        <Card.Root bg={{ base: "white", _dark: "gray.800" }} border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+        <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
             <Card.Header pb="4">
                 <Flex justify="space-between" align="center">
                     <VStack align="start" gap="1">

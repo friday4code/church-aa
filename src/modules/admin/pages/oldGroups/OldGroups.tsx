@@ -125,6 +125,9 @@ const Content = () => {
         },
     })
 
+    console.log("olg grpud", oldGroups);
+    
+
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean

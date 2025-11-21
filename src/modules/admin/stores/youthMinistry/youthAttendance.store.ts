@@ -1,26 +1,18 @@
 // stores/youth-attendance.store.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { YouthAttendanceFormData } from '../../schemas/youthMinistry/youthAttendance.schema';
+import type { YouthAttendanceLocalFormData } from '../../schemas/youthMinistry/youthAttendanceLocal.schema';
 
-export interface YouthAttendance {
+export interface YouthAttendance extends YouthAttendanceLocalFormData {
     id: number;
-    stateName: string;
-    regionName: string;
-    oldGroupName?: string;
-    groupName: string;
-    month: string;
-    year: string;
-    yhsfMale: number;
-    yhsfFemale: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
 interface YouthAttendanceStore {
     youthAttendance: YouthAttendance[];
-    addYouthAttendance: (data: YouthAttendanceFormData) => void;
-    updateYouthAttendance: (id: number, data: Partial<YouthAttendanceFormData>) => void;
+    addYouthAttendance: (data: YouthAttendanceLocalFormData) => void;
+    updateYouthAttendance: (id: number, data: Partial<YouthAttendanceLocalFormData>) => void;
     deleteYouthAttendance: (id: number) => void;
     setYouthAttendance: (youthAttendance: YouthAttendance[]) => void;
 }

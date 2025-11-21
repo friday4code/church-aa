@@ -1,7 +1,7 @@
 // components/dashboard/YouthAttendanceDashboard.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link, useNavigate } from "react-router"
 import {
     Box,
@@ -14,13 +14,11 @@ import {
     SimpleGrid,
     Badge,
 } from "@chakra-ui/react"
-import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
 import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
-import { useYouthAttendanceStore, type YouthAttendance } from "@/modules/admin/stores/youthMinistry/youthAttendance.store"
-import { useYouthWeeklyStore, type YouthWeeklyAttendance } from "@/modules/admin/stores/youthMinistry/youthWeekly.store"
-import { useYouthRevivalAttendanceStore, type YouthRevivalAttendance } from "@/modules/admin/stores/youthMinistry/revival.store"
+import { useYouthAttendance } from "@/modules/admin/hooks/useYouthAttendance"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 export const YouthAttendanceDashboard: React.FC = () => {
     return (
@@ -71,10 +69,13 @@ const YOUTH_SERVICE_TYPES = {
 const Content = () => {
     const navigate = useNavigate()
 
-    // Get all youth attendance stores
-    const { youthAttendance } = useYouthAttendanceStore()
-    const { attendances: youthWeeklyAttendances } = useYouthWeeklyStore()
-    const { youthRevivalAttendances } = useYouthRevivalAttendanceStore()
+    // Get all youth attendance data from API
+    const { data: weeklyData, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
+    const { data: revivalData, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
+
+    const youthWeeklyAttendances: YouthAttendance[] = useMemo(() => weeklyData?.data ?? [], [weeklyData])
+    const youthRevivalAttendances: YouthAttendance[] = useMemo(() => revivalData?.data ?? [], [revivalData])
+    const youthAttendance: YouthAttendance[] = useMemo(() => [], [])
 
     const [stats, setStats] = useState({
         totalRecords: 0,
@@ -150,9 +151,13 @@ const Content = () => {
         // Calculate last 7 days activity
         const oneWeekAgo = new Date()
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-        const recentActivity = allYouthRecords.filter(record =>
-            new Date(record.createdAt) > oneWeekAgo
-        ).length
+        const recentActivity = allYouthRecords.filter(record => {
+            if (!record.createdAt) return false
+            const createdAt = typeof record.createdAt === 'string' || record.createdAt instanceof Date
+                ? new Date(record.createdAt)
+                : null
+            return createdAt && createdAt > oneWeekAgo
+        }).length
 
         setStats({
             totalRecords,
@@ -187,38 +192,31 @@ const Content = () => {
         const monthlyYouthAttendance = calculateMonthlyYouthAttendance()
         setMonthlyData(monthlyYouthAttendance)
 
-    }, [youthAttendance, youthWeeklyAttendances, youthRevivalAttendances])
+    }, [youthWeeklyAttendances, youthRevivalAttendances, isLoadingWeekly, isLoadingRevival])
 
     // Helper function to calculate service-specific statistics
     const getServiceStats = (serviceType: YouthAttendanceType): YouthServiceStats => {
         switch (serviceType) {
             case 'youth-attendance':
-                const youthAttRecords = youthAttendance.length
-                const youthAttTotal = youthAttendance.reduce((sum, att) => sum + att.yhsfMale + att.yhsfFemale, 0)
-                const youthAttMale = youthAttendance.reduce((sum, att) => sum + att.yhsfMale, 0)
-                const youthAttFemale = youthAttendance.reduce((sum, att) => sum + att.yhsfFemale, 0)
-                const youthAttLastUpdated = youthAttendance.length > 0
-                    ? new Date(Math.max(...youthAttendance.map(a => new Date(a.updatedAt).getTime())))
-                    : null
-
+                // This type appears to be deprecated or merged with weekly/revival
                 return {
                     name: 'Youth Attendance',
-                    records: youthAttRecords,
-                    totalAttendance: youthAttTotal,
-                    averageAttendance: youthAttRecords > 0 ? Math.round(youthAttTotal / youthAttRecords) : 0,
-                    lastUpdated: youthAttLastUpdated,
-                    totalMale: youthAttMale,
-                    totalFemale: youthAttFemale
+                    records: 0,
+                    totalAttendance: 0,
+                    averageAttendance: 0,
+                    lastUpdated: null,
+                    totalMale: 0,
+                    totalFemale: 0
                 }
 
             case 'youth-weekly':
                 const weeklyRecords = youthWeeklyAttendances.length
                 const weeklyTotal = youthWeeklyAttendances.reduce((sum, att) =>
-                    sum + att.membersBoys + att.visitorsBoys + att.membersGirls + att.visitorsGirls, 0)
-                const weeklyMale = youthWeeklyAttendances.reduce((sum, att) => sum + att.membersBoys + att.visitorsBoys, 0)
-                const weeklyFemale = youthWeeklyAttendances.reduce((sum, att) => sum + att.membersGirls + att.visitorsGirls, 0)
+                    sum + att.member_boys + att.visitor_boys + att.member_girls + att.visitor_girls, 0)
+                const weeklyMale = youthWeeklyAttendances.reduce((sum, att) => sum + att.member_boys + att.visitor_boys, 0)
+                const weeklyFemale = youthWeeklyAttendances.reduce((sum, att) => sum + att.member_girls + att.visitor_girls, 0)
                 const weeklyLastUpdated = youthWeeklyAttendances.length > 0
-                    ? new Date(Math.max(...youthWeeklyAttendances.map(a => new Date(a.updatedAt).getTime())))
+                    ? new Date(Math.max(...youthWeeklyAttendances.map(a => new Date(a.updatedAt || a.createdAt || Date.now()).getTime())))
                     : null
 
                 return {
@@ -237,7 +235,7 @@ const Content = () => {
                 const revivalMale = youthRevivalAttendances.reduce((sum, att) => sum + att.male, 0)
                 const revivalFemale = youthRevivalAttendances.reduce((sum, att) => sum + att.female, 0)
                 const revivalLastUpdated = youthRevivalAttendances.length > 0
-                    ? new Date(Math.max(...youthRevivalAttendances.map(a => new Date(a.updatedAt).getTime())))
+                    ? new Date(Math.max(...youthRevivalAttendances.map(a => new Date(a.updatedAt || a.createdAt || Date.now()).getTime())))
                     : null
 
                 return {
@@ -254,9 +252,9 @@ const Content = () => {
 
     // Calculate total youth attendance across all services
     const calculateTotalYouthAttendance = (): number => {
-        const youthAttTotal = youthAttendance.reduce((sum, att) => sum + att.yhsfMale + att.yhsfFemale, 0)
+        const youthAttTotal = 0 // This type appears deprecated
         const weeklyTotal = youthWeeklyAttendances.reduce((sum, att) =>
-            sum + att.membersBoys + att.visitorsBoys + att.membersGirls + att.visitorsGirls, 0)
+            sum + att.member_boys + att.visitor_boys + att.member_girls + att.visitor_girls, 0)
         const revivalTotal = youthRevivalAttendances.reduce((sum, att) => sum + att.male + att.female, 0)
 
         return youthAttTotal + weeklyTotal + revivalTotal
@@ -265,29 +263,11 @@ const Content = () => {
     // Calculate monthly youth attendance data
     const calculateMonthlyYouthAttendance = () => {
         const monthlyData: Record<string, any> = {}
-        const currentYear = new Date().getFullYear().toString()
-
-        // Process Youth Attendance
-        youthAttendance.forEach(attendance => {
-            if (attendance.year === currentYear) {
-                const monthKey = `${attendance.year}-${attendance.month}`
-                if (!monthlyData[monthKey]) {
-                    monthlyData[monthKey] = {
-                        month: attendance.month,
-                        youthAttendance: 0,
-                        youthWeekly: 0,
-                        youthRevival: 0,
-                        total: 0
-                    }
-                }
-                monthlyData[monthKey].youthAttendance += attendance.yhsfMale + attendance.yhsfFemale
-                monthlyData[monthKey].total += attendance.yhsfMale + attendance.yhsfFemale
-            }
-        })
+        const currentYear = new Date().getFullYear()
 
         // Process Youth Weekly Attendance
         youthWeeklyAttendances.forEach(attendance => {
-            if (attendance.year === currentYear) {
+            if (attendance.year && attendance.year === currentYear) {
                 const monthKey = `${attendance.year}-${attendance.month}`
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
@@ -298,8 +278,8 @@ const Content = () => {
                         total: 0
                     }
                 }
-                const weeklyTotal = attendance.membersBoys + attendance.visitorsBoys +
-                    attendance.membersGirls + attendance.visitorsGirls
+                const weeklyTotal = attendance.member_boys + attendance.visitor_boys +
+                    attendance.member_girls + attendance.visitor_girls
                 monthlyData[monthKey].youthWeekly += weeklyTotal
                 monthlyData[monthKey].total += weeklyTotal
             }
@@ -307,13 +287,11 @@ const Content = () => {
 
         // Process Youth Revival Attendance
         youthRevivalAttendances.forEach(attendance => {
-            const attendanceDate = new Date(attendance.createdAt)
-            if (attendanceDate.getFullYear().toString() === currentYear) {
-                const month = attendanceDate.toLocaleString('default', { month: 'long' })
-                const monthKey = `${currentYear}-${month}`
+            if (attendance.year && attendance.year === currentYear) {
+                const monthKey = `${attendance.year}-${attendance.month}`
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
-                        month: month,
+                        month: attendance.month,
                         youthAttendance: 0,
                         youthWeekly: 0,
                         youthRevival: 0,
@@ -350,7 +328,7 @@ const Content = () => {
         trend?: number
     }) => (
         <Card.Root
-            bg="white"
+            bg="bg"
             border="1px"
             borderColor="gray.200"
             rounded="xl"
@@ -367,7 +345,7 @@ const Content = () => {
             <Card.Body p="0">
                 <Flex justify="space-between" align="start">
                     <VStack align="start" gap="2">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                        <Text fontSize="sm" color="fg" fontWeight="medium">
                             {title}
                         </Text>
                         <Heading size="2xl" color={color}>
@@ -390,25 +368,12 @@ const Content = () => {
                     </VStack>
                     <Box
                         p="3"
-                        bg={`${color}.50`}
+                        bg={`${color}/5`}
                         rounded="lg"
                         color={color}
                     >
                         <Icon size="24" />
                     </Box>
-                </Flex>
-                <Flex justify="space-between" align="center" mt="4">
-                    <Box
-                        asChild
-                        fontSize="sm"
-                        color={color}
-                        fontWeight="medium"
-                    >
-                        <Link to={link}>
-                            View details
-                        </Link>
-                    </Box>
-                    <ArrowRight size="16" color="currentColor" />
                 </Flex>
             </Card.Body>
         </Card.Root>
@@ -416,51 +381,45 @@ const Content = () => {
 
     // Youth Service Distribution Donut Chart
     const YouthServiceDistributionChart = () => {
-        const chart = useChart({
-            data: serviceDistribution,
-        })
-
         const totalRecords = serviceDistribution.reduce((sum, item) => sum + item.value, 0)
 
+        const colorMap: Record<string, string> = {
+            "blue.solid": "#3182CE",
+            "green.solid": "#38A169",
+            "purple.solid": "#805AD5",
+            "orange.solid": "#DD6B20",
+            "red.solid": "#E53E3E",
+        }
+
         return (
-            <Chart.Root boxSize="200px" chart={chart} mx="auto">
-                <PieChart>
-                    <Tooltip
-                        cursor={false}
-                        animationDuration={100}
-                        content={<Chart.Tooltip hideLabel />}
-                    />
-                    <Pie
-                        innerRadius={60}
-                        outerRadius={80}
-                        isAnimationActive={true}
-                        animationDuration={500}
-                        data={chart.data}
-                        dataKey={chart.key("value")}
-                        nameKey="name"
-                    >
-                        <Label
-                            content={({ viewBox }) => (
-                                <Chart.RadialText
-                                    viewBox={viewBox}
-                                    title={totalRecords.toLocaleString()}
-                                    description="youth records"
-                                />
-                            )}
-                        />
-                        {chart.data.map((item) => (
-                            <Cell key={item.color} fill={chart.color(item.color)} />
-                        ))}
-                    </Pie>
-                </PieChart>
-            </Chart.Root>
+            <Box boxSize="200px" mx="auto">
+                <ResponsiveContainer width="200px" height="200px">
+                    <PieChart>
+                        <Tooltip cursor={false} animationDuration={100} />
+                        <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={serviceDistribution} dataKey="value" nameKey="name">
+                            <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
+                                const { cx, cy } = viewBox
+                                return (
+                                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
+                                        <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>
+                                        <tspan x={cx} dy="20" fontSize="12" fill="#718096">youth records</tspan>
+                                    </text>
+                                )
+                            }} />
+                            {serviceDistribution.map((item) => (
+                                <Cell key={item.serviceType} fill={colorMap[item.color] || item.color} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+            </Box>
         )
     }
 
     // Monthly Youth Attendance Bar Chart
     const MonthlyYouthAttendanceChart = () => {
         return (
-            <Box width="100%" height="300px">
+            <Box bg="bg" width="100%" height="300px">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -520,7 +479,7 @@ const Content = () => {
                     value={stats.totalRecords}
                     icon={Calendar}
                     color="blue"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="All youth attendance records"
                 />
 
@@ -529,7 +488,7 @@ const Content = () => {
                     value={stats.totalYouthAttendance}
                     icon={Profile2User}
                     color="green"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Combined youth attendance"
                 />
 
@@ -538,7 +497,7 @@ const Content = () => {
                     value={stats.averageYouthAttendance}
                     icon={TrendUp}
                     color="purple"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Average youth per record"
                 />
 
@@ -547,7 +506,7 @@ const Content = () => {
                     value={stats.activeServices}
                     icon={ChartSquare}
                     color="orange"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Youth services with data"
                 />
 
@@ -556,15 +515,58 @@ const Content = () => {
                     value={stats.recentActivity}
                     icon={UserOctagon}
                     color="red"
-                    link="/admin/youth-attendance"
+                    link="/admin/youth_ministry/attendance"
                     description="Youth records last 7 days"
                 />
             </SimpleGrid>
 
+
+            {/* Quick Actions for Youth */}
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Header pb="4">
+                    <Heading size="lg">Youth Quick Actions</Heading>
+                </Card.Header>
+                <Card.Body pt="0">
+                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                        {Object.entries(YOUTH_SERVICE_TYPES).map(([serviceType, config]) => (
+                            <Link key={serviceType} to={`/admin/youth_ministry/${config.route}`}>
+                                <Card.Root
+                                    bg="bg"
+                                    variant="outline"
+                                    cursor="pointer"
+                                    transition="all 0.2s"
+                                    _hover={{
+                                        bg: `${config.color.replace('.solid', '')}/5`,
+                                        borderColor: `${config.color.replace('.solid', '')}/50`
+                                    }}
+                                >
+                                    <Card.Body>
+                                        <HStack justify="space-between">
+                                            <VStack align="start" gap="1">
+                                                <Text fontWeight="medium">{config.name}</Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    Manage youth attendance records
+                                                </Text>
+                                            </VStack>
+                                            <ArrowRight size="20" color={config.color.replace('.solid', '')} />
+                                        </HStack>
+                                    </Card.Body>
+                                </Card.Root>
+                            </Link>
+                        ))}
+                    </SimpleGrid>
+                </Card.Body>
+            </Card.Root>
+
+
+
+
+
+
             {/* Charts Section */}
-            <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
+            <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8" bg="bg" rounded="xl">
                 {/* Youth Service Distribution Chart */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -579,7 +581,7 @@ const Content = () => {
                         </Flex>
                     </Card.Header>
 
-                    <Card.Body pt="0">
+                    <Card.Body pt="0" bg="bg" rounded='xl'>
                         <SimpleGrid columns={{ base: 1, md: 2 }} gap="8" alignItems="center">
                             {/* Donut Chart */}
                             <Box display="flex" justifyContent="center" alignItems="center">
@@ -618,7 +620,7 @@ const Content = () => {
 
                                 {/* Summary Stats */}
                                 <Box
-                                    bg="gray.50"
+                                    bg="bg.subtle"
                                     rounded="lg"
                                     p="4"
                                     w="full"
@@ -655,7 +657,7 @@ const Content = () => {
                 </Card.Root>
 
                 {/* Monthly Youth Attendance Trend */}
-                <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -677,7 +679,7 @@ const Content = () => {
             </SimpleGrid>
 
             {/* Youth Service Type Breakdown */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
+            <Card.Root bg="bg" border="1px" borderColor="gray.200" rounded="xl">
                 <Card.Header pb="4">
                     <Heading size="lg">Youth Service Type Breakdown</Heading>
                     <Text color="gray.600" mt="1">
@@ -700,7 +702,7 @@ const Content = () => {
                                         transform: 'translateY(-2px)',
                                         shadow: 'md'
                                     }}
-                                    onClick={() => navigate(config.route)}
+                                    onClick={() => navigate(`/admin/youth_ministry/${config.route}`)}
                                 >
                                     <Card.Body>
                                         <VStack align="start" gap="3">
@@ -782,41 +784,7 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
 
-            {/* Quick Actions for Youth */}
-            <Card.Root bg="white" border="1px" borderColor="gray.200" rounded="xl">
-                <Card.Header pb="4">
-                    <Heading size="lg">Youth Quick Actions</Heading>
-                </Card.Header>
-                <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
-                        {Object.entries(YOUTH_SERVICE_TYPES).map(([serviceType, config]) => (
-                            <Link key={serviceType} to={config.route}>
-                                <Card.Root
-                                    variant="outline"
-                                    cursor="pointer"
-                                    transition="all 0.2s"
-                                    _hover={{
-                                        bg: `${config.color.replace('.solid', '')}.50`,
-                                        borderColor: `${config.color.replace('.solid', '')}.200`
-                                    }}
-                                >
-                                    <Card.Body>
-                                        <HStack justify="space-between">
-                                            <VStack align="start" gap="1">
-                                                <Text fontWeight="medium">{config.name}</Text>
-                                                <Text fontSize="sm" color="gray.600">
-                                                    Manage youth attendance records
-                                                </Text>
-                                            </VStack>
-                                            <ArrowRight size="20" color={config.color.replace('.solid', '')} />
-                                        </HStack>
-                                    </Card.Body>
-                                </Card.Root>
-                            </Link>
-                        ))}
-                    </SimpleGrid>
-                </Card.Body>
-            </Card.Root>
+
         </VStack>
     )
 }

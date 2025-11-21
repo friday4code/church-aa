@@ -2,8 +2,34 @@ import type { District, Districts } from "@/types/districts.type";
 import { axiosClient } from "../config/axios.config"
 import type { AttendanceRecord } from "@/types/attendance.type";
 import type { CreateYouthAttendanceData, UpdateYouthAttendanceData, YouthAttendanceFilters, YouthAttendanceResponse, YouthAttendancesResponse } from "@/types/youthAttendance.type";
+import type { AttendanceMonitoring } from "@/types/attendance-monitoring.type";
 
 export const adminApi = {
+    // Users
+    getAttendanceMonitoring: async (): Promise<AttendanceMonitoring> => {
+        const { data } = await axiosClient.get<any>("/attendance-monitor/monitor/attendance");
+        return data;
+    },
+
+    sendAttendanceReminder: async (entityType: string): Promise<{
+        "sent_to": string[]
+    }> => {
+        const { data } = await axiosClient.post<{
+            "sent_to": string[]
+        }>(`/attendance-monitor/monitor/remind/${entityType}`);
+        return data;
+    },
+
+    sendAttendanceEntityReminder: async (entityType: string, entityId: number): Promise<{
+        "sent_to": string[]
+    }> => {
+        const { data } = await axiosClient.post<{
+            "sent_to": string[]
+        }>(`/attendance-monitor/monitor/remind/${entityType}/${entityId}`);
+        return data;
+    },
+
+
     // Users
     getUsers: async (): Promise<any> => {
         const { data } = await axiosClient.get<any>("/api/users/");
@@ -215,7 +241,7 @@ export const adminApi = {
         if (filters?.attendance_type) params.append('attendance_type', filters.attendance_type);
         if (filters?.year) params.append('year', filters.year.toString());
         if (filters?.month) params.append('month', filters.month);
-        
+
         const { data } = await axiosClient.get<YouthAttendancesResponse>(`/youth-attendance/youth-attendance?${params.toString()}`);
         return data;
     },
