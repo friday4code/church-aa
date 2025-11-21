@@ -8,6 +8,8 @@ export const userSchema = (mode: string) => z.object({
     state_id: z.number().min(1, 'State is required'),
     region_id: z.number().min(1, 'Region is required'),
     district_id: z.number().min(1, 'District is required'),
+    group_id: z.number().optional().default(0),
+    old_group_id: z.number().optional().default(0),
     roles: z.array(z.union([z.number(), z.string()])).optional().default([1])
 }).refine((data) => {
     // For add mode, password is required

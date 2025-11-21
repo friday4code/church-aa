@@ -110,7 +110,6 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedUsers, users, onClose, onUp
                                             <UserEditForm
                                                 user={tab.user}
                                                 onUpdate={(data) => handleTabUpdate(tab.id, data)}
-                                                onCancel={() => removeTab(tab.id)}
                                             />
                                         </Tabs.Content>
                                     ))}

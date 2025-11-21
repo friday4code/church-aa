@@ -264,6 +264,8 @@ const Content = () => {
             state_id: data.state_id,
             region_id: data.region_id,
             district_id: data.district_id,
+            group_id: data.group_id,
+            old_group_id: data.old_group_id,
             roles: data.roles
         }
 

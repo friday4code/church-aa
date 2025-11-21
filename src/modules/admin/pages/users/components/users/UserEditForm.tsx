@@ -8,41 +8,69 @@ import {
     Text,
     InputGroup,
     IconButton,
+    Select,
+    createListCollection,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
 import { userSchema, type UserFormData } from "@/modules/admin/schemas/users.schema"
-import { useAuthStore } from "@/store/auth.store"
+import { useMe } from "@/hooks/useMe"
+import type { User } from "@/types/users.type"
 
 interface UserEditFormProps {
-    user: any
+    user: User
     onUpdate: (data: Partial<UserFormData>) => void
-    onCancel: () => void
 }
 
-const UserEditForm = ({ user, onUpdate, onCancel }: UserEditFormProps) => {
+const UserEditForm = ({ user, onUpdate }: UserEditFormProps) => {
     const [showPassword, setShowPassword] = useState(false)
-    const authUser = useAuthStore((state) => state.user)
+    const { user: authUser } = useMe();
 
-    const { register, handleSubmit, formState: { errors } } = useForm<UserFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<UserFormData>({
         resolver: zodResolver(userSchema("edit")),
         defaultValues: {
             name: user.name,
             email: user.email,
-            phone: user.phone,
+            phone: user.phone as string,
             password: '', // Don't pre-fill password for security
             state_id: user.state_id || authUser?.state_id || 0,
             region_id: user.region_id || authUser?.region_id || 0,
             district_id: user.district_id || authUser?.district_id || 0,
-            roles: user.roles || ['user']
+            roles: Array.isArray(user.roles)
+                ? (user.roles as string[]).map((r) => {
+                    const t = String(r).trim().toLowerCase()
+                    if (t === 'super admin') return 2
+                    if (t === 'state admin') return 3
+                    if (t === 'region admin') return 4
+                    if (t === 'district admin') return 5
+                    if (t === 'group admin') return 6
+                    if (t === 'viewer') return 7
+                    if (t === 'admin') return 1
+                    return 1
+                })
+                : [1]
         }
     })
 
     const onSubmit = (data: UserFormData) => {
         onUpdate(data)
     }
+
+    const rolesCollection = createListCollection({
+        items: [
+            { label: 'Super Admin', value: '2' },
+            { label: 'State Admin', value: '3' },
+            { label: 'Region Admin', value: '4' },
+            { label: 'Group Admin', value: '6' },
+            { label: 'District Admin', value: '5' },
+            { label: 'Viewer', value: '7' },
+            { label: ' Admin', value: '1' },
+        ]
+    })
+    const rolesValue = ((watch('roles') ?? []) as (number | string)[]).map((v) => String(v))
+    const rolesErrorMessage = (errors.roles as unknown as { message?: string } | undefined)?.message
 
     return (
         <VStack gap="4" align="stretch">
@@ -110,6 +138,37 @@ const UserEditForm = ({ user, onUpdate, onCancel }: UserEditFormProps) => {
                         </InputGroup>
                         <Field.HelperText>Leave blank to keep current password</Field.HelperText>
                         <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.roles}>
+                        <Field.Label>Roles</Field.Label>
+                        <Select.Root
+                            collection={rolesCollection}
+                            size="sm"
+                            value={rolesValue}
+                            onValueChange={(val) => setValue('roles', (val.value || []).map((v) => parseInt(v, 10)), { shouldValidate: true })}
+                        >
+                            <Select.HiddenSelect multiple />
+                            <Select.Control>
+                                <Select.Trigger rounded="lg">
+                                    <Select.ValueText placeholder="Select roles" />
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                        <Select.Positioner>
+                            <Select.Content>
+                                    {rolesCollection.items.map((item) => (
+                                        <Select.Item item={item} key={item.value}>
+                                            {item.label}
+                                            <Select.ItemIndicator />
+                                        </Select.Item>
+                                    ))}
+                            </Select.Content>
+                        </Select.Positioner>
+                        </Select.Root>
+                        <Field.ErrorText>{rolesErrorMessage}</Field.ErrorText>
                     </Field.Root>
 
                     {/* Hidden fields for API compatibility */}

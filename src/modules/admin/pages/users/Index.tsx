@@ -397,7 +397,7 @@ const Content: React.FC = () => {
                             </Card.Body>
                         </Card.Root>
 
-                        <Card.Root
+                        {/* <Card.Root
                             variant="outline"
                             cursor="pointer"
                             transition="all 0.2s"
@@ -418,7 +418,7 @@ const Content: React.FC = () => {
                                     <ArrowRight size="20" variant="Bulk" color="green" />
                                 </HStack>
                             </Card.Body>
-                        </Card.Root>
+                        </Card.Root> */}
                     </SimpleGrid>
                 </Card.Body>
             </Card.Root>
