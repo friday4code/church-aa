@@ -27,7 +27,7 @@ export const useUserMutations = () => {
 
     const deleteUser = useMutation({
         // mutationFn: adminApi.deleteUser,
-        mutationFn: (id: number) => Promise.resolve("Deleted"),
+        mutationFn: (id: number) => adminApi.deleteUser(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
         },

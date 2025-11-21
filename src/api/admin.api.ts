@@ -45,6 +45,10 @@ export const adminApi = {
         const { data } = await axiosClient.put<any>(`/api/users/${userId}`, userData);
         return data;
     },
+    deleteUser: async (userId: number): Promise<any> => {
+        const { data } = await axiosClient.delete<any>(`/api/users/${userId}`);
+        return data;
+    },
 
     // Attendance - updated to use proper types
     getAttendance: async (): Promise<AttendanceRecord[]> => {

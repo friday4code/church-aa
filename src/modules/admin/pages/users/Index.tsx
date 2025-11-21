@@ -64,7 +64,8 @@ export default Index
 
 const Content: React.FC = () => {
     const navigate = useNavigate()
-    const { data: users, isLoading: usersLoading, error: usersError } = useUsers()
+    const { data, isLoading: usersLoading, error: usersError } = useUsers()
+    const users = data?.users || [];
     console.log(users)
 
     const [stats, setStats] = useState<DashboardStats>({
@@ -82,19 +83,19 @@ const Content: React.FC = () => {
     // Helper function to map access_level string to admin type
     const getAdminTypeFromAccessLevel = (accessLevel: string): string | null => {
         if (!accessLevel) return null
-        
+
         const level = accessLevel.toLowerCase().trim()
-        
+
         // Check for exact snake_case format first
-        if (level === 'super_admin' || level === 'group_admin' || 
-            level === 'district_admin' || level === 'region_admin' || 
+        if (level === 'super_admin' || level === 'group_admin' ||
+            level === 'district_admin' || level === 'region_admin' ||
             level === 'state_admin') {
             return level
         }
-        
+
         // Map descriptive access_level strings to admin types
         // Check for super admin patterns first (most specific)
-        if (level.includes('global') || level.includes('all states') || 
+        if (level.includes('global') || level.includes('all states') ||
             (level.includes('super') && level.includes('admin'))) {
             return 'super_admin'
         }
@@ -114,7 +115,7 @@ const Content: React.FC = () => {
         if (level.includes('state') && level.includes('admin') && !level.includes('all states')) {
             return 'state_admin'
         }
-        
+
         return null
     }
 

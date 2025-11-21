@@ -85,7 +85,7 @@ const Content = () => {
     const { hasRole } = useAuth();
 
     // Use custom hooks
-    const { data: users, isLoading: usersLoading, error: usersError } = useUsers();
+    const { data, isLoading: usersLoading, error: usersError } = useUsers();
     const { states, isLoading: statesLoading, error: statesError } = useStates();
     const { regions, isLoading: regionsLoading, error: regionsError } = useRegions();
     const { districts, isLoading: districtsLoading, error: districtsError } = useDistricts();
@@ -93,6 +93,7 @@ const Content = () => {
     const { oldGroups, isLoading: oldGroupsLoading, error: oldGroupsError } = useOldGroups();
     const { data: attendance, isLoading: attendanceLoading, error: attendanceError } = useAttendance();
 
+    const users = data?.users || [];
     // Handle errors with toasts
     const showErrorToast = (message: string) => {
         toaster.create({
@@ -112,9 +113,9 @@ const Content = () => {
 
     // Calculate total attendance for a record
     const getTotalAttendance = (record: AttendanceRecord) => {
-        return (record.men || 0) + (record.women || 0) + 
-               (record.youth_boys || 0) + (record.youth_girls || 0) + 
-               (record.children_boys || 0) + (record.children_girls || 0);
+        return (record.men || 0) + (record.women || 0) +
+            (record.youth_boys || 0) + (record.youth_girls || 0) +
+            (record.children_boys || 0) + (record.children_girls || 0);
     };
 
     // Transform attendance data for monthly trend chart
@@ -122,11 +123,11 @@ const Content = () => {
         if (!attendance || attendance.length === 0) return [];
 
         const monthlyData: Record<string, number> = {};
-        
+
         attendance.forEach((record: AttendanceRecord) => {
             const monthKey = record.month || 'Unknown';
             const total = getTotalAttendance(record);
-            
+
             if (monthlyData[monthKey]) {
                 monthlyData[monthKey] += total;
             } else {
@@ -135,9 +136,9 @@ const Content = () => {
         });
 
         // Convert to array and sort by month name
-        const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June', 
-                           'July', 'August', 'September', 'October', 'November', 'December'];
-        
+        const monthOrder = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+
         return Object.entries(monthlyData)
             .map(([month, attendance]) => ({ month, attendance }))
             .sort((a, b) => {
@@ -152,11 +153,11 @@ const Content = () => {
         if (!attendance || attendance.length === 0 || !regions) return [];
 
         const regionData: Record<number, number> = {};
-        
+
         attendance.forEach((record: AttendanceRecord) => {
             const regionId = record.region_id;
             const total = getTotalAttendance(record);
-            
+
             if (regionData[regionId]) {
                 regionData[regionId] += total;
             } else {

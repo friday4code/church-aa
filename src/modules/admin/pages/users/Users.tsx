@@ -102,7 +102,8 @@ const Content = () => {
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
-    const { data: users = [], isLoading } = useUsers()
+    const { data, isLoading } = useUsers();
+    const users = data?.users || [];
     const { createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUserMutations()
 
     const searchQuery = searchParams.get('search') || ''
