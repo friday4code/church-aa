@@ -1,17 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { VStack, SimpleGrid, Heading, Text, Card, Button } from "@chakra-ui/react"
 import { Profile2User, UserOctagon, Calendar, TrendUp, ChartSquare } from "iconsax-reactjs"
-import { useAttendanceStore } from "../../../stores/attendance.store"
-import { useDistrictsStore } from "../../../stores/districts.store"
-import { useGroupsStore } from "../../../stores/group.store"
-import { useOldGroupsStore } from "../../../stores/oldgroups.store"
-import { useRegionsStore } from "../../../stores/region.store"
-import { useStatesStore } from "../../../stores/states.store"
-import { useYouthRevivalAttendanceStore } from "../../../stores/youthMinistry/revival.store"
-import { useYouthAttendanceStore } from "../../../stores/youthMinistry/youthAttendance.store"
-import { useYouthWeeklyStore } from "../../../stores/youthMinistry/youthWeekly.store"
+import { useAttendance } from "@/modules/admin/hooks/useAttendance"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { useYouthAttendance } from "@/modules/admin/hooks/useYouthAttendance"
+import type { AttendanceRecord } from "@/types/attendance.type"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 import ReportsHeader from "./ReportsHeader"
 import StatCard from "./StatCard"
 import ServiceDistributionCard from "./ServiceDistributionCard"
@@ -20,20 +20,23 @@ import StateAttendanceReport from "./StateAttendanceReport"
 import RegionAttendanceReport from "./RegionAttendanceReport"
 import GroupAttendanceReport from "./GroupAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
-import QuickExportActions from "./QuickExportActions"
+ 
 import type { ReportFormValues } from "./ReportFilters"
+import { exportStateReportToExcel, transformApiToStore } from "@/utils/report.utils"
 
 export const ReportsContent = () => {
-    // All stores
-    const { attendances } = useAttendanceStore()
-    const { youthAttendance } = useYouthAttendanceStore()
-    const { attendances: youthWeeklyAttendances } = useYouthWeeklyStore()
-    const { youthRevivalAttendances } = useYouthRevivalAttendanceStore()
-    const { states } = useStatesStore()
-    const { regions } = useRegionsStore()
-    const { groups } = useGroupsStore()
-    const { oldGroups } = useOldGroupsStore()
-    const { districts } = useDistrictsStore()
+    const { data: attendanceData = [], isLoading: isLoadingAttendance } = useAttendance()
+    const { states = [], isLoading: isLoadingStates } = useStates()
+    const { regions = [], isLoading: isLoadingRegions } = useRegions()
+    const { groups = [], isLoading: isLoadingGroups } = useGroups()
+    const { oldGroups = [], isLoading: isLoadingOldGroups } = useOldGroups()
+    const { districts = [] } = useDistricts()
+    const { data: weeklyResp, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
+    const { data: revivalResp, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
+
+    const attendances: AttendanceRecord[] = attendanceData
+    const youthWeeklyAttendances: YouthAttendance[] = useMemo(() => weeklyResp?.data ?? [], [weeklyResp])
+    const youthRevivalAttendances: YouthAttendance[] = useMemo(() => revivalResp?.data ?? [], [revivalResp])
 
     const [selectedReport, setSelectedReport] = useState<string>("state")
     const [isLoading, setIsLoading] = useState(false)
@@ -45,35 +48,71 @@ export const ReportsContent = () => {
         averageAttendance: 0,
         growthRate: 0,
     })
-    const [serviceDistribution, setServiceDistribution] = useState<any[]>([])
-    const [monthlyTrend, setMonthlyTrend] = useState<any[]>([])
+    const serviceDistribution = useMemo(() => {
+        const data = [
+            { name: "Sunday Worship", value: attendances.filter((a) => a.service_type === "Sunday Service").length, color: "blue.solid" },
+            { name: "House Caring", value: attendances.filter((a) => a.service_type === "House Caring").length, color: "green.solid" },
+            { name: "Youth Attendance", value: (youthWeeklyAttendances.length + youthRevivalAttendances.length), color: "purple.solid" },
+            { name: "Youth Weekly", value: youthWeeklyAttendances.length, color: "orange.solid" },
+            { name: "Youth Revival", value: youthRevivalAttendances.length, color: "red.solid" },
+        ].filter((item) => item.value > 0)
+        return data
+    }, [attendances, youthWeeklyAttendances, youthRevivalAttendances])
+
+    const monthlyTrend = useMemo(() => {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        const currentMonth = new Date().getMonth()
+        const monthlyData: { month: string; attendance: number; youth: number }[] = []
+
+        for (let i = 5; i >= 0; i--) {
+            const monthIndex = (currentMonth - i + 12) % 12
+            const monthName = months[monthIndex]
+
+            const monthAttendances = attendances.filter((att) => {
+                const monthAbbrev = (att.month || '').slice(0, 3).toLowerCase()
+                return monthAbbrev === monthName.toLowerCase()
+            })
+
+            const monthTotal = monthAttendances.reduce((sum, att) =>
+                sum + (att.men || 0) + (att.women || 0) + (att.youth_boys || 0) + (att.youth_girls || 0) + (att.children_boys || 0) + (att.children_girls || 0), 0
+            )
+
+            monthlyData.push({
+                month: monthName,
+                attendance: monthTotal,
+                youth: Math.round(monthTotal * 0.3),
+            })
+        }
+
+        return monthlyData
+    }, [attendances])
 
     // Create collections for Combobox components - Sorted in ASC order
     const statesCollection = states
-        .map((state: any) => ({
+        .map((state) => ({
             label: state.name || state.stateName,
-            value: state.id || state.stateName,
+            value: state.name || state.stateName,
         }))
         .sort((a, b) => a.label.localeCompare(b.label))
 
     const regionsCollection = regions
-        .map((region: any) => ({
+        .map((region) => ({
             label: region.name || region.regionName,
-            value: region.id || region.regionName,
+            value: region.name || region.regionName,
         }))
         .sort((a, b) => a.label.localeCompare(b.label))
 
     const groupsCollection = groups
-        .map((group: any) => ({
+        .map((group) => ({
             label: group.name || group.groupName,
-            value: group.id || group.groupName,
+            value: group.name || group.groupName,
         }))
         .sort((a, b) => a.label.localeCompare(b.label))
 
     const oldGroupsCollection = oldGroups
-        .map((group: any) => ({
+        .map((group) => ({
             label: group.name || group.groupName,
-            value: group.id || group.groupName,
+            value: group.name || group.groupName,
         }))
         .sort((a, b) => a.label.localeCompare(b.label))
 
@@ -98,20 +137,15 @@ export const ReportsContent = () => {
     ]
 
     useEffect(() => {
-        calculateStats()
-        prepareChartData()
-    }, [attendances, youthAttendance, youthWeeklyAttendances, youthRevivalAttendances])
-
-    const calculateStats = () => {
-        const totalAttendance = attendances.reduce((sum, att: any) =>
+        const totalAttendance = attendances.reduce((sum, att) =>
             sum + (att.men || 0) + (att.women || 0) + (att.youth_boys || 0) + (att.youth_girls || 0) + (att.children_boys || 0) + (att.children_girls || 0), 0
         )
 
-        const totalYouth = youthAttendance.reduce((sum, att: any) => sum + (att.yhsf_male || 0) + (att.yhsf_female || 0), 0)
-        const totalWeeklyYouth = youthWeeklyAttendances.reduce((sum, att: any) =>
-            sum + (att.members_boys || 0) + (att.visitors_boys || 0) + (att.members_girls || 0) + (att.visitors_girls || 0), 0
+        const totalWeeklyYouth = youthWeeklyAttendances.reduce((sum: number, att) =>
+            sum + (att.member_boys || 0) + (att.visitor_boys || 0) + (att.member_girls || 0) + (att.visitor_girls || 0), 0
         )
-        const totalRevivalYouth = youthRevivalAttendances.reduce((sum, att: any) => sum + (att.male || 0) + (att.female || 0), 0)
+        const totalRevivalYouth = youthRevivalAttendances.reduce((sum: number, att) => sum + (att.male || 0) + (att.female || 0), 0)
+        const totalYouth = totalWeeklyYouth + totalRevivalYouth
 
         const averageAttendance = attendances.length > 0 ? Math.round(totalAttendance / attendances.length) : 0
         const growthRate = 12.5
@@ -124,50 +158,123 @@ export const ReportsContent = () => {
             averageAttendance,
             growthRate,
         })
-    }
+    }, [attendances, youthWeeklyAttendances, youthRevivalAttendances])
 
-    const prepareChartData = () => {
-        const serviceData = [
-            { name: "Sunday Worship", value: attendances.filter((a: any) => a.service_type === "sunday-worship").length, color: "blue.solid" },
-            { name: "House Caring", value: attendances.filter((a: any) => a.service_type === "house-caring").length, color: "green.solid" },
-            { name: "Youth Attendance", value: youthAttendance.length, color: "purple.solid" },
-            { name: "Youth Weekly", value: youthWeeklyAttendances.length, color: "orange.solid" },
-            { name: "Youth Revival", value: youthRevivalAttendances.length, color: "red.solid" },
-        ].filter((item) => item.value > 0)
+    // const calculateStats = () => {
+    //     const totalAttendance = attendances.reduce((sum, att) =>
+    //         sum + (att.men || 0) + (att.women || 0) + (att.youth_boys || 0) + (att.youth_girls || 0) + (att.children_boys || 0) + (att.children_girls || 0), 0
+    //     )
 
-        setServiceDistribution(serviceData)
+    //     const totalWeeklyYouth = youthWeeklyAttendances.reduce((sum: number, att) =>
+    //         sum + (att.member_boys || 0) + (att.visitor_boys || 0) + (att.member_girls || 0) + (att.visitor_girls || 0), 0
+    //     )
+    //     const totalRevivalYouth = youthRevivalAttendances.reduce((sum: number, att) => sum + (att.male || 0) + (att.female || 0), 0)
+    //     const totalYouth = totalWeeklyYouth + totalRevivalYouth
 
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        const currentMonth = new Date().getMonth()
-        const monthlyData: { month: string; attendance: number; youth: number }[] = []
+    //     const averageAttendance = attendances.length > 0 ? Math.round(totalAttendance / attendances.length) : 0
+    //     const growthRate = 12.5
 
-        for (let i = 5; i >= 0; i--) {
-            const monthIndex = (currentMonth - i + 12) % 12
-            const monthName = months[monthIndex]
+    //     setStats({
+    //         totalAttendance,
+    //         totalYouth,
+    //         totalWeeklyYouth,
+    //         totalRevivalYouth,
+    //         averageAttendance,
+    //         growthRate,
+    //     })
+    // }
 
-            const monthAttendances = attendances.filter((att: any) =>
-                att.month?.toLowerCase().includes(monthName.toLowerCase())
-            )
-
-            const monthTotal = monthAttendances.reduce((sum, att: any) =>
-                sum + (att.men || 0) + (att.women || 0) + (att.youth_boys || 0) + (att.youth_girls || 0) + (att.children_boys || 0) + (att.children_girls || 0), 0
-            )
-
-            monthlyData.push({
-                month: monthName,
-                attendance: monthTotal,
-                youth: Math.round(monthTotal * 0.3),
-            })
-        }
-
-        setMonthlyTrend(monthlyData)
-    }
+    // Removed prepareChartData state updates; using memoized derived data above
 
     const handleDownloadReport = (data: ReportFormValues) => {
         setIsLoading(true)
         try {
-            console.log("Downloading report with filters:", data)
-            // Implement download logic here
+            const months = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ]
+
+            let filtered = attendances
+            let stateName = 'AKWA IBOM'
+
+            if (data.state) {
+                const stateObj = states.find((s) => (s.name || (s as { stateName?: string }).stateName) === data.state || String(s.id) === data.state)
+                if (stateObj) {
+                    filtered = filtered.filter((att) => att.state_id === stateObj.id)
+                    stateName = (stateObj.name || (stateObj as { stateName?: string }).stateName || stateName)
+                }
+            }
+
+            if (data.region) {
+                const regionObj = regions.find((r) => (r.name || (r as { regionName?: string }).regionName) === data.region || String(r.id) === data.region)
+                if (regionObj) {
+                    filtered = filtered.filter((att) => att.region_id === regionObj.id)
+                }
+            }
+
+            if (data.district) {
+                const districtObj = districts.find((d) => d.name === data.district || String(d.id) === data.district)
+                if (districtObj) {
+                    filtered = filtered.filter((att) => att.district_id === districtObj.id)
+                }
+            }
+
+            if (data.group) {
+                const groupObj = groups.find((g) => (g.name || (g as { groupName?: string }).groupName) === data.group || String(g.id) === data.group)
+                if (groupObj) {
+                    filtered = filtered.filter((att) => att.group_id === groupObj.id)
+                }
+            }
+
+            if (data.oldGroup) {
+                const oldGroupObj = oldGroups.find((g) => (g.name || (g as { groupName?: string }).groupName) === data.oldGroup || String(g.id) === data.oldGroup)
+                if (oldGroupObj) {
+                    filtered = filtered.filter((att) => (att.old_group_id || 0) === oldGroupObj.id)
+                }
+            }
+
+            if (data.year) {
+                const yearNum = parseInt(data.year, 10)
+                if (!Number.isNaN(yearNum)) {
+                    filtered = filtered.filter((att) => att.year === yearNum)
+                }
+            }
+
+            if (data.month) {
+                const monthIndex = parseInt(data.month, 10)
+                if (!Number.isNaN(monthIndex) && monthIndex >= 1 && monthIndex <= 12) {
+                    const monthName = months[monthIndex - 1]
+                    filtered = filtered.filter((att) => att.month === monthName)
+                }
+            } else if (data.fromMonth && data.toMonth) {
+                const fromIndex = parseInt(data.fromMonth, 10)
+                const toIndex = parseInt(data.toMonth, 10)
+                if (
+                    !Number.isNaN(fromIndex) &&
+                    !Number.isNaN(toIndex) &&
+                    fromIndex >= 1 &&
+                    toIndex <= 12 &&
+                    fromIndex <= toIndex
+                ) {
+                    filtered = filtered.filter((att) => {
+                        const idx = months.indexOf(att.month) + 1
+                        return idx >= fromIndex && idx <= toIndex
+                    })
+                }
+            }
+
+            const toExport = filtered.map(transformApiToStore)
+            exportStateReportToExcel(toExport, regions, stateName)
         } catch (error) {
             console.error("Failed to download report:", error)
         } finally {
@@ -184,7 +291,7 @@ export const ReportsContent = () => {
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
-                        isLoading={isLoading}
+                        isLoading={isLoading || isLoadingAttendance || isLoadingStates}
                     />
                 )
             case "region":
@@ -195,7 +302,7 @@ export const ReportsContent = () => {
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
-                        isLoading={isLoading}
+                        isLoading={isLoading || isLoadingAttendance || isLoadingStates || isLoadingRegions}
                     />
                 )
             case "group":
@@ -207,7 +314,7 @@ export const ReportsContent = () => {
                         oldGroupsCollection={oldGroupsCollection}
                         yearsCollection={yearsCollection}
                         onDownload={handleDownloadReport}
-                        isLoading={isLoading}
+                        isLoading={isLoading || isLoadingAttendance || isLoadingStates || isLoadingRegions || isLoadingGroups || isLoadingOldGroups}
                     />
                 )
             case "youth":
@@ -218,7 +325,7 @@ export const ReportsContent = () => {
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
-                        isLoading={isLoading}
+                        isLoading={isLoading || isLoadingWeekly || isLoadingRevival || isLoadingStates || isLoadingRegions}
                     />
                 )
             default:
@@ -231,7 +338,7 @@ export const ReportsContent = () => {
             <ReportsHeader />
 
             {/* Quick Stats */}
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 6 }} gap="6">
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 6 }} gap="2">
                 <StatCard
                     title="Total Attendance"
                     value={stats.totalAttendance}
@@ -282,15 +389,10 @@ export const ReportsContent = () => {
                 />
             </SimpleGrid>
 
-            {/* Charts Section */}
-            <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
-                <ServiceDistributionCard data={serviceDistribution} />
-                <MonthlyTrendCard data={monthlyTrend} />
-            </SimpleGrid>
 
             {/* Report Generation Section */}
             <Card.Root
-                bg={{ base: "white", _dark: "gray.800" }}
+                bg="bg"
                 border="1px"
                 borderColor={{ base: "gray.200", _dark: "gray.700" }}
                 rounded="xl"
@@ -314,11 +416,11 @@ export const ReportsContent = () => {
                     <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
                         <Button
                             variant={selectedReport === "state" ? "solid" : "outline"}
-                            bg={selectedReport === "state" ? "accent.100" : "transparent"}
+                            bg={selectedReport === "state" ? "accent" : "transparent"}
                             color={selectedReport === "state" ? "white" : { base: "gray.700", _dark: "gray.300" }}
                             borderColor={!selectedReport.includes("state") ? { base: "gray.300", _dark: "gray.600" } : "transparent"}
                             _hover={{
-                                bg: selectedReport === "state" ? "accent.200" : { base: "gray.100", _dark: "gray.700" },
+                                bg: selectedReport === "state" ? "accent.emphasized" : "bg.subtle",
                             }}
                             onClick={() => setSelectedReport("state")}
                             rounded="xl"
@@ -327,11 +429,11 @@ export const ReportsContent = () => {
                         </Button>
                         <Button
                             variant={selectedReport === "region" ? "solid" : "outline"}
-                            bg={selectedReport === "region" ? "accent.100" : "transparent"}
+                            bg={selectedReport === "region" ? "accent" : "transparent"}
                             color={selectedReport === "region" ? "white" : { base: "gray.700", _dark: "gray.300" }}
                             borderColor={!selectedReport.includes("region") ? { base: "gray.300", _dark: "gray.600" } : "transparent"}
                             _hover={{
-                                bg: selectedReport === "region" ? "accent.200" : { base: "gray.100", _dark: "gray.700" },
+                                bg: selectedReport === "region" ? "accent.emphasized" : "bg.subtle",
                             }}
                             onClick={() => setSelectedReport("region")}
                             rounded="xl"
@@ -340,11 +442,11 @@ export const ReportsContent = () => {
                         </Button>
                         <Button
                             variant={selectedReport === "group" ? "solid" : "outline"}
-                            bg={selectedReport === "group" ? "accent.100" : "transparent"}
+                            bg={selectedReport === "group" ? "accent" : "transparent"}
                             color={selectedReport === "group" ? "white" : { base: "gray.700", _dark: "gray.300" }}
                             borderColor={!selectedReport.includes("group") ? { base: "gray.300", _dark: "gray.600" } : "transparent"}
                             _hover={{
-                                bg: selectedReport === "group" ? "accent.200" : { base: "gray.100", _dark: "gray.700" },
+                                bg: selectedReport === "group" ? "accent.emphasized" : "bg.subtle",
                             }}
                             onClick={() => setSelectedReport("group")}
                             rounded="xl"
@@ -353,11 +455,11 @@ export const ReportsContent = () => {
                         </Button>
                         <Button
                             variant={selectedReport === "youth" ? "solid" : "outline"}
-                            bg={selectedReport === "youth" ? "accent.100" : "transparent"}
+                            bg={selectedReport === "youth" ? "accent" : "transparent"}
                             color={selectedReport === "youth" ? "white" : { base: "gray.700", _dark: "gray.300" }}
                             borderColor={!selectedReport.includes("youth") ? { base: "gray.300", _dark: "gray.600" } : "transparent"}
                             _hover={{
-                                bg: selectedReport === "youth" ? "accent.200" : { base: "gray.100", _dark: "gray.700" },
+                                bg: selectedReport === "youth" ? "accent.emphasized" : "bg.subtle",
                             }}
                             onClick={() => setSelectedReport("youth")}
                             rounded="xl"
@@ -371,11 +473,19 @@ export const ReportsContent = () => {
                 </Card.Body>
             </Card.Root>
 
+
+            {/* Charts Section */}
+            {/* <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
+                <ServiceDistributionCard data={serviceDistribution} />
+                <MonthlyTrendCard data={monthlyTrend} />
+            </SimpleGrid> */}
+
+
             {/* Quick Export Actions */}
-            <QuickExportActions
+            {/* <QuickExportActions
                 attendances={attendances}
-                districts={districts}
-            />
+                districts={districts as District[]}
+            /> */}
         </VStack>
     )
 }

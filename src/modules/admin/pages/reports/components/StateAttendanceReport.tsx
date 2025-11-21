@@ -51,9 +51,9 @@ export const StateAttendanceReport = ({
 
     return (
         <Card.Root
-            bg={{ base: "white", _dark: "gray.800" }}
-            border="1px"
-            borderColor={{ base: "gray.200", _dark: "gray.700" }}
+            bg="bg"
+            border="xs"
+            borderColor={"border"}
             rounded="xl"
         >
             <Card.Header>
@@ -117,9 +117,9 @@ export const StateAttendanceReport = ({
                     <Flex justify="end">
                         <Button
                             type="submit"
-                            bg={{ base: "accent.100", _dark: "accent.200" }}
+                            bg="accent.100"
                             color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: { base: "accent.200", _dark: "accent.300" } }}
+                            _hover={{ bg: "accent.200" }}
                             disabled={isLoading}
                             rounded="xl"
                         >

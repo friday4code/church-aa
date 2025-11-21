@@ -11,6 +11,7 @@ interface ServiceBreakdownProps {
 }
 
 export const ServiceBreakdownCard = ({ data }: ServiceBreakdownProps) => {
+    type Palette = 'blue' | 'green' | 'purple' | 'orange' | 'red'
     return (
         <VStack align="start" gap="4">
             <Text fontSize="lg" fontWeight="medium" color={{ base: "gray.700", _dark: "gray.200" }}>
@@ -33,7 +34,7 @@ export const ServiceBreakdownCard = ({ data }: ServiceBreakdownProps) => {
                         </HStack>
                         <Badge
                             variant="subtle"
-                            colorPalette={item.color.replace('.solid', '') as any}
+                            colorPalette={item.color.split('.')[0] as Palette}
                         >
                             {item.value}
                         </Badge>

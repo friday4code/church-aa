@@ -21,7 +21,6 @@
  * @since 2024
  */
 
-import { Suspense, lazy } from "react"
 import AttendanceType from "@/modules/admin/components/AttendanceType";
 import AdminLayout from "@/modules/admin/layouts/AdminLayout";
 import AttendanceDashboard from "@/modules/admin/pages/attendance/Index";
@@ -41,6 +40,7 @@ import States from "@/modules/admin/pages/states/States";
 import Index from "@/modules/admin/pages/users/Index";
 import UserRights from "@/modules/admin/pages/users/UserRights";
 import Users from "@/modules/admin/pages/users/Users";
+import AttendanceMonitoring from "@/modules/admin/pages/attendance-monitoring/AttendanceMonitoring";
 import ProtectedRoute from "@/modules/shared/ProtectedRoute";
 import { Route, Routes } from "react-router";
 
@@ -145,6 +145,7 @@ export default function AdminRoutes() {
               - Provides report generation and data analytics functionality
               - Currently uses AdminProfilePage component (may need refactoring) */}
           <Route path="reports" element={<ReportsDashboard />} />
+          <Route path="attendance-logs" element={<AttendanceMonitoring />} />
 
           {/* Admin Profile Management:
               - Personal profile settings and preferences

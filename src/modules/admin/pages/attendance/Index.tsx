@@ -17,7 +17,6 @@ import {
     Spinner,
     Alert,
 } from "@chakra-ui/react"
-import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
 import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
@@ -315,44 +314,38 @@ const Content = () => {
 
     // Service Distribution Donut Chart
     const ServiceDistributionChart = () => {
-        const chart = useChart({
-            data: serviceDistribution,
-        })
-
         const totalRecords = serviceDistribution.reduce((sum, item) => sum + item.value, 0)
 
+        const colorMap: Record<string, string> = {
+            "blue.solid": "#3182CE",
+            "green.solid": "#38A169",
+            "purple.solid": "#805AD5",
+            "orange.solid": "#DD6B20",
+            "red.solid": "#E53E3E",
+        }
+
         return (
-            <Chart.Root boxSize="200px" chart={chart} mx="auto">
-                <PieChart>
-                    <Tooltip
-                        cursor={false}
-                        animationDuration={100}
-                        content={<Chart.Tooltip hideLabel />}
-                    />
-                    <Pie
-                        innerRadius={60}
-                        outerRadius={80}
-                        isAnimationActive={true}
-                        animationDuration={500}
-                        data={chart.data}
-                        dataKey={chart.key("value")}
-                        nameKey="name"
-                    >
-                        <Label
-                            content={({ viewBox }) => (
-                                <Chart.RadialText
-                                    viewBox={viewBox}
-                                    title={totalRecords.toLocaleString()}
-                                    description="total records"
-                                />
-                            )}
-                        />
-                        {chart.data.map((item) => (
-                            <Cell key={item.color} fill={chart.color(item.color)} />
-                        ))}
-                    </Pie>
-                </PieChart>
-            </Chart.Root>
+            <Box boxSize="200px" mx="auto">
+                <ResponsiveContainer width={200} height={200}>
+                    <PieChart>
+                        <Tooltip cursor={false} animationDuration={100} />
+                        <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={serviceDistribution} dataKey="value" nameKey="name">
+                            <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
+                                const { cx = 0, cy = 0 } = viewBox || {}
+                                return (
+                                    <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
+                                        <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>
+                                        <tspan x={cx} dy="20" fontSize="12" fill="#718096">total records</tspan>
+                                    </text>
+                                )
+                            }} />
+                            {serviceDistribution.map((item) => (
+                                <Cell key={item.serviceType} fill={colorMap[item.color] || item.color} />
+                            ))}
+                        </Pie>
+                    </PieChart>
+                </ResponsiveContainer>
+            </Box>
         )
     }
 

@@ -22,7 +22,10 @@ const AdminSidebar: React.FC = () => {
     const { hasRole } = useAuth();
 
     const isLinkActive = (href: string): boolean => {
-        return location.pathname.includes(href);
+        if (location.pathname === href) return true;
+        if (!location.pathname.startsWith(href)) return false;
+        const nextChar = location.pathname.charAt(href.length);
+        return nextChar === "/" || nextChar === "";
     };
 
     // Determine if a link should be visible based on user role
@@ -65,7 +68,7 @@ const AdminSidebar: React.FC = () => {
         return false;
     }, [hasRole]);
 
-    const allLinks = [
+    const allLinks = React.useMemo(() => ([
         { name: "Dashboard", href: "/admin/dashboard", icon: <Chart2 variant="Bulk" /> },
         { name: "States", href: "/admin/states", icon: <Location variant="Bulk" /> },
         { name: "Regions", href: "/admin/regions", icon: <Map variant="Bulk" /> },
@@ -77,8 +80,7 @@ const AdminSidebar: React.FC = () => {
         { name: "Attendance Logs", href: "/admin/attendance-logs", icon: <Notepad variant="Bulk" /> },
         { name: "Youth Ministry", href: "/admin/youth_ministry", icon: <House variant="Bulk" /> },
         { name: "Reports", href: "/admin/reports", icon: <Chart1 variant="Bulk" /> },
-        // { name: "Profile", href: "/admin/profile", icon: <User variant="Bulk" /> },
-    ];
+    ]), []);
 
     // Filter links based on user role
     const links = React.useMemo(() => {

@@ -8,10 +8,11 @@ import {
     exportAttendanceToCSV,
     copyAttendanceToClipboard,
 } from "@/utils/attendance.utils"
+import type { AttendanceRecord, District } from "@/types/attendance.type"
 
 interface QuickExportActionsProps {
-    attendances?: any
-    districts?: any
+    attendances?: AttendanceRecord[]
+    districts?: District[]
 }
 
 export const QuickExportActions = ({
@@ -20,7 +21,7 @@ export const QuickExportActions = ({
 }: QuickExportActionsProps) => {
     const handleExportExcel = () => {
         try {
-            exportAttendanceToExcel(attendances, districts)
+            exportAttendanceToExcel(attendances as AttendanceRecord[], districts as District[])
         } catch (error) {
             console.error("Failed to export to Excel:", error)
         }
@@ -28,7 +29,7 @@ export const QuickExportActions = ({
 
     const handleExportPDF = () => {
         try {
-            exportAttendanceToPDF(attendances, districts)
+            exportAttendanceToPDF(attendances as AttendanceRecord[], districts as District[])
         } catch (error) {
             console.error("Failed to export to PDF:", error)
         }
@@ -36,7 +37,7 @@ export const QuickExportActions = ({
 
     const handleExportCSV = () => {
         try {
-            exportAttendanceToCSV(attendances, districts)
+            exportAttendanceToCSV(attendances as AttendanceRecord[], districts as District[])
         } catch (error) {
             console.error("Failed to export to CSV:", error)
         }
@@ -44,7 +45,7 @@ export const QuickExportActions = ({
 
     const handleCopyToClipboard = async () => {
         try {
-            await copyAttendanceToClipboard(attendances, districts)
+            await copyAttendanceToClipboard(attendances as AttendanceRecord[], districts as District[])
         } catch (error) {
             console.error("Failed to copy to clipboard:", error)
         }
@@ -52,7 +53,7 @@ export const QuickExportActions = ({
 
     return (
         <Box
-            bg={{ base: "white", _dark: "gray.800" }}
+            bg="bg"
             p={4}
             rounded="xl"
             boxShadow={{ base: "sm", _dark: "0 1px 3px rgba(0, 0, 0, 0.3)" }}
@@ -65,7 +66,7 @@ export const QuickExportActions = ({
                     color="white"
                     _hover={{ bg: { base: "green.600", _dark: "green.700" } }}
                     onClick={handleExportExcel}
-                    disabled={attendances.length === 0}
+                    disabled={!((attendances?.length ?? 0) > 0)}
                 >
                     <DocumentDownload />
                     Export Excel
@@ -77,7 +78,7 @@ export const QuickExportActions = ({
                     color="white"
                     _hover={{ bg: { base: "red.600", _dark: "red.700" } }}
                     onClick={handleExportPDF}
-                    disabled={attendances.length === 0}
+                    disabled={!((attendances?.length ?? 0) > 0)}
                 >
                     <DocumentDownload />
                     Export PDF
@@ -89,7 +90,7 @@ export const QuickExportActions = ({
                     color="white"
                     _hover={{ bg: { base: "blue.600", _dark: "blue.700" } }}
                     onClick={handleExportCSV}
-                    disabled={attendances.length === 0}
+                    disabled={!((attendances?.length ?? 0) !== 0)}
                 >
                     <ReceiptText />
                     Export CSV
@@ -101,7 +102,7 @@ export const QuickExportActions = ({
                     color="white"
                     _hover={{ bg: { base: "gray.600", _dark: "gray.700" } }}
                     onClick={handleCopyToClipboard}
-                    disabled={attendances.length === 0}
+                    disabled={!((attendances?.length ?? 0) !== 0)}
                 >
                     <DocumentDownload />
                     Copy to Clipboard

@@ -15,7 +15,6 @@ import {
     Badge,
     Link,
 } from "@chakra-ui/react"
-import { Chart, useChart } from "@chakra-ui/charts"
 import { Cell, Label, Pie, PieChart, Tooltip } from "recharts"
 import { Profile2User, Shield, TrendUp, ArrowRight } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
@@ -258,10 +257,6 @@ const Content: React.FC = () => {
 
     // Donut Chart Component using Recharts
     const UserRightsDonutChart: React.FC = () => {
-        const chart = useChart({
-            data: chartData,
-        })
-
         const totalUsersWithRights = chartData
             .filter(item => item.name !== 'No Rights')
             .reduce((sum, item) => sum + item.value, 0)
@@ -274,38 +269,35 @@ const Content: React.FC = () => {
             )
         }
 
+        const colorMap: Record<string, string> = {
+            "blue.solid": "#3182CE",
+            "green.solid": "#38A169",
+            "purple.solid": "#805AD5",
+            "orange.solid": "#DD6B20",
+            "red.solid": "#E53E3E",
+            "gray.solid": "#A0AEC0",
+        }
+
         return (
-            <Chart.Root boxSize="200px" chart={chart} mx="auto">
+            <Box boxSize="200px" mx="auto">
                 <PieChart>
-                    <Tooltip
-                        cursor={false}
-                        animationDuration={100}
-                        content={<Chart.Tooltip hideLabel />}
-                    />
-                    <Pie
-                        innerRadius={60}
-                        outerRadius={80}
-                        isAnimationActive={true}
-                        animationDuration={500}
-                        data={chart.data as any}
-                        dataKey={chart.key("value")}
-                        nameKey="name"
-                    >
-                        <Label
-                            content={({ viewBox }) => (
-                                <Chart.RadialText
-                                    viewBox={viewBox}
-                                    title={totalUsersWithRights.toLocaleString()}
-                                    description="with rights"
-                                />
-                            )}
-                        />
-                        {chart.data.map((item) => (
-                            <Cell key={item.color} fill={chart.color(item.color)} />
+                    <Tooltip cursor={false} animationDuration={100} />
+                    <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={chartData} dataKey="value" nameKey="name">
+                        <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
+                            const { cx, cy } = viewBox
+                            return (
+                                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
+                                    <tspan fontSize="18" fontWeight="600">{totalUsersWithRights.toLocaleString()}</tspan>
+                                    <tspan x={cx} dy="20" fontSize="12" fill="#718096">with rights</tspan>
+                                </text>
+                            )
+                        }} />
+                        {chartData.map((item) => (
+                            <Cell key={item.name} fill={colorMap[item.color] || item.color} />
                         ))}
                     </Pie>
                 </PieChart>
-            </Chart.Root>
+            </Box>
         )
     }
 
