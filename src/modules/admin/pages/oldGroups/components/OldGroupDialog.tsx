@@ -96,33 +96,6 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
         setValue('code', generatedCode)
     }
 
-    const handleStateChange = (stateName: string) => {
-        if (!stateName) {
-            setValue('state_id', 0, { shouldValidate: true })
-            setValue('region_id', 0)
-            return
-        }
-
-        const selectedState = states?.find(state => state.name === stateName)
-        if (selectedState) {
-            setValue('state_id', selectedState.id, { shouldValidate: true })
-            // Reset region when state changes
-            setValue('region_id', 0, { shouldValidate: true })
-        }
-    }
-
-    const handleRegionChange = (regionName: string) => {
-        if (!regionName) {
-            setValue('region_id', 0, { shouldValidate: true })
-            return
-        }
-
-        const selectedRegion = regions?.find(region => region.name === regionName)
-        if (selectedRegion) {
-            setValue('region_id', selectedRegion.id, { shouldValidate: true })
-        }
-    }
-
     const generateGroupCode = (groupName: string): string => {
         if (!groupName) return ''
         const cleanName = groupName.replace(/group/gi, '').trim()
