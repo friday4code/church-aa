@@ -163,7 +163,7 @@ const Login = () => {
                                                         rounded="lg"
                                                         size="lg"
                                                         placeholder="admin@dclm.com"
-                                                        type="email"
+                                                        type="text"
                                                         autoComplete="email"
                                                     />
                                                 </InputGroup>
