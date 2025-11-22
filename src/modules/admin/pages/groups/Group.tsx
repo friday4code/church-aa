@@ -243,7 +243,7 @@ const Content = () => {
     }
 
     const handleBulkUpdate = (id: number, data: any) => {
-        updateGroup(id, data)
+        updateGroup({ id, data })
         // Remove from selected groups after update
         setSelectedGroups(prev => prev.filter(groupId => groupId !== id))
     }
@@ -273,7 +273,7 @@ const Content = () => {
         if (dialogState.mode === 'add') {
             createGroup(apiData)
         } else if (dialogState.group) {
-            updateGroup(dialogState.group.id, apiData as any)
+            updateGroup({ id: dialogState.group.id, data: apiData as any })
         }
     }
 

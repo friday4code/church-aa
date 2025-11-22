@@ -1,15 +1,8 @@
 // components/groups/components/GroupsTable.tsx
 "use client"
 
-import {
-    Table,
-    Checkbox,
-    IconButton,
-    Menu,
-    Portal,
-    ButtonGroup,
-    Pagination,
-} from "@chakra-ui/react"
+import { Table, Checkbox, IconButton, Menu, Portal, ButtonGroup, Pagination } from "@chakra-ui/react"
+import { memo, useMemo, useCallback } from "react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import TableLoading from "./GroupsTableLoading"
 import type { Group } from "@/types/groups.type"
@@ -47,9 +40,51 @@ const GroupsTable = ({
     onDeleteGroup,
     onPageChange,
 }: GroupsTableProps) => {
-    if (isLoading) {
-        return <TableLoading />;
-    }
+    const handleSelect = useCallback((id: number) => onSelectGroup(id), [onSelectGroup])
+    const handleEdit = useCallback((g: Group) => onEditGroup(g), [onEditGroup])
+    const handleDelete = useCallback((g: Group) => onDeleteGroup(g), [onDeleteGroup])
+
+    const Row = memo(({ group, index }: { group: Group; index: number }) => (
+        <Table.Row key={group.id}>
+            <Table.Cell>
+                <Checkbox.Root colorPalette={"accent"} checked={selectedGroups.includes(group.id)} onCheckedChange={() => handleSelect(group.id)}>
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control cursor="pointer" rounded="md" />
+                </Checkbox.Root>
+            </Table.Cell>
+            <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell>{group.old_group || '-'}</Table.Cell>
+            <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
+            <Table.Cell>{group.leader || '-'}</Table.Cell>
+            <Table.Cell textAlign="center">
+                <Menu.Root>
+                    <Menu.Trigger asChild>
+                        <IconButton rounded="xl" variant="ghost" size="sm">
+                            <More />
+                        </IconButton>
+                    </Menu.Trigger>
+                    <Portal>
+                        <Menu.Positioner>
+                            <Menu.Content rounded="lg">
+                                <Menu.Item value="edit" onClick={() => handleEdit(group)}>
+                                    <Edit /> Edit
+                                </Menu.Item>
+                                <Menu.Item color="red" value="delete" colorPalette="red" onClick={() => handleDelete(group)}>
+                                    <Trash /> Delete
+                                </Menu.Item>
+                            </Menu.Content>
+                        </Menu.Positioner>
+                    </Portal>
+                </Menu.Root>
+            </Table.Cell>
+        </Table.Row>
+    ), (a, b) => a.group === b.group && a.index === b.index)
+
+    const rows = useMemo(() => (
+        paginatedGroups?.map((group, index) => (
+            <Row key={group.id} group={group} index={index} />
+        ))
+    ), [paginatedGroups, selectedGroups, handleSelect, handleEdit, handleDelete])
 
     return (
         <>
@@ -104,53 +139,7 @@ const GroupsTable = ({
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
-                        {paginatedGroups?.map((group, index) => (
-                            <Table.Row key={group.id}>
-                                <Table.Cell>
-                                    <Checkbox.Root
-                                        colorPalette={"accent"}
-                                        checked={selectedGroups.includes(group.id)}
-                                        onCheckedChange={() => onSelectGroup(group.id)}
-                                    >
-                                        <Checkbox.HiddenInput />
-                                        <Checkbox.Control cursor="pointer" rounded="md" />
-                                    </Checkbox.Root>
-                                </Table.Cell>
-                                <Table.Cell>{index + 1}</Table.Cell>
-                                <Table.Cell>{group.old_group || '-'}</Table.Cell>
-                                <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
-                                <Table.Cell>{group.leader || '-'}</Table.Cell>
-                                <Table.Cell textAlign="center">
-                                    <Menu.Root>
-                                        <Menu.Trigger asChild>
-                                            <IconButton rounded="xl" variant="ghost" size="sm">
-                                                <More />
-                                            </IconButton>
-                                        </Menu.Trigger>
-                                        <Portal>
-                                            <Menu.Positioner>
-                                                <Menu.Content rounded="lg">
-                                                    <Menu.Item
-                                                        value="edit"
-                                                        onClick={() => onEditGroup(group)}
-                                                    >
-                                                        <Edit /> Edit
-                                                    </Menu.Item>
-                                                    <Menu.Item
-                                                        color="red"
-                                                        value="delete"
-                                                        colorPalette="red"
-                                                        onClick={() => onDeleteGroup(group)}
-                                                    >
-                                                        <Trash /> Delete
-                                                    </Menu.Item>
-                                                </Menu.Content>
-                                            </Menu.Positioner>
-                                        </Portal>
-                                    </Menu.Root>
-                                </Table.Cell>
-                            </Table.Row>
-                        ))}
+                        {isLoading ? <TableLoading /> : rows}
                     </Table.Body>
                 </Table.Root>
             </Table.ScrollArea>

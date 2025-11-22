@@ -73,16 +73,7 @@ export const States: React.FC = () => {
                     <ErrorFallback {...{ resetErrorBoundary, error }} />
                 )}
             >
-                <Suspense fallback={
-                    <Center h="400px">
-                        <VStack gap="4">
-                            <Spinner size="xl" color="accent.500" />
-                            <Text fontSize="lg" color="gray.600">Loading States Page...</Text>
-                        </VStack>
-                    </Center>
-                }>
-                    <Content />
-                </Suspense>
+                <Content />
             </ErrorBoundary>
         </>
     );
@@ -279,16 +270,7 @@ const Content = () => {
         }
     }, [selectedStates, isActionBarOpen])
 
-    if (isLoading && states.length === 0) {
-        return (
-            <Center h="400px">
-                <VStack gap="4">
-                    <Spinner size="xl" color="accent.500" />
-                    <Text fontSize="lg" color="gray.600">Loading states...</Text>
-                </VStack>
-            </Center>
-        )
-    }
+    
 
     return (
         <>

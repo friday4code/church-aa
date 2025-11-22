@@ -1,16 +1,9 @@
 "use client"
 
-import {
-    Heading,
-    HStack,
-    Button,
-    Badge,
-    Flex,
-    InputGroup,
-    Input
-} from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft } from "iconsax-reactjs"
 import type { Attendance } from "../../../stores/attendance.store"
+import { useState, useCallback } from "react"
 
 interface AttendanceHeaderProps {
     serviceName: string
@@ -27,6 +20,16 @@ const AttendanceHeader = ({
     onSearch,
     onNavigateBack
 }: AttendanceHeaderProps) => {
+    const [search, setSearch] = useState("")
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value)
+        onSearch(e.target.value)
+    }, [onSearch])
+    const clearSearch = useCallback(() => {
+        setSearch("")
+        onSearch("")
+    }, [onSearch])
+
     return (
         <>
             <Flex
@@ -46,12 +49,13 @@ const AttendanceHeader = ({
                 </HStack>
 
                 <HStack gap="4">
-                    <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
+                    <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                         <Input
                             bg="bg"
                             rounded="xl"
                             placeholder="Search attendance..."
-                            onChange={(e) => onSearch(e.target.value)}
+                            value={search}
+                            onChange={handleChange}
                         />
                     </InputGroup>
                     <Button

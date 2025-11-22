@@ -72,7 +72,7 @@ const BulkEditDialog = ({ isOpen, selectedGroups, groups, onClose, onUpdate }: B
     }
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root role="alertdialog" open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>

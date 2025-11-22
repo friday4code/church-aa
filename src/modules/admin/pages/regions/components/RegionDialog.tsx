@@ -140,6 +140,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     return (
         <>
             <Dialog.Root
+                role="alertdialog"
                 open={isOpen}
                 onOpenChange={(e) => {
                     if (!e.open) {

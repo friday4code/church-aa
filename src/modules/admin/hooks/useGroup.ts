@@ -32,7 +32,7 @@ export const useGroups = (options?: {
     });
 
     const updateMutation = useMutation({
-        mutationFn: adminApi.updateGroup,
+        mutationFn: ({ id, data }: { id: number | string; data: any }) => adminApi.updateGroup(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['groups'] });
             toaster.success({ description: "Group updated successfully", closable: true });

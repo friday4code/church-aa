@@ -15,8 +15,8 @@ export const authApi = {
         return data
     },
 
-    sendRefereeReport: async (report: RefereeFormData): Promise<any> => {
-        const { data } = await axiosClient.post("/users", report)
+    sendRefereeReport: async (report: RefereeFormData): Promise<unknown> => {
+        const { data } = await axiosClient.post<unknown>("/users", report)
         return data
     },
 
@@ -40,5 +40,15 @@ export const authApi = {
     getCurrentUser: async (): Promise<GetCurrentUserResponse> => {
         const { data } = await axiosClient.get<GetCurrentUserResponse>("/auth/me");
         return data;
+    },
+
+    updateProfile: async (payload: Record<string, string>): Promise<{ status: boolean; message?: string }> => {
+        const { data } = await axiosClient.put<{ status: boolean; message?: string }>("/profile", payload)
+        return data
+    },
+
+    changePassword: async (payload: { current_password: string; new_password: string; confirm_new_password: string }): Promise<{ status: boolean; message?: string }> => {
+        const { data } = await axiosClient.put<{ status: boolean; message?: string }>("/profile/change-password", payload)
+        return data
     },
 }

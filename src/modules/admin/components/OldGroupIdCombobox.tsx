@@ -2,12 +2,8 @@
 
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup";
 import type { OldGroup } from "@/types/oldGroups.type";
-import {
-    Combobox,
-    Field,
-    useListCollection,
-} from "@chakra-ui/react"
-import { useState, useEffect } from "react"
+import { Combobox, Field, useListCollection } from "@chakra-ui/react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
 
 
@@ -32,19 +28,16 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when oldGroups data loads or input changes
+    const filteredItems = useMemo(() => {
+        if (!oldGroups || oldGroups.length === 0) return []
+        return oldGroups
+            .filter((g) => g.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((g) => ({ label: g.name, value: g.name }))
+    }, [oldGroups, inputValue])
+
     useEffect(() => {
-        if (!oldGroups || oldGroups.length === 0) {
-            set([])
-            return
-        }
-
-        const filtered = oldGroups
-            .filter(g => g.name.toLowerCase().includes(inputValue.toLowerCase()))
-            .map(g => ({ label: g.name, value: g.name }))
-
-        set(filtered)
-    }, [oldGroups, inputValue, set])
+        set(filteredItems)
+    }, [filteredItems, set])
 
     const handleValueChange = (details: any) => {
         if (details.value && details.value.length > 0) {
@@ -72,7 +65,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
-            onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
             closeOnSelect={true}
             openOnClick

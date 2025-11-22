@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toaster } from "@/components/ui/toaster"
 import { type AdminProfileFormData, adminProfileSchema } from "../../../schemas/profile.schema"
 import { useMe } from "@/hooks/useMe"
+import { authApi } from "@/api/auth.api"
 
 interface EditProfileDialogProps {
     isOpen: boolean
@@ -52,8 +53,16 @@ export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) =
 
     const onSubmit = async (data: AdminProfileFormData) => {
         try {
-            // TODO: Implement actual profile update API call
-            // For now, just show success and refetch
+            const payload = {
+                first_name: data.firstName,
+                last_name: data.lastName,
+                email: data.email,
+                phone: data.phone,
+                role: data.role,
+                department: data.department,
+                bio: data.bio,
+            }
+            await authApi.updateProfile(payload)
             toaster.success({
                 title: "Profile updated",
                 description: "Your profile has been updated successfully",
@@ -62,7 +71,7 @@ export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) =
             await refetch()
             onClose()
             reset(data)
-        } catch (error) {
+        } catch {
             toaster.error({
                 title: "Update failed",
                 description: "Failed to update profile",

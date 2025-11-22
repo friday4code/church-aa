@@ -1,13 +1,8 @@
 // components/districts/components/BulkEditDialog.tsx
 "use client"
 
-import {
-    Dialog,
-    Portal,
-    CloseButton,
-    Button,
-    Tabs,
-} from "@chakra-ui/react"
+import { Dialog, Portal, CloseButton, Button, Tabs } from "@chakra-ui/react"
+import DistrictEditForm from "./DistrictEditForm"
 import { useEffect, useState } from "react"
 import type { DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
@@ -71,7 +66,7 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedDistricts, districts, onClo
     }
 
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root role="alertdialog" open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>

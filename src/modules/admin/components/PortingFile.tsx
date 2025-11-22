@@ -72,20 +72,15 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
     }
 
     const downloadTemplate = () => {
-        const templateData = data.map(s => ({
-            "STATE NAME": s.name,
-            "STATE CODE": s.code,
-            "LEADER": s.leader
-        }))
+        const templateData = [
+            { "STATE NAME": "LAGOS", "STATE CODE": "LAG", "LEADER": "Jane Doe" },
+            ...data.map(s => ({ "STATE NAME": s.name, "STATE CODE": s.code, "LEADER": s.leader }))
+        ]
 
         const worksheet = utils.json_to_sheet(templateData)
-
-        // Auto-calculate column widths based on content
         worksheet['!cols'] = calculateColumnWidths(templateData)
-
         const workbook = utils.book_new()
         utils.book_append_sheet(workbook, worksheet, "States Template")
-
         writeFile(workbook, "states_template.xlsx")
     }
 
@@ -112,12 +107,23 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
                 totalProcessed: jsonData.length
             }
 
+            const getCell = (row: Record<string, unknown>, variants: string[]) => {
+                for (const key of variants) {
+                    if (row[key] != null) return row[key] as string
+                    const lowerKey = key.toLowerCase()
+                    const upperKey = key.toUpperCase()
+                    if (row[lowerKey] != null) return row[lowerKey] as string
+                    if (row[upperKey] != null) return row[upperKey] as string
+                }
+                return ''
+            }
+
             // Process each row
             jsonData.forEach((row, index) => {
                 try {
-                    const stateName = row['State Name'] || row['stateName'] || row['STATE NAME']
-                    const stateCode = row['State Code'] || row['stateCode'] || row['STATE CODE']
-                    const leader = row['State Leader'] || row['leader'] || row['LEADER'] || row['State Leader']
+                    const stateName = getCell(row, ['STATE NAME', 'State Name'])
+                    const stateCode = getCell(row, ['STATE CODE', 'State Code'])
+                    const leader = getCell(row, ['LEADER', 'Leader', 'State Leader'])
 
                     if (!stateName || !stateCode) {
                         result.errors.push(`Row ${index + 1}: Missing state name or code`)
@@ -195,7 +201,7 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
             </Button>
 
             {/* Dialog */}
-            <Dialog.Root open={open} onOpenChange={(e) => !e.open && handleClose()}>
+            <Dialog.Root role="alertdialog" open={open} onOpenChange={(e) => !e.open && handleClose()}>
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner >

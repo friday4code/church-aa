@@ -75,16 +75,7 @@ export const OldGroups: React.FC = () => {
                     <ErrorFallback {...{ resetErrorBoundary, error }} />
                 )}
             >
-                <Suspense fallback={
-                    <Center h="400px">
-                        <VStack gap="4">
-                            <Spinner size="xl" color="accent.500" />
-                            <Text fontSize="lg" color="gray.600">Loading Old Groups Page...</Text>
-                        </VStack>
-                    </Center>
-                }>
-                    <Content />
-                </Suspense>
+                <Content />
             </ErrorBoundary>
         </>
     );

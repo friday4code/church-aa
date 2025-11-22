@@ -265,9 +265,21 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                     groupId = foundGroup?.id
                 }
 
+                // Derive missing state/region IDs from names
+                let stateId = district.state_id || 0
+                let regionId = district.region_id || 0
+                if (!stateId && district.state && states?.length) {
+                    const foundState = states.find(s => s.name === district.state)
+                    stateId = foundState?.id || 0
+                }
+                if (!regionId && district.region && regions?.length) {
+                    const foundRegion = regions.find(r => r.name === district.region)
+                    regionId = foundRegion?.id || 0
+                }
+
                 reset({
-                    state_id: district.state_id || 0,
-                    region_id: district.region_id || 0,
+                    state_id: stateId,
+                    region_id: regionId,
                     name: district.name,
                     leader: district.leader || '',
                     code: district.code || '',
@@ -337,6 +349,55 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                         <Dialog.Body>
                             <form noValidate id="district-form" onSubmit={handleFormSubmit}>
                                 <VStack gap="4" colorPalette={"accent"}>
+                                    {isSuperAdmin && (
+                                        <Field.Root required invalid={!!errors.state_id}>
+                                            <StateIdCombobox
+                                                value={selectedStateName}
+                                                onChange={handleStateChange}
+                                                invalid={!!errors.state_id}
+                                            />
+                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
+
+                                    <Field.Root required invalid={!!errors.region_id}>
+                                        <RegionIdCombobox
+                                            value={selectedRegionName}
+                                            onChange={handleRegionChange}
+                                            invalid={!!errors.region_id}
+                                            items={regions?.filter((region) => {
+                                                if (region.state_id != null && watchedStateId) {
+                                                    return Number(region.state_id) === Number(watchedStateId)
+                                                }
+                                                if (derivedStateName && region.state) {
+                                                    return region.state.toLowerCase() === derivedStateName.toLowerCase()
+                                                }
+                                                return false
+                                            }) || []}
+                                            disabled={!watchedStateId && !derivedStateName}
+                                        />
+                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root required invalid={!!errors.old_group_id}>
+                                        <OldGroupIdCombobox
+                                            value={selectedOldGroupName}
+                                            onChange={handleOldGroupChange}
+                                            invalid={!!errors.old_group_id}
+                                        />
+                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root required invalid={!!errors.group_id}>
+                                        <GroupIdCombobox
+                                            value={selectedGroupName}
+                                            onChange={handleGroupChange}
+                                            invalid={!!errors.group_id}
+                                            items={filteredGroups}
+                                            disabled={!currentOldGroupName}
+                                        />
+                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
                                     <Field.Root required invalid={!!errors.name}>
                                         <Field.Label>District Name
@@ -360,7 +421,6 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                             placeholder="District code will be auto-generated"
                                             value={watch('code')}
                                             readOnly={mode === 'add'}
-                                            // bg={mode === 'add' ? "gray.50" : "white"}
                                             {...register('code')}
                                         />
                                         <Field.HelperText>
@@ -383,62 +443,6 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {isSuperAdmin && (
-                                        <Field.Root required invalid={!!errors.state_id}>
-                                            <StateIdCombobox
-                                                value={selectedStateName}
-                                                onChange={handleStateChange}
-                                                invalid={!!errors.state_id}
-                                            />
-                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    )}
-
-                                    {/* Region Selection - filtered by selected state */}
-                                    <Field.Root required invalid={!!errors.region_id}>
-                                        <RegionIdCombobox
-                                            value={selectedRegionName}
-                                            onChange={handleRegionChange}
-                                            invalid={!!errors.region_id}
-                                            items={regions?.filter((region) => {
-                                                if (region.state_id != null && watchedStateId) {
-                                                    return Number(region.state_id) === Number(watchedStateId)
-                                                }
-
-                                                if (derivedStateName && region.state) {
-                                                    return region.state.toLowerCase() === derivedStateName.toLowerCase()
-                                                }
-
-                                                return false
-                                            }) || []}
-                                            disabled={!watchedStateId && !derivedStateName}
-                                        />
-                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Old Group Selection */}
-                                    <Field.Root required invalid={!!errors.old_group_id}>
-                                        <OldGroupIdCombobox
-                                            value={selectedOldGroupName}
-                                            onChange={handleOldGroupChange}
-                                            invalid={!!errors.old_group_id}
-                                        />
-                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Group Selection - filtered by selected old group */}
-                                    <Field.Root required invalid={!!errors.group_id}>
-                                        <GroupIdCombobox
-                                            value={selectedGroupName}
-                                            onChange={handleGroupChange}
-                                            invalid={!!errors.group_id}
-                                            items={filteredGroups}
-                                            disabled={!currentOldGroupName}
-                                        />
-                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
-
-                                    {/* Hidden inputs for state_id, region_id, old_group_id, and group_id */}
                                     <input type="hidden" {...register('state_id')} />
                                     <input type="hidden" {...register('region_id')} />
                                     <input type="hidden" {...register('old_group_id')} />

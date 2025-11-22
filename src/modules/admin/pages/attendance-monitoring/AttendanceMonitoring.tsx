@@ -4,7 +4,9 @@ import { useQuery, useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { ErrorBoundary } from "react-error-boundary";
 import { adminApi } from "@/api/admin.api";
 import type { AttendanceMonitoring } from "@/types/attendance-monitoring.type";
-import { VStack, Card, Heading, Text, Table, Badge, SimpleGrid } from "@chakra-ui/react";
+import { VStack, Card, Heading, Text, Table, Badge, SimpleGrid, HoverCard, IconButton, Portal as ChakraPortal, HStack } from "@chakra-ui/react";
+import { ArrowLeft3, Eye } from "iconsax-reactjs";
+import { useMemo, useCallback } from "react";
 import Reminder from "./components/Reminder";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -38,63 +40,114 @@ const Content = () => {
         queryFn: adminApi.getAttendanceMonitoring,
         staleTime: 5 * 60 * 1000,
     });
+    const pending = useMemo(() => {
+        return {
+            states: (data?.states ?? []).filter((i) => i.status === 'red'),
+            regions: (data?.regions ?? []).filter((i) => i.status === 'red'),
+            districts: (data?.districts ?? []).filter((i) => i.status === 'red'),
+            groups: (data?.groups ?? []).filter((i) => i.status === 'red'),
+            old_groups: (data?.old_groups ?? []).filter((i) => i.status === 'red'),
+        }
+    }, [data])
 
-    const pending = data?.pending || { states: [], regions: [], districts: [], groups: [] };
-    const submitted = data?.submitted || { states: [], regions: [], districts: [], groups: [] };
+    const submitted = useMemo(() => {
+        const notRed = (i: { status: 'red' | 'yellow' | 'green' }) => i.status !== 'red'
+        return {
+            states: (data?.states ?? []).filter(notRed),
+            regions: (data?.regions ?? []).filter(notRed),
+            districts: (data?.districts ?? []).filter(notRed),
+            groups: (data?.groups ?? []).filter(notRed),
+            old_groups: (data?.old_groups ?? []).filter(notRed),
+        }
+    }, [data])
 
-    const renderRows = (section: { states: string[]; regions: string[]; districts: string[]; groups: string[] }) => (
+    const renderItemHover = useCallback((title: string, items: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[]) => (
+        <HoverCard.Root openDelay={300} closeDelay={300} positioning={{ placement: 'top' }}>
+            <HoverCard.Trigger asChild>
+                <IconButton aria-label={`View ${title}`} size="sm" variant="ghost" rounded="md">
+                    <Eye />
+                </IconButton>
+            </HoverCard.Trigger>
+            <ChakraPortal>
+                <HoverCard.Positioner>
+                    <HoverCard.Content rounded="md" p="3" bg="bg" borderWidth="1px" minW="sm">
+                        <Heading size="sm" mb="2">{title}</Heading>
+                        <VStack align="start" gap="2">
+                            {items.map((it) => (
+                                <HStack key={it.id} justify="space-between" w="full">
+                                    <Text>{it.name}</Text>
+                                    <Badge colorPalette={it.status === 'red' ? 'red' : (it.status === 'yellow' ? 'yellow' : 'green')}>
+                                        week {it.last_filled_week}
+                                    </Badge>
+                                </HStack>
+                            ))}
+                            {items.length === 0 && (
+                                <Text color="gray.500">No items</Text>
+                            )}
+                        </VStack>
+                    </HoverCard.Content>
+                </HoverCard.Positioner>
+            </ChakraPortal>
+        </HoverCard.Root>
+    ), [])
+
+    const renderRows = useCallback((section: {
+        states: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
+        regions: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
+        districts: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
+        groups: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
+        old_groups: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
+    }) => (
         <>
             <Table.Row>
                 <Table.Cell fontWeight="medium">States</Table.Cell>
                 <Table.Cell>{section.states.length}</Table.Cell>
                 <Table.Cell>
-                    <VStack align="start" gap="2">
-                        {section.states.map((s) => (
-                            <Badge key={s} variant="subtle" colorPalette="blue">{s}</Badge>
-                        ))}
-                    </VStack>
+                    {renderItemHover('States', section.states)}
                 </Table.Cell>
             </Table.Row>
             <Table.Row>
                 <Table.Cell fontWeight="medium">Regions</Table.Cell>
                 <Table.Cell>{section.regions.length}</Table.Cell>
                 <Table.Cell>
-                    <VStack align="start" gap="2">
-                        {section.regions.map((r) => (
-                            <Badge key={r} variant="subtle" colorPalette="green">{r}</Badge>
-                        ))}
-                    </VStack>
+                    {renderItemHover('Regions', section.regions)}
                 </Table.Cell>
             </Table.Row>
             <Table.Row>
                 <Table.Cell fontWeight="medium">Districts</Table.Cell>
                 <Table.Cell>{section.districts.length}</Table.Cell>
                 <Table.Cell>
-                    <VStack align="start" gap="2">
-                        {section.districts.map((d) => (
-                            <Badge key={d} variant="subtle" colorPalette="purple">{d}</Badge>
-                        ))}
-                    </VStack>
+                    {renderItemHover('Districts', section.districts)}
                 </Table.Cell>
             </Table.Row>
             <Table.Row>
                 <Table.Cell fontWeight="medium">Groups</Table.Cell>
                 <Table.Cell>{section.groups.length}</Table.Cell>
                 <Table.Cell>
-                    <VStack align="start" gap="2">
-                        {section.groups.map((g) => (
-                            <Badge key={g} variant="subtle" colorPalette="orange">{g}</Badge>
-                        ))}
-                    </VStack>
+                    {renderItemHover('Groups', section.groups)}
+                </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+                <Table.Cell fontWeight="medium">Old Groups</Table.Cell>
+                <Table.Cell>{section.old_groups.length}</Table.Cell>
+                <Table.Cell>
+                    {renderItemHover('Old Groups', section.old_groups)}
                 </Table.Cell>
             </Table.Row>
         </>
-    );
+    ), [renderItemHover])
 
     return (
         <>
             <VStack gap="6" align="stretch">
-                <Heading size="2xl" color={{ base: "gray.800", _dark: "white" }}>Attendance Monitoring</Heading>
+                <HStack justify="space-between">
+                    <HStack gap="3">
+                        <IconButton aria-label="Go back" variant="outline" rounded="xl" onClick={() => window.history.back()}>
+                            <ArrowLeft3 />
+                        </IconButton>
+                        <Heading size="2xl" color={{ base: "gray.800", _dark: "white" }}>Attendance Monitoring</Heading>
+                    </HStack>
+                </HStack>
                 <Text color={{ base: "gray.600", _dark: "gray.300" }}>Overview of pending and submitted attendance by hierarchy</Text>
 
                 <Reminder />
@@ -115,7 +168,7 @@ const Content = () => {
                                     </Table.Row>
                                 </Table.Header>
                                 <Table.Body>
-                                    {isLoading ? null : renderRows(pending)}
+                                    {isLoading ? renderRows({ states: [], regions: [], districts: [], groups: [], old_groups: [] }) : renderRows(pending)}
                                 </Table.Body>
                             </Table.Root>
                         </Card.Body>
@@ -136,7 +189,7 @@ const Content = () => {
                                     </Table.Row>
                                 </Table.Header>
                                 <Table.Body>
-                                    {isLoading ? null : renderRows(submitted)}
+                                    {isLoading ? renderRows({ states: [], regions: [], districts: [], groups: [], old_groups: [] }) : renderRows(submitted)}
                                 </Table.Body>
                             </Table.Root>
                         </Card.Body>

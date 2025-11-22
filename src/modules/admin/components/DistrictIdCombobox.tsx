@@ -3,12 +3,8 @@
 
 import { useDistricts } from "@/modules/admin/hooks/useDistrict";
 import type { District } from "@/types/districts.type";
-import {
-    Combobox,
-    Field,
-    useListCollection,
-} from "@chakra-ui/react"
-import { useState, useEffect } from "react"
+import { Combobox, Field, useListCollection } from "@chakra-ui/react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
 const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
@@ -29,30 +25,24 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when districts data loads or input changes
+    const filteredItems = useMemo(() => {
+        if (!districts || districts.length === 0) return []
+        return districts
+            .filter((district) => district.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((district) => ({ label: district.name, value: district.name }))
+    }, [districts, inputValue])
+
     useEffect(() => {
-        if (!districts || districts.length === 0) return
+        set(filteredItems)
+    }, [filteredItems, set])
 
-        const filteredDistricts = districts
-            .filter(district =>
-                district.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(district => ({
-                label: district.name,
-                value: district.name
-            }))
-
-        set(filteredDistricts)
-       }, [districts, inputValue, set, items])
-
-    const handleValueChange = (details: any) => {
+    const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            const selectedDistrict = details.value[0]
-            onChange(selectedDistrict)
+            onChange(details.value[0])
         } else {
             onChange('')
         }
-    }
+    }, [onChange])
 
     // Sync the input value with the selected value
     useEffect(() => {
@@ -71,7 +61,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
-            onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
             closeOnSelect={true}
             openOnClick

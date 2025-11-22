@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toaster } from "@/components/ui/toaster"
 import { type ChangePasswordFormData, changePasswordSchema } from "../../../schemas/profile.schema"
+import { authApi } from "@/api/auth.api"
 
 interface ChangePasswordDialogProps {
     isOpen: boolean
@@ -29,9 +30,12 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
 
     const onSubmit = async (data: ChangePasswordFormData) => {
         try {
-            // TODO: Implement actual password change API call
-            // For now, simulate success
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const payload = {
+                current_password: data.currentPassword,
+                new_password: data.newPassword,
+                confirm_new_password: data.confirmPassword,
+            }
+            await authApi.changePassword(payload)
             toaster.success({
                 title: "Password updated",
                 description: "Your password has been changed successfully",
@@ -39,7 +43,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
             })
             onClose()
             reset()
-        } catch (error) {
+        } catch {
             toaster.error({
                 title: "Update failed",
                 description: "Failed to change password. Please try again.",

@@ -7,7 +7,7 @@ import {
     Field,
     useListCollection,
 } from "@chakra-ui/react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
 
 const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled = false }: {
@@ -27,56 +27,39 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when states data loads or input changes
-    useEffect(() => {
+    const filteredItems = useMemo(() => {
         if (!states || states.length === 0) {
-            // Allow custom value even when no states are loaded
-            if (inputValue.trim()) {
-                set([{
-                    label: inputValue,
-                    value: inputValue
-                }])
-            } else {
-                set([])
-            }
-            return
+            return inputValue.trim()
+                ? [{ label: inputValue, value: inputValue }]
+                : []
         }
-
-        const filteredStates = states
-            .filter(state =>
-                state.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(state => ({
-                label: state.name,
-                value: state.name
-            }))
-
-        // Add custom value if input doesn't match any existing state
-        if (inputValue.trim() && !filteredStates.some(s => s.value.toLowerCase() === inputValue.toLowerCase())) {
-            filteredStates.push({
-                label: inputValue,
-                value: inputValue
-            })
+        const base = states
+            .filter((state) => state.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((state) => ({ label: state.name, value: state.name }))
+        if (inputValue.trim() && !base.some((s) => s.value.toLowerCase() === inputValue.toLowerCase())) {
+            base.push({ label: inputValue, value: inputValue })
         }
+        return base
+    }, [states, inputValue])
 
-        set(filteredStates)
-    }, [states, inputValue, set])
+    useEffect(() => {
+        set(filteredItems)
+    }, [filteredItems, set])
 
-    const handleValueChange = (details: any) => {
+    const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            const selectedState = details.value[0]
-            onChange(selectedState)
+            onChange(details.value[0])
         } else {
             onChange('')
         }
-    }
+    }, [onChange])
 
     // Handle blur to accept custom value
-    const handleBlur = () => {
+    const handleBlur = useCallback(() => {
         if (inputValue.trim() && inputValue !== value) {
             onChange(inputValue.trim())
         }
-    }
+    }, [inputValue, value, onChange])
 
     // Sync the input value with the selected value
     useEffect(() => {
@@ -95,7 +78,7 @@ const StateIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
-            onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             onInteractOutside={handleBlur}
             invalid={invalid}
             closeOnSelect={true}

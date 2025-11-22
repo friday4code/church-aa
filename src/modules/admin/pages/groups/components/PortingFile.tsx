@@ -18,8 +18,8 @@ import {
     useDisclosure,
 } from "@chakra-ui/react"
 import { DocumentDownload, DocumentUpload, TickCircle, Warning2 } from "iconsax-reactjs"
-import type { Group, CreateGroupData, UpdateGroupData } from "@/types/groups.type"
-import { useStates } from "@/modules/admin/hooks/useState"
+import type { Group, CreateGroupData } from "@/types/groups.type"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 
 interface PortingResult {
     success: boolean
@@ -39,17 +39,14 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-    const { createState, updateState } = useStates()
+    const { createGroup, updateGroup } = useGroups()
 
     const handleAddGroup = (groupData: CreateGroupData) => {
-        // You'll need to update this hook to handle groups instead of states
-        // For now, using the existing state hook structure
-        createState(groupData as any)
+        createGroup(groupData as any)
     }
 
     const handleUpdateGroup = (id: number, groupData: Partial<CreateGroupData>) => {
-        // You'll need to update this hook to handle groups instead of states
-        updateState({ id, data: groupData } as any)
+        updateGroup({ id, data: groupData as any })
     }
 
     // Download template function
@@ -74,21 +71,21 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
     }
 
     const downloadTemplate = () => {
-        const templateData = data.map(group => ({
-            "GROUP NAME": group.name,
-            "LEADER": group.leader,
-            "STATE ID": group.state_id,
-            "REGION ID": group.region_id,
-        }))
+        const templateData = [
+            { "GROUP NAME": "Alpha", "LEADER": "John Doe", "STATE ID": 1, "REGION ID": 2, "OLD GROUP ID": 0 },
+            ...data.map(group => ({
+                "GROUP NAME": group.name,
+                "LEADER": group.leader ?? '',
+                "STATE ID": group.state_id ?? 0,
+                "REGION ID": group.region_id ?? 0,
+                "OLD GROUP ID": group.old_group_id ?? 0,
+            }))
+        ]
 
         const worksheet = utils.json_to_sheet(templateData)
-
-        // Auto-calculate column widths based on content
         worksheet['!cols'] = calculateColumnWidths(templateData)
-
         const workbook = utils.book_new()
         utils.book_append_sheet(workbook, worksheet, "Groups Template")
-
         writeFile(workbook, "groups_template.xlsx")
     }
 
@@ -115,13 +112,25 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                 totalProcessed: jsonData.length
             }
 
+            const getCell = (row: Record<string, unknown>, variants: string[]) => {
+                for (const key of variants) {
+                    if (row[key] != null) return row[key] as string
+                    const lowerKey = key.toLowerCase()
+                    const upperKey = key.toUpperCase()
+                    if (row[lowerKey] != null) return row[lowerKey] as string
+                    if (row[upperKey] != null) return row[upperKey] as string
+                }
+                return ''
+            }
+
             // Process each row
             for (const [index, row] of jsonData.entries()) {
                 try {
-                    const groupName = row['Group Name'] || row['groupName'] || row['GROUP NAME'] || row['group_name']
-                    const leader = row['Leader'] || row['leader'] || row['LEADER']
-                    const stateId = parseInt(row['State ID'] || row['stateId'] || row['STATE ID'] || row['state_id'])
-                    const regionId = parseInt(row['Region ID'] || row['regionId'] || row['REGION ID'] || row['region_id'])
+                    const groupName = getCell(row, ['GROUP NAME', 'Group Name', 'group_name'])
+                    const leader = getCell(row, ['LEADER', 'Leader'])
+                    const stateId = parseInt(getCell(row, ['STATE ID', 'State ID', 'state_id']) || '0')
+                    const regionId = parseInt(getCell(row, ['REGION ID', 'Region ID', 'region_id']) || '0')
+                    const oldGroupId = parseInt(getCell(row, ['OLD GROUP ID', 'Old Group ID', 'old_group_id']) || '0')
 
                     // Validate required fields
                     if (!groupName) {
@@ -144,7 +153,8 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                         group_name: groupName,
                         leader: leader || '',
                         state_id: stateId,
-                        region_id: regionId || 0, // Default value
+                        region_id: regionId || 0,
+                        old_group_id: oldGroupId || undefined,
                     }
 
                     if (existingGroup) {

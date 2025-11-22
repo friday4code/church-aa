@@ -3,12 +3,8 @@
 
 import { useRegions } from "@/modules/admin/hooks/useRegion";
 import type { Region } from "@/types/regions.type";
-import {
-    Combobox,
-    Field,
-    useListCollection,
-} from "@chakra-ui/react"
-import { useState, useEffect } from "react"
+import { Combobox, Field, useListCollection } from "@chakra-ui/react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
 const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
@@ -29,33 +25,24 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when regions data loads or input changes
+    const filteredItems = useMemo(() => {
+        if (!regions || regions.length === 0) return []
+        return regions
+            .filter((region) => region.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((region) => ({ label: region.name, value: region.name }))
+    }, [regions, inputValue])
+
     useEffect(() => {
-        if (!regions || regions.length === 0) {
-            set([])
-            return
-        }
+        set(filteredItems)
+    }, [filteredItems, set])
 
-        const filteredRegions = regions
-            .filter(region =>
-                region.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(region => ({
-                label: region.name,
-                value: region.name
-            }))
-
-        set(filteredRegions)
-    }, [regions, inputValue, set, items])
-
-    const handleValueChange = (details: any) => {
+    const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            const selectedRegion = details.value[0]
-            onChange(selectedRegion)
+            onChange(details.value[0])
         } else {
             onChange('')
         }
-    }
+    }, [onChange])
 
     // Sync the input value with the selected value
     useEffect(() => {
@@ -74,7 +61,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
-            onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
             closeOnSelect={true}
             openOnClick

@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
 import { userSchema, type UserFormData } from "@/modules/admin/schemas/users.schema"
 import { useMe } from "@/hooks/useMe"
@@ -173,8 +173,69 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     const rolesValue = ((watch('roles') ?? []) as (number | string)[]).map((v) => String(v))
     const rolesErrorMessage = (errors.roles as unknown as { message?: string } | undefined)?.message
 
+    const watchedStateId = watch('state_id')
+    const watchedRegionId = watch('region_id')
+    const watchedDistrictId = watch('district_id')
+    const watchedGroupId = watch('group_id')
+    const watchedOldGroupId = watch('old_group_id')
+
+    const currentStateName = useMemo(() => {
+        const match = states.find(s => s.id === watchedStateId)
+        return match?.name || ''
+    }, [states, watchedStateId])
+
+    const currentRegionName = useMemo(() => {
+        const match = regions.find(r => r.id === watchedRegionId)
+        return match?.name || ''
+    }, [regions, watchedRegionId])
+
+    const currentDistrictName = useMemo(() => {
+        const match = districts.find(d => d.id === watchedDistrictId)
+        return match?.name || ''
+    }, [districts, watchedDistrictId])
+
+    const currentGroupName = useMemo(() => {
+        const match = groups.find(g => g.id === watchedGroupId)
+        return match?.name || ''
+    }, [groups, watchedGroupId])
+
+    const currentOldGroupName = useMemo(() => {
+        const match = oldGroups.find(og => og.id === watchedOldGroupId)
+        return match?.name || ''
+    }, [oldGroups, watchedOldGroupId])
+
+    const onStateChange = useCallback((name: string) => {
+        const id = states.find(s => s.name.toLowerCase() === name.toLowerCase())?.id || 0
+        setValue('state_id', id, { shouldValidate: true })
+    }, [states, setValue])
+
+    const onRegionChange = useCallback((name: string) => {
+        const id = regions.find(r => r.name.toLowerCase() === name.toLowerCase())?.id || 0
+        setValue('region_id', id, { shouldValidate: true })
+    }, [regions, setValue])
+
+    const onDistrictChange = useCallback((name: string) => {
+        const id = districts.find(d => d.name.toLowerCase() === name.toLowerCase())?.id || 0
+        setValue('district_id', id, { shouldValidate: true })
+    }, [districts, setValue])
+
+    const onGroupChange = useCallback((name: string) => {
+        const id = groups.find(g => g.name.toLowerCase() === name.toLowerCase())?.id || 0
+        setValue('group_id', id, { shouldValidate: true })
+    }, [groups, setValue])
+
+    const onOldGroupChange = useCallback((name: string) => {
+        const id = oldGroups.find(og => og.name.toLowerCase() === name.toLowerCase())?.id || 0
+        setValue('old_group_id', id, { shouldValidate: true })
+    }, [oldGroups, setValue])
+
+    const onRolesChange = useCallback((val: { value: string[] }) => {
+        setValue('roles', (val.value || []).map((v) => parseInt(v, 10)), { shouldValidate: true })
+    }, [setValue])
+
     return (
         <Dialog.Root
+            role="alertdialog"
             open={isOpen}
             onOpenChange={(e) => {
                 if (!e.open) {
@@ -242,7 +303,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                             collection={rolesCollection}
                                             size="sm"
                                             value={rolesValue}
-                                            onValueChange={(val) => setValue('roles', (val.value || []).map((v) => parseInt(v, 10)), { shouldValidate: true })}
+                                            onValueChange={onRolesChange}
                                         >
                                             <Select.HiddenSelect multiple />
                                             <Select.Control>
@@ -299,15 +360,8 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                         <>
                                             <Field.Root required invalid={!!errors.state_id}>
                                                 <StateIdCombobox
-                                                    value={(() => {
-                                                        const currentId = watch('state_id')
-                                                        const match = states.find(s => s.id === currentId)
-                                                        return match?.name || ''
-                                                    })()}
-                                                    onChange={(name) => {
-                                                        const id = states.find(s => s.name.toLowerCase() === name.toLowerCase())?.id || 0
-                                                        setValue('state_id', id, { shouldValidate: true })
-                                                    }}
+                                                    value={currentStateName}
+                                                    onChange={onStateChange}
                                                     required
                                                     invalid={!!errors.state_id}
                                                 />
@@ -316,15 +370,8 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
 
                                             <Field.Root required invalid={!!errors.region_id}>
                                                 <RegionIdCombobox
-                                                    value={(() => {
-                                                        const currentId = watch('region_id')
-                                                        const match = regions.find(r => r.id === currentId)
-                                                        return match?.name || ''
-                                                    })()}
-                                                    onChange={(name) => {
-                                                        const id = regions.find(r => r.name.toLowerCase() === name.toLowerCase())?.id || 0
-                                                        setValue('region_id', id, { shouldValidate: true })
-                                                    }}
+                                                    value={currentRegionName}
+                                                    onChange={onRegionChange}
                                                     required
                                                     invalid={!!errors.region_id}
                                                 />
@@ -333,15 +380,8 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
 
                                             <Field.Root required invalid={!!errors.district_id}>
                                                 <DistrictIdCombobox
-                                                    value={(() => {
-                                                        const currentId = watch('district_id')
-                                                        const match = districts.find(d => d.id === currentId)
-                                                        return match?.name || ''
-                                                    })()}
-                                                    onChange={(name) => {
-                                                        const id = districts.find(d => d.name.toLowerCase() === name.toLowerCase())?.id || 0
-                                                        setValue('district_id', id, { shouldValidate: true })
-                                                    }}
+                                                    value={currentDistrictName}
+                                                    onChange={onDistrictChange}
                                                     required
                                                     invalid={!!errors.district_id}
                                                 />
@@ -349,32 +389,19 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                             </Field.Root>
 
                                             <Field.Root>
-                                                <GroupIdCombobox
-                                                    value={(() => {
-                                                        const currentId = watch('group_id')
-                                                        const match = groups.find(g => g.id === currentId)
-                                                        return match?.name || ''
-                                                    })()}
-                                                    onChange={(name) => {
-                                                        const id = groups.find(g => g.name.toLowerCase() === name.toLowerCase())?.id || 0
-                                                        setValue('group_id', id, { shouldValidate: true })
-                                                    }}
+                                                <OldGroupIdCombobox
+                                                    value={currentOldGroupName}
+                                                    onChange={onOldGroupChange}
                                                 />
                                             </Field.Root>
 
                                             <Field.Root>
-                                                <OldGroupIdCombobox
-                                                    value={(() => {
-                                                        const currentId = watch('old_group_id')
-                                                        const match = oldGroups.find(og => og.id === currentId)
-                                                        return match?.name || ''
-                                                    })()}
-                                                    onChange={(name) => {
-                                                        const id = oldGroups.find(og => og.name.toLowerCase() === name.toLowerCase())?.id || 0
-                                                        setValue('old_group_id', id, { shouldValidate: true })
-                                                    }}
+                                                <GroupIdCombobox
+                                                    value={currentGroupName}
+                                                    onChange={onGroupChange}
                                                 />
                                             </Field.Root>
+
                                         </>
                                     )}
 

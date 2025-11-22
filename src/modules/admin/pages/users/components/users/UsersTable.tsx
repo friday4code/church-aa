@@ -10,12 +10,15 @@ import {
     Pagination,
     Badge,
 } from "@chakra-ui/react"
+import { memo, useMemo, useCallback } from "react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import UsersTableLoading from "./UsersTableLoading"
 import type { User } from "@/types/users.type"
 
+type MinimalUser = { id: number; name: string; email: string; phone: string | null; roles?: string[] }
+
 interface UsersTableProps {
-    paginatedUsers: any[]
+    paginatedUsers: MinimalUser[]
     selectedUsers: number[]
     sortField: string
     sortOrder: 'asc' | 'desc'
@@ -26,10 +29,80 @@ interface UsersTableProps {
     onSort: (field: keyof User) => void
     onSelectAllOnPage: () => void
     onSelectUser: (userId: number) => void
-    onEditUser: (user: any) => void
-    onDeleteUser: (user: any) => void
+    onEditUser: (user: MinimalUser) => void
+    onDeleteUser: (user: MinimalUser) => void
     onPageChange: (page: number) => void
 }
+
+interface UserRowProps {
+    user: { id: number; name: string; email: string; phone: string | null; roles?: string[] }
+    index: number
+    selected: boolean
+    onSelect: (id: number) => void
+    onEdit: (user: { id: number; name: string; email: string; phone: string | null; roles?: string[] }) => void
+    onDelete: (user: { id: number; name: string; email: string; phone: string | null; roles?: string[] }) => void
+}
+
+const UserRow = memo(({ user, index, selected, onSelect, onEdit, onDelete }: UserRowProps) => {
+    return (
+        <Table.Row key={user.id}>
+            <Table.Cell>
+                <Checkbox.Root
+                    colorPalette={"accent"}
+                    checked={selected}
+                    onCheckedChange={() => onSelect(user.id)}
+                >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control cursor="pointer" rounded="md" />
+                </Checkbox.Root>
+            </Table.Cell>
+            <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell fontWeight="medium">
+                {user.name}
+            </Table.Cell>
+            <Table.Cell>{user.email}</Table.Cell>
+            <Table.Cell>{user.phone}</Table.Cell>
+            <Table.Cell>
+                {(user.roles || []).map((role, idx) => (
+                    <Badge key={idx} colorPalette="blue" variant="subtle" mr="1">
+                        {role}
+                    </Badge>
+                ))}
+            </Table.Cell>
+            <Table.Cell textAlign="center">
+                <Menu.Root>
+                    <Menu.Trigger asChild>
+                        <IconButton rounded="xl" variant="ghost" size="sm">
+                            <More />
+                        </IconButton>
+                    </Menu.Trigger>
+                    <Portal>
+                        <Menu.Positioner>
+                            <Menu.Content rounded="lg">
+                                <Menu.Item
+                                    value="edit"
+                                    onClick={() => onEdit(user)}
+                                >
+                                    <Edit /> Edit
+                                </Menu.Item>
+                                <Menu.Item
+                                    color="red"
+                                    value="delete"
+                                    colorPalette="red"
+                                    onClick={() => onDelete(user)}
+                                >
+                                    <Trash /> Delete
+                                </Menu.Item>
+                            </Menu.Content>
+                        </Menu.Positioner>
+                    </Portal>
+                </Menu.Root>
+            </Table.Cell>
+        </Table.Row>
+    )
+}, (prev, next) => {
+    return prev.user === next.user && prev.selected === next.selected && prev.index === next.index
+})
 
 const UsersTable = ({
     isLoading,
@@ -47,9 +120,23 @@ const UsersTable = ({
     onDeleteUser,
     onPageChange,
 }: UsersTableProps) => {
-    if (isLoading) {
-        return <UsersTableLoading />;
-    }
+    const handleSelect = useCallback((id: number) => onSelectUser(id), [onSelectUser])
+    const handleEdit = useCallback((u: MinimalUser) => onEditUser(u), [onEditUser])
+    const handleDelete = useCallback((u: MinimalUser) => onDeleteUser(u), [onDeleteUser])
+
+    const rowItems = useMemo(() => (
+        paginatedUsers.map((user, index) => (
+            <UserRow
+                key={user.id}
+                user={user}
+                index={index}
+                selected={selectedUsers.includes(user.id)}
+                onSelect={handleSelect}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+            />
+        ))
+    ), [paginatedUsers, selectedUsers, handleSelect, handleEdit, handleDelete])
 
     return (
         <>
@@ -110,63 +197,8 @@ const UsersTable = ({
                             </Table.ColumnHeader>
                         </Table.Row>
                     </Table.Header>
-                    <Table.Body >
-                        {paginatedUsers.map((user, index) => (
-                            <Table.Row key={user.id} >
-                                <Table.Cell>
-                                    <Checkbox.Root
-                                        colorPalette={"accent"}
-                                        checked={selectedUsers.includes(user.id)}
-                                        onCheckedChange={() => onSelectUser(user.id)}
-                                    >
-                                        <Checkbox.HiddenInput />
-                                        <Checkbox.Control cursor="pointer" rounded="md" />
-                                    </Checkbox.Root>
-                                </Table.Cell>
-                                <Table.Cell>{index + 1}</Table.Cell>
-                                <Table.Cell fontWeight="medium">
-                                    {user.name}
-                                </Table.Cell>
-                                <Table.Cell>{user.email}</Table.Cell>
-                                <Table.Cell>{user.phone}</Table.Cell>
-                                <Table.Cell>
-                                    {user.roles?.map((role: string, idx: number) => (
-                                        <Badge key={idx} colorPalette="blue" variant="subtle" mr="1">
-                                            {role}
-                                        </Badge>
-                                    ))}
-                                </Table.Cell>
-                                <Table.Cell textAlign="center">
-                                    <Menu.Root>
-                                        <Menu.Trigger asChild>
-                                            <IconButton rounded="xl" variant="ghost" size="sm">
-                                                <More />
-                                            </IconButton>
-                                        </Menu.Trigger>
-                                        <Portal>
-                                            <Menu.Positioner>
-                                                <Menu.Content rounded="lg">
-                                                    <Menu.Item
-                                                        value="edit"
-                                                        onClick={() => onEditUser(user)}
-                                                    >
-                                                        <Edit /> Edit
-                                                    </Menu.Item>
-                                                    <Menu.Item
-                                                        color="red"
-                                                        value="delete"
-                                                        colorPalette="red"
-                                                        onClick={() => onDeleteUser(user)}
-                                                    >
-                                                        <Trash /> Delete
-                                                    </Menu.Item>
-                                                </Menu.Content>
-                                            </Menu.Positioner>
-                                        </Portal>
-                                    </Menu.Root>
-                                </Table.Cell>
-                            </Table.Row>
-                        ))}
+                    <Table.Body>
+                        {isLoading ? <UsersTableLoading /> : rowItems}
                     </Table.Body>
                 </Table.Root>
             </Table.ScrollArea>

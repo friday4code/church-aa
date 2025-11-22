@@ -3,12 +3,8 @@
 
 import { useGroups } from "@/modules/admin/hooks/useGroup";
 import type { Group } from "@/types/groups.type";
-import {
-    Combobox,
-    Field,
-    useListCollection,
-} from "@chakra-ui/react"
-import { useState, useEffect } from "react"
+import { Combobox, Field, useListCollection } from "@chakra-ui/react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 
 const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
     value?: string;
@@ -29,30 +25,24 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
         itemToValue: (item) => item.value,
     })
 
-    // Update collection when groups data loads or input changes
+    const filteredItems = useMemo(() => {
+        if (!groups || groups.length === 0) return []
+        return groups
+            .filter((group) => group.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((group) => ({ label: group.name, value: group.name }))
+    }, [groups, inputValue])
+
     useEffect(() => {
-        if (!groups || groups.length === 0) return
+        set(filteredItems)
+    }, [filteredItems, set])
 
-        const filteredGroups = groups
-            .filter(group =>
-                group.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .map(group => ({
-                label: group.name,
-                value: group.name
-            }))
-
-        set(filteredGroups)
-       }, [groups, inputValue, set, items])
-
-    const handleValueChange = (details: any) => {
+    const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            const selectedGroup = details.value[0]
-            onChange(selectedGroup)
+            onChange(details.value[0])
         } else {
             onChange('')
         }
-    }
+    }, [onChange])
 
     // Sync the input value with the selected value
     useEffect(() => {
@@ -71,7 +61,7 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             value={value ? [value] : []}
             defaultInputValue={value ? value : ""}
             onValueChange={handleValueChange}
-            onInputValueChange={(e) => setInputValue(e.inputValue)}
+            onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
             closeOnSelect={true}
             openOnClick

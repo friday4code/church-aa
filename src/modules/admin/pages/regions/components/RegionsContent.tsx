@@ -232,16 +232,7 @@ const RegionsContent = () => {
         }
     }, [selectedRegions, isActionBarOpen])
 
-    if (isLoading && regions.length === 0) {
-        return (
-            <Center h="400px">
-                <VStack gap="4">
-                    <Spinner size="xl" color="accent.500" />
-                    <Text fontSize="lg" color="gray.600">Loading regions...</Text>
-                </VStack>
-            </Center>
-        )
-    }
+    
 
     return (
         <>

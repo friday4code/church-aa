@@ -83,15 +83,14 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
             "REGION NAME": r.name,
             "REGION CODE": r.code,
             "LEADER": r.leader
-        }));
+        }))
 
-        // Add example row
-        templateData.push({
+        templateData.unshift({
             "STATE": "LAGOS",
             "REGION NAME": "IKEJA",
             "REGION CODE": "IKE",
             "LEADER": "John Doe"
-        });
+        })
 
         const worksheet = utils.json_to_sheet(templateData)
         worksheet['!cols'] = calculateColumnWidths(templateData)
@@ -124,13 +123,24 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                 totalProcessed: jsonData.length
             }
 
+            const getCell = (row: Record<string, unknown>, variants: string[]) => {
+                for (const key of variants) {
+                    if (row[key] != null) return row[key] as string
+                    const lowerKey = key.toLowerCase()
+                    const upperKey = key.toUpperCase()
+                    if (row[lowerKey] != null) return row[lowerKey] as string
+                    if (row[upperKey] != null) return row[upperKey] as string
+                }
+                return ''
+            }
+
             // Process each row
             for (const [index, row] of jsonData.entries()) {
                 try {
-                    const state = row['State'] || row['state'] || row['STATE']
-                    const regionName = row['Region Name'] || row['regionName'] || row['REGION NAME'] || row['name']
-                    const regionCode = row['Region Code'] || row['regionCode'] || row['REGION CODE'] || row['code']
-                    const leader = row['Leader'] || row['leader'] || row['LEADER']
+                    const state = getCell(row, ['STATE', 'State'])
+                    const regionName = getCell(row, ['REGION NAME', 'Region Name', 'name'])
+                    const regionCode = getCell(row, ['REGION CODE', 'Region Code', 'code'])
+                    const leader = getCell(row, ['LEADER', 'Leader'])
 
                     if (!state || !regionName || !regionCode) {
                         result.errors.push(`Row ${index + 1}: Missing state, region name, or region code`)
@@ -214,7 +224,7 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                 Upload From CSV/EXCEL File
             </Button>
 
-            <Dialog.Root open={open} onOpenChange={(e) => !e.open && handleClose()}>
+            <Dialog.Root role="alertdialog" open={open} onOpenChange={(e) => !e.open && handleClose()}>
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>

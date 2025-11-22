@@ -20,7 +20,7 @@ interface DeleteConfirmationDialogProps {
 
 const DeleteConfirmationDialog = ({ isLoading, isOpen, region, onClose, onConfirm }: DeleteConfirmationDialogProps) => {
     return (
-        <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root role="alertdialog" open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>

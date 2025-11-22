@@ -1,14 +1,14 @@
+export interface MonitoringItem {
+    id: number
+    last_filled_week: number
+    name: string
+    status: 'red' | 'yellow' | 'green'
+}
+
 export interface AttendanceMonitoring {
-    pending: {
-        districts: string[];
-        groups: string[];
-        regions: string[];
-        states: string[];
-    };
-    submitted: {
-        districts: string[];
-        groups: string[];
-        regions: string[];
-        states: string[];
-    };
+    districts: MonitoringItem[]
+    groups: MonitoringItem[]
+    old_groups: MonitoringItem[]
+    regions: MonitoringItem[]
+    states: MonitoringItem[]
 }
