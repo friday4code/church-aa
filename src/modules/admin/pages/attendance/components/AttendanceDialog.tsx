@@ -311,6 +311,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 
     return (
         <Dialog.Root
+            role="alertdialog"
             open={isOpen}
             onOpenChange={(e) => {
                 if (!e.open) {
@@ -331,101 +332,95 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                         <Dialog.Body>
                             <form noValidate id="attendance-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4" colorPalette={"accent"}>
-                                    <HStack gap="4" w="full">
-                                        <Field.Root required invalid={!!errors.state_id}>
-                                            <StateIdCombobox
-                                                value={selectedStateName}
-                                                onChange={handleStateChange}
-                                                required
-                                                invalid={!!errors.state_id}
-                                            />
-                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                        </Field.Root>
+                                    <Field.Root required invalid={!!errors.state_id}>
+                                        <StateIdCombobox
+                                            value={selectedStateName}
+                                            onChange={handleStateChange}
+                                            required
+                                            invalid={!!errors.state_id}
+                                        />
+                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
-                                        <Field.Root required invalid={!!errors.region_id}>
-                                            <RegionIdCombobox
-                                                value={selectedRegionName}
-                                                onChange={handleRegionChange}
-                                                required
-                                                invalid={!!errors.region_id}
-                                                items={filteredRegions}
-                                                disabled={!currentStateId}
-                                            />
-                                            <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    </HStack>
+                                    <Field.Root required invalid={!!errors.region_id}>
+                                        <RegionIdCombobox
+                                            value={selectedRegionName}
+                                            onChange={handleRegionChange}
+                                            required
+                                            invalid={!!errors.region_id}
+                                            items={filteredRegions}
+                                            disabled={!currentStateId}
+                                        />
+                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
-                                    <HStack gap="4" w="full">
-                                        <Field.Root invalid={!!errors.old_group_id}>
-                                            <OldGroupIdCombobox
-                                                value={selectedOldGroupName}
-                                                onChange={handleOldGroupChange}
-                                                invalid={!!errors.old_group_id}
-                                                items={filteredOldGroups}
-                                                disabled={!currentRegionId}
-                                            />
-                                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                                        </Field.Root>
+                                    <Field.Root invalid={!!errors.old_group_id}>
+                                        <OldGroupIdCombobox
+                                            value={selectedOldGroupName}
+                                            onChange={handleOldGroupChange}
+                                            invalid={!!errors.old_group_id}
+                                            items={filteredOldGroups}
+                                            disabled={!currentRegionId}
+                                        />
+                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
-                                        <Field.Root required invalid={!!errors.group_id}>
-                                            <GroupIdCombobox
-                                                value={selectedGroupName}
-                                                onChange={handleGroupChange}
-                                                required
-                                                invalid={!!errors.group_id}
-                                                items={filteredGroups}
-                                                disabled={!currentOldGroupId}
-                                            />
-                                            <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    </HStack>
+                                    <Field.Root required invalid={!!errors.group_id}>
+                                        <GroupIdCombobox
+                                            value={selectedGroupName}
+                                            onChange={handleGroupChange}
+                                            required
+                                            invalid={!!errors.group_id}
+                                            items={filteredGroups}
+                                            disabled={!currentOldGroupId}
+                                        />
+                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
-                                    <HStack gap="4" w="full">
-                                        <Field.Root required invalid={!!errors.district_id}>
-                                            <DistrictIdCombobox
-                                                value={selectedDistrictName}
-                                                onChange={handleDistrictChange}
-                                                required
-                                                invalid={!!errors.district_id}
-                                                items={filteredDistricts}
-                                                disabled={!currentGroupId}
-                                            />
-                                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                                        </Field.Root>
+                                    <Field.Root required invalid={!!errors.district_id}>
+                                        <DistrictIdCombobox
+                                            value={selectedDistrictName}
+                                            onChange={handleDistrictChange}
+                                            required
+                                            invalid={!!errors.district_id}
+                                            items={filteredDistricts}
+                                            disabled={!currentGroupId}
+                                        />
+                                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
-                                        <Field.Root required invalid={!!errors.month}>
-                                            <Field.Label>Month
-                                                <Field.RequiredIndicator />
-                                            </Field.Label>
-                                            <Select.Root
-                                                collection={monthCollection}
-                                                size="sm"
-                                                value={watch('month') ? [watch('month')] : []}
-                                                onValueChange={(value) => setValue('month', value.value[0] || '', { shouldValidate: true })}
-                                            >
-                                                <Select.HiddenSelect />
-                                                <Select.Control>
-                                                    <Select.Trigger rounded="lg">
-                                                        <Select.ValueText placeholder="Select month" />
-                                                    </Select.Trigger>
-                                                    <Select.IndicatorGroup>
-                                                        <Select.Indicator />
-                                                    </Select.IndicatorGroup>
-                                                </Select.Control>
-                                                <Select.Positioner>
-                                                    <Select.Content>
-                                                        {monthCollection.items.map((item: any) => (
-                                                            <Select.Item item={item} key={item.value}>
-                                                                {item.label}
-                                                                <Select.ItemIndicator />
-                                                            </Select.Item>
-                                                        ))}
-                                                    </Select.Content>
-                                                </Select.Positioner>
-                                            </Select.Root>
-                                            <Field.ErrorText>{errors.month?.message}</Field.ErrorText>
-                                        </Field.Root>
-                                    </HStack>
+                                    <Field.Root required invalid={!!errors.month}>
+                                        <Field.Label>Month
+                                            <Field.RequiredIndicator />
+                                        </Field.Label>
+                                        <Select.Root
+                                            collection={monthCollection}
+                                            size="sm"
+                                            value={watch('month') ? [watch('month')] : []}
+                                            onValueChange={(value) => setValue('month', value.value[0] || '', { shouldValidate: true })}
+                                        >
+                                            <Select.HiddenSelect />
+                                            <Select.Control>
+                                                <Select.Trigger rounded="lg">
+                                                    <Select.ValueText placeholder="Select month" />
+                                                </Select.Trigger>
+                                                <Select.IndicatorGroup>
+                                                    <Select.Indicator />
+                                                </Select.IndicatorGroup>
+                                            </Select.Control>
+                                            <Select.Positioner>
+                                                <Select.Content>
+                                                    {monthCollection.items.map((item: any) => (
+                                                        <Select.Item item={item} key={item.value}>
+                                                            {item.label}
+                                                            <Select.ItemIndicator />
+                                                        </Select.Item>
+                                                    ))}
+                                                </Select.Content>
+                                            </Select.Positioner>
+                                        </Select.Root>
+                                        <Field.ErrorText>{errors.month?.message}</Field.ErrorText>
+                                    </Field.Root>
 
                                     {/* Hidden inputs for ID fields so react-hook-form validates them */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />

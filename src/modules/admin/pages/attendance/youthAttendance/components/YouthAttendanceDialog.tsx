@@ -25,9 +25,10 @@ import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import DistrictIdCombobox from "@/modules/admin/components/DistrictIdCombobox"
 import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useGroups } from "@/modules/admin/hooks/useGroup"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 interface YouthAttendanceDialogProps {
     isOpen: boolean
@@ -36,6 +37,7 @@ interface YouthAttendanceDialogProps {
     attendanceType: 'weekly' | 'revival'
     onClose: () => void
     onSave: (data: YouthAttendanceFormData) => void
+    attendance?: YouthAttendance
 }
 
 const months = [
@@ -53,6 +55,7 @@ export const YouthAttendanceDialog = ({
     attendanceType,
     onClose,
     onSave,
+    attendance,
 }: YouthAttendanceDialogProps) => {
     const { states } = useStates()
     const { regions } = useRegions()
@@ -68,7 +71,7 @@ export const YouthAttendanceDialog = ({
             region_id: 0,
             district_id: 0,
             group_id: 0,
-            old_group_id: 0,
+            old_group_id: undefined,
             year: currentYear,
             month: '',
             male: 0,
@@ -79,6 +82,54 @@ export const YouthAttendanceDialog = ({
             visitor_girls: 0,
         }
     })
+
+    useEffect(() => {
+        if (isOpen && attendance && mode === 'edit') {
+            reset({
+                attendance_type: attendance.attendance_type,
+                state_id: attendance.state_id,
+                region_id: attendance.region_id,
+                district_id: attendance.district_id,
+                group_id: attendance.group_id,
+                old_group_id: attendance.old_group_id ?? undefined,
+                year: attendance.year,
+                month: attendance.month,
+                week: attendance.week,
+                male: attendance.male,
+                female: attendance.female,
+                member_boys: attendance.member_boys,
+                member_girls: attendance.member_girls,
+                visitor_boys: attendance.visitor_boys,
+                visitor_girls: attendance.visitor_girls,
+                challenges: attendance.challenges,
+                solutions: attendance.solutions,
+                testimony: attendance.testimony,
+                remarks: attendance.remarks,
+            })
+        } else if (isOpen && mode === 'add') {
+            reset({
+                attendance_type: attendanceType,
+                state_id: 0,
+                region_id: 0,
+                district_id: 0,
+                group_id: 0,
+                old_group_id: undefined,
+                year: currentYear,
+                month: '',
+                week: attendanceType === 'weekly' ? 1 : undefined,
+                male: 0,
+                female: 0,
+                member_boys: 0,
+                member_girls: 0,
+                visitor_boys: 0,
+                visitor_girls: 0,
+                challenges: '',
+                solutions: '',
+                testimony: '',
+                remarks: '',
+            })
+        }
+    }, [isOpen, attendance, mode, attendanceType, reset])
 
     const currentStateId = watch('state_id')
     const currentRegionId = watch('region_id')
@@ -293,6 +344,7 @@ export const YouthAttendanceDialog = ({
 
     return (
         <Dialog.Root
+            role="alertdialog"
             open={isOpen}
             onOpenChange={(e) => !e.open && handleClose()}
         >

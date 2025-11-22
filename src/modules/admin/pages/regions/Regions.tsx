@@ -1,7 +1,7 @@
 // components/regions/Regions.tsx
 "use client"
 
-import { Suspense } from "react"
+ 
 import {
     VStack,
     Spinner,
@@ -31,16 +31,7 @@ export const Regions: React.FC = () => {
                     <ErrorFallback {...{ resetErrorBoundary, error }} />
                 )}
             >
-                <Suspense fallback={
-                    <Center h="400px">
-                        <VStack gap="4">
-                            <Spinner size="xl" color="accent.500" />
-                            <Text fontSize="lg" color="gray.600">Loading Regions Page...</Text>
-                        </VStack>
-                    </Center>
-                }>
-                    <RegionsContent />
-                </Suspense>
+                <RegionsContent />
             </ErrorBoundary>
         </>
     );

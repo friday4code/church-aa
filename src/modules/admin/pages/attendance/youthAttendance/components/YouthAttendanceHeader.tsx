@@ -1,20 +1,26 @@
 // components/YouthAttendanceHeader.tsx
 "use client"
 
-import { HStack, Button, Heading, VStack, Text } from "@chakra-ui/react"
-import { Add, DocumentDownload } from "iconsax-reactjs"
+import { HStack, Button, Heading, VStack, Text, IconButton } from "@chakra-ui/react"
+import { Add, DocumentDownload, ArrowLeft3 } from "iconsax-reactjs"
 
 interface YouthAttendanceHeaderProps {
     onAddClick: () => void
     onExportClick: () => void
     attendanceType: 'weekly' | 'revival'
+    showBackButton?: boolean
 }
 
-export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType }: YouthAttendanceHeaderProps) => {
+export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType, showBackButton }: YouthAttendanceHeaderProps) => {
     return (
         <VStack align="stretch" gap="4">
             <HStack justify="space-between">
                 <VStack align="start" gap="0">
+                    {showBackButton && (
+                        <IconButton aria-label="Go back" variant="outline" rounded="xl" onClick={() => window.history.back()}>
+                            <ArrowLeft3 />
+                        </IconButton>
+                    )}
                     <Heading size="lg">Youth {attendanceType === 'weekly' ? 'Weekly' : 'Revival'} Attendance</Heading>
                     <Text color="gray.600" fontSize="sm">
                         Manage {attendanceType} attendance records for youth groups

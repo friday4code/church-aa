@@ -45,7 +45,7 @@ const RevivalPage: React.FC = () => {
     return (
         <Box p="6">
             <VStack align="stretch" gap="6">
-                <YouthAttendanceHeader onAddClick={handleAddClick} onExportClick={handleExportClick} attendanceType="revival" />
+                <YouthAttendanceHeader onAddClick={handleAddClick} onExportClick={handleExportClick} attendanceType="revival" showBackButton />
                 <FilterComponent onFilter={setFilters} attendanceType="revival" />
                 <YouthAttendanceTable data={attendanceData?.data || []} isLoading={isLoading} onDelete={handleDelete} />
             </VStack>

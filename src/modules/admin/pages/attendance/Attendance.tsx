@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
+ 
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
@@ -36,16 +36,7 @@ export const AttendancePage: React.FC<AttendancePageProps> = ({ serviceType }) =
                     <ErrorFallback {...{ resetErrorBoundary, error }} />
                 )}
             >
-                <Suspense fallback={
-                    <Center h="400px">
-                        <VStack gap="4">
-                            <Spinner size="xl" color="accent.500" />
-                            <Text fontSize="lg" color="gray.600">Loading Attendance Page...</Text>
-                        </VStack>
-                    </Center>
-                }>
-                    <AttendanceContent serviceType={serviceType} serviceName={serviceName} />
-                </Suspense>
+                <AttendanceContent serviceType={serviceType} serviceName={serviceName} />
             </ErrorBoundary>
         </>
     );
