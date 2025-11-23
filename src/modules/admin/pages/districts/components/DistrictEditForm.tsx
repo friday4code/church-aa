@@ -13,8 +13,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { districtSchema, type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
-import LGACombobox from "@/modules/admin/components/LGACombobox"
-import StateCombobox from "@/modules/admin/components/StateCombobox"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
+import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { useEffect, useMemo } from "react"
 
 
 interface DistrictEditFormProps {
@@ -24,31 +31,118 @@ interface DistrictEditFormProps {
 }
 
 const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<DistrictFormData>({
+    const { states } = useStates()
+    const { regions } = useRegions()
+    const { oldGroups } = useOldGroups()
+    const { groups: allGroups } = useGroups()
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
         resolver: zodResolver(districtSchema),
         defaultValues: {
-            state: district.state,
-            region: district.region,
+            state_id: district.state_id || 0,
+            region_id: district.region_id || 0,
             name: district.name,
             leader: district.leader,
-            code: district.code
+            code: district.code || '',
+            old_group_id: district.old_group_id || 0,
+            group_id: district.group_id || 0,
+            old_group_name: district.old_group || '',
+            group_name: district.group || '',
+            state_name: district.state || '',
+            region_name: district.region || '',
         }
     })
 
-    const currentStateName = watch('state')
+    const currentStateName = watch('state_name')
+    const currentRegionName = watch('region_name')
+    const currentOldGroupName = watch('old_group_name')
+    const currentGroupName = watch('group_name')
+    const watchedStateId = watch('state_id')
 
-    const handleStateChange = (value: string) => {
-        setValue('state', value)
-        // Clear region when state changes
-        setValue('region', '')
+    const filteredRegions = (regions || []).filter((region) => {
+        if (region.state_id != null && watchedStateId) {
+            return Number(region.state_id) === Number(watchedStateId)
+        }
+        if (currentStateName && region.state) {
+            return region.state.toLowerCase() === currentStateName.toLowerCase()
+        }
+        return false
+    })
+
+    const filteredGroups = useMemo(() => {
+        if (!currentOldGroupName || !oldGroups || !allGroups) return []
+        const selectedOldGroup = oldGroups.find(og => og.name === currentOldGroupName)
+        if (!selectedOldGroup) return []
+        return allGroups.filter(group => group.old_group === selectedOldGroup.name)
+    }, [currentOldGroupName, oldGroups, allGroups])
+
+    const handleStateChange = (stateName: string) => {
+        const state = states?.find(s => s.name === stateName)
+        if (state) {
+            setValue('state_id', state.id, { shouldValidate: true })
+            setValue('state_name', stateName)
+            setValue('region_id', 0, { shouldValidate: true })
+            setValue('region_name', '')
+        }
     }
 
-    const handleRegionChange = (value: string) => {
-        setValue('region', value)
+    const handleRegionChange = (regionName: string) => {
+        const region = regions?.find(r => r.name === regionName)
+        if (region) {
+            setValue('region_id', region.id, { shouldValidate: true })
+            setValue('region_name', regionName)
+        }
     }
+
+    const handleOldGroupChange = (oldGroupName: string) => {
+        const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+        if (oldGroup) {
+            setValue('old_group_id', oldGroup.id, { shouldValidate: true })
+            setValue('old_group_name', oldGroupName)
+            setValue('group_id', 0, { shouldValidate: true })
+            setValue('group_name', '')
+        }
+    }
+
+    const handleGroupChange = (groupName: string) => {
+        const group = filteredGroups.find(g => g.name === groupName)
+        if (group) {
+            setValue('group_id', group.id, { shouldValidate: true })
+            setValue('group_name', groupName)
+        }
+    }
+
+    const generateDistrictCode = (districtName: string): string => {
+        if (!districtName) return ''
+        const cleanName = districtName.replace(/district|area|zone|region/gi, '').trim()
+        return cleanName.substring(0, 4).toUpperCase()
+    }
+
+    const handleDistrictNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const districtName = e.target.value
+        setValue('name', districtName)
+        const districtCode = districtName ? generateDistrictCode(districtName) : ''
+        setValue('code', districtCode)
+    }
+
+    useEffect(() => {
+        reset({
+            state_id: district.state_id || 0,
+            region_id: district.region_id || 0,
+            name: district.name,
+            leader: district.leader,
+            code: district.code || '',
+            old_group_id: district.old_group_id || 0,
+            group_id: district.group_id || 0,
+            old_group_name: district.old_group || '',
+            group_name: district.group || '',
+            state_name: district.state || '',
+            region_name: district.region || '',
+        })
+    }, [district, reset])
 
     const onSubmit = (data: DistrictFormData) => {
-        onUpdate(data)
+        const { old_group_name, group_name, state_name, region_name, ...apiData } = data
+        onUpdate(apiData)
     }
 
     return (
@@ -59,25 +153,44 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
 
             <form id={`district-form-${district.id}`} onSubmit={handleSubmit(onSubmit)}>
                 <VStack gap="4" colorPalette={"accent"}>
-                    <Field.Root required invalid={!!errors.state}>
-                        <StateCombobox
+                    <Field.Root required invalid={!!errors.state_id}>
+                        <StateIdCombobox
                             value={currentStateName}
                             onChange={handleStateChange}
-                            required
-                            invalid={!!errors.state}
+                            invalid={!!errors.state_id}
                         />
-                        <Field.ErrorText>{errors.state?.message}</Field.ErrorText>
+                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root required invalid={!!errors.region}>
-                        <LGACombobox
-                            stateName={currentStateName}
-                            value={watch('region')}
+                    <Field.Root required invalid={!!errors.region_id}>
+                        <RegionIdCombobox
+                            value={currentRegionName}
                             onChange={handleRegionChange}
-                            required
-                            invalid={!!errors.region}
+                            invalid={!!errors.region_id}
+                            items={filteredRegions}
+                            disabled={!watchedStateId && !currentStateName}
                         />
-                        <Field.ErrorText>{errors.region?.message}</Field.ErrorText>
+                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root required invalid={!!errors.old_group_id}>
+                        <OldGroupIdCombobox
+                            value={currentOldGroupName}
+                            onChange={handleOldGroupChange}
+                            invalid={!!errors.old_group_id}
+                        />
+                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root required invalid={!!errors.group_id}>
+                        <GroupIdCombobox
+                            value={currentGroupName}
+                            onChange={handleGroupChange}
+                            invalid={!!errors.group_id}
+                            items={filteredGroups}
+                            disabled={!currentOldGroupName}
+                        />
+                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
                     </Field.Root>
 
                     <Field.Root required invalid={!!errors.name}>
@@ -88,6 +201,7 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                             rounded="lg"
                             placeholder="Enter district name"
                             {...register('name')}
+                            onChange={handleDistrictNameChange}
                         />
                         <Field.ErrorText>{errors.name?.message}</Field.ErrorText>
                     </Field.Root>
@@ -104,15 +218,25 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root invalid={!!errors.code}>
-                        <Field.Label>District Code</Field.Label>
+                    <Field.Root required invalid={!!errors.code}>
+                        <Field.Label>District Code
+                            <Field.RequiredIndicator />
+                        </Field.Label>
                         <Input
                             rounded="lg"
-                            placeholder="Enter district code (optional)"
+                            placeholder="District code will be auto-generated"
                             {...register('code')}
                         />
                         <Field.ErrorText>{errors.code?.message}</Field.ErrorText>
                     </Field.Root>
+                    <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('state_name')} />
+                    <input type="hidden" {...register('region_name')} />
+                    <input type="hidden" {...register('old_group_name')} />
+                    <input type="hidden" {...register('group_name')} />
                 </VStack>
             </form>
 

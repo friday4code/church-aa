@@ -35,8 +35,9 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
 
     const handleStateChange = (value: string) => {
         setValue('stateName', value)
- 
-        setValue('stateCode', state?.code)
+        const cleanName = value.replace(/state/gi, '').trim()
+        const stateCode = cleanName.substring(0, 3).toUpperCase()
+        setValue('stateCode', stateCode)
     }
 
     const onSubmit = (data: StateFormData) => {

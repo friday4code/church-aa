@@ -204,6 +204,20 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
         return match?.name || ''
     }, [oldGroups, watchedOldGroupId])
 
+    const filteredGroups = useMemo(() => {
+        if (!currentOldGroupName || !oldGroups || !groups) {
+            return []
+        }
+
+        const selectedOldGroup = oldGroups.find(og => og.name === currentOldGroupName)
+
+        if (!selectedOldGroup) {
+            return []
+        }
+
+        return groups.filter(group => group.old_group === selectedOldGroup.name)
+    }, [currentOldGroupName, oldGroups, groups])
+
     const onStateChange = useCallback((name: string) => {
         const id = states.find(s => s.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('state_id', id, { shouldValidate: true })
@@ -227,6 +241,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     const onOldGroupChange = useCallback((name: string) => {
         const id = oldGroups.find(og => og.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('old_group_id', id, { shouldValidate: true })
+        setValue('group_id', 0, { shouldValidate: true })
     }, [oldGroups, setValue])
 
     const onRolesChange = useCallback((val: { value: string[] }) => {
@@ -399,6 +414,8 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                                 <GroupIdCombobox
                                                     value={currentGroupName}
                                                     onChange={onGroupChange}
+                                                    items={filteredGroups}
+                                                    disabled={!currentOldGroupName}
                                                 />
                                             </Field.Root>
 

@@ -13,7 +13,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { regionSchema, type RegionFormData } from "../../../schemas/region.schema"
 import type { Region } from "@/types/regions.type"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useStates } from "@/modules/admin/hooks/useState"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 
 interface RegionEditFormProps {
     region: Region
@@ -22,11 +24,11 @@ interface RegionEditFormProps {
 }
 
 const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => {
-    const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<RegionFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<RegionFormData>({
         resolver: zodResolver(regionSchema),
         defaultValues: {
             name: region.name,
-            state_id: 1, // You'll need to get the actual state_id from the region
+            state_id: region.state_id ?? 0,
             leader: region.leader,
             code: region.code
         }
@@ -34,6 +36,9 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
 
     const currentName = watch('name')
     const currentCode = watch('code')
+    const watchedStateId = watch('state_id')
+    const { states } = useStates()
+    const [selectedStateName, setSelectedStateName] = useState('')
 
     const generateRegionCode = (regionName: string): string => {
         if (!regionName) return ''
@@ -47,6 +52,33 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
             setValue('code', generatedCode)
         }
     }, [currentName, setValue, currentCode])
+
+    useEffect(() => {
+        if (!states?.length || selectedStateName) return
+        const matched = states.find(s => s.id === (region.state_id ?? 0))
+        if (matched) {
+            setSelectedStateName(matched.name)
+        }
+    }, [states, region.state_id, selectedStateName])
+
+    useEffect(() => {
+        reset({
+            name: region.name,
+            state_id: region.state_id ?? 0,
+            leader: region.leader,
+            code: region.code
+        })
+    }, [region, reset])
+
+    const handleStateChange = (stateName: string) => {
+        setSelectedStateName(stateName)
+        if (!stateName) {
+            setValue('state_id', 0, { shouldValidate: true })
+            return
+        }
+        const selected = states?.find(s => s.name === stateName)
+        setValue('state_id', selected?.id ?? 0, { shouldValidate: true })
+    }
 
     const onSubmit = (data: RegionFormData) => {
         onUpdate(data)
@@ -73,14 +105,11 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
                     </Field.Root>
 
                     <Field.Root required invalid={!!errors.state_id}>
-                        <Field.Label>State ID
-                            <Field.RequiredIndicator />
-                        </Field.Label>
-                        <Input
-                            type="number"
-                            rounded="lg"
-                            placeholder="Enter state ID"
-                            {...register('state_id', { valueAsNumber: true })}
+                        <StateIdCombobox
+                            required
+                            value={selectedStateName}
+                            onChange={handleStateChange}
+                            invalid={!!errors.state_id}
                         />
                         <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
                     </Field.Root>
@@ -113,6 +142,8 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
                     </Field.Root>
                 </VStack>
             </form>
+
+            <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
 
             <HStack justify="flex-end" gap="2" mt="4">
                 <Button variant="outline" size="sm" onClick={onCancel}>

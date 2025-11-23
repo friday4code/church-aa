@@ -15,6 +15,12 @@ import { useEffect } from "react"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
 import { useMe } from "@/hooks/useMe"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 
 interface GroupEditFormProps {
     group: Group
@@ -25,23 +31,78 @@ interface GroupEditFormProps {
 const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     const { user } = useMe()
     
-    const { register, handleSubmit, formState: { errors }, setValue } = useForm<GroupFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
             group_name: group.name,
             leader: group.leader || '',
-            state_id: user?.state_id || group.state_id || 0,
-            region_id: user?.region_id || group.region_id || 0,
+            state_id: group.state_id || 0,
+            region_id: group.region_id || 0,
+            old_group_id: undefined,
+            old_group_name: group.old_group || '',
         }
     })
 
-    // Set state_id and region_id from logged in user when form initializes
-    useEffect(() => {
-        if (user) {
-            setValue('state_id', user.state_id || 0)
-            setValue('region_id', user.region_id || 0)
+    const { states } = useStates()
+    const { regions } = useRegions()
+    const { oldGroups } = useOldGroups()
+    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const watchedStateId = watch('state_id')
+    const watchedRegionId = watch('region_id')
+    const selectedOldGroupName = watch('old_group_name')
+    const [selectedStateName, setSelectedStateName] = ((): [string, (v: string) => void] => {
+        const s = watch('state_id')
+        const match = states?.find(st => st.id === s)?.name || ''
+        const setter = (v: string) => setValue('state_id', (states?.find(st => st.name === v)?.id ?? 0), { shouldValidate: true })
+        return [match, setter]
+    })()
+    const [selectedRegionName, setSelectedRegionName] = ((): [string, (v: string) => void] => {
+        const r = watch('region_id')
+        const match = regions?.find(reg => reg.id === r)?.name || ''
+        const setter = (v: string) => setValue('region_id', (regions?.find(reg => reg.name === v)?.id ?? 0), { shouldValidate: true })
+        return [match, setter]
+    })()
+
+    const filteredRegions = (regions || []).filter((region) => {
+        if (region.state_id != null && watchedStateId) {
+            return Number(region.state_id) === Number(watchedStateId)
         }
-    }, [user, setValue])
+        const stateName = states?.find(s => s.id === watchedStateId)?.name
+        if (stateName && region.state) {
+            return region.state.toLowerCase() === stateName.toLowerCase()
+        }
+        return false
+    })
+
+    const handleOldGroupChange = (oldGroupName: string) => {
+        if (oldGroupName) {
+            const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+            if (oldGroup) {
+                setValue('old_group_id', oldGroup.id, { shouldValidate: true })
+                setValue('old_group_name', oldGroupName)
+            }
+        } else {
+            setValue('old_group_id', undefined)
+            setValue('old_group_name', '')
+        }
+    }
+
+    useEffect(() => {
+        reset({
+            group_name: group.name,
+            leader: group.leader || '',
+            state_id: group.state_id || 0,
+            region_id: group.region_id || 0,
+            old_group_id: ((): number | undefined => {
+                if (group.old_group && oldGroups) {
+                    const found = oldGroups.find(og => og.name === group.old_group)
+                    return found?.id
+                }
+                return undefined
+            })(),
+            old_group_name: group.old_group || '',
+        })
+    }, [group, reset, oldGroups])
 
     const onSubmit = (data: GroupFormData) => {
         onUpdate(data)
@@ -79,9 +140,44 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    {/* Hidden inputs for state_id and region_id from logged in user */}
+                    {isSuperAdmin && (
+                        <Field.Root required invalid={!!errors.state_id}>
+                            <StateIdCombobox
+                                required
+                                value={selectedStateName}
+                                onChange={setSelectedStateName}
+                                invalid={!!errors.state_id}
+                            />
+                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                        </Field.Root>
+                    )}
+
+                    {isSuperAdmin && (
+                        <Field.Root required invalid={!!errors.region_id}>
+                            <RegionIdCombobox
+                                required
+                                value={selectedRegionName}
+                                onChange={setSelectedRegionName}
+                                invalid={!!errors.region_id}
+                                items={filteredRegions}
+                            />
+                            <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                        </Field.Root>
+                    )}
+
+                    <Field.Root invalid={!!errors.old_group_id}>
+                        <OldGroupIdCombobox
+                            value={selectedOldGroupName}
+                            onChange={handleOldGroupChange}
+                            invalid={!!errors.old_group_id}
+                        />
+                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                    </Field.Root>
+
                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
+                    <input type="hidden" {...register('old_group_name')} />
                 </VStack>
             </form>
 
