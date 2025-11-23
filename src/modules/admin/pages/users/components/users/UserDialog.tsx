@@ -218,14 +218,45 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
         return groups.filter(group => group.old_group === selectedOldGroup.name)
     }, [currentOldGroupName, oldGroups, groups])
 
+    const filteredRegions = useMemo(() => {
+        if (!regions || regions.length === 0 || !watchedStateId) {
+            return []
+        }
+        return regions.filter((region) => {
+            if (region.state_id != null && watchedStateId) {
+                return Number(region.state_id) === Number(watchedStateId)
+            }
+            if (currentStateName && region.state) {
+                return region.state.toLowerCase() === currentStateName.toLowerCase()
+            }
+            return false
+        })
+    }, [regions, watchedStateId, currentStateName])
+
+    const filteredDistricts = useMemo(() => {
+        if (!districts || districts.length === 0 || (!currentRegionName && !currentStateName)) {
+            return []
+        }
+        return districts.filter((d) => {
+            if (currentRegionName && currentStateName) {
+                return d.region.toLowerCase() === currentRegionName.toLowerCase() && d.state.toLowerCase() === currentStateName.toLowerCase()
+            }
+
+            return false
+        })
+    }, [districts, currentStateName, currentRegionName])
+
     const onStateChange = useCallback((name: string) => {
         const id = states.find(s => s.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('state_id', id, { shouldValidate: true })
+        setValue('region_id', 0, { shouldValidate: true })
+        setValue('district_id', 0, { shouldValidate: true })
     }, [states, setValue])
 
     const onRegionChange = useCallback((name: string) => {
         const id = regions.find(r => r.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('region_id', id, { shouldValidate: true })
+        setValue('district_id', 0, { shouldValidate: true })
     }, [regions, setValue])
 
     const onDistrictChange = useCallback((name: string) => {
@@ -236,12 +267,14 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     const onGroupChange = useCallback((name: string) => {
         const id = groups.find(g => g.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('group_id', id, { shouldValidate: true })
+        setValue('district_id', 0, { shouldValidate: true })
     }, [groups, setValue])
 
     const onOldGroupChange = useCallback((name: string) => {
         const id = oldGroups.find(og => og.name.toLowerCase() === name.toLowerCase())?.id || 0
         setValue('old_group_id', id, { shouldValidate: true })
         setValue('group_id', 0, { shouldValidate: true })
+        setValue('district_id', 0, { shouldValidate: true })
     }, [oldGroups, setValue])
 
     const onRolesChange = useCallback((val: { value: string[] }) => {
@@ -389,18 +422,10 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                                     onChange={onRegionChange}
                                                     required
                                                     invalid={!!errors.region_id}
+                                                    items={filteredRegions}
+                                                    disabled={!watchedStateId}
                                                 />
                                                 <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                            </Field.Root>
-
-                                            <Field.Root required invalid={!!errors.district_id}>
-                                                <DistrictIdCombobox
-                                                    value={currentDistrictName}
-                                                    onChange={onDistrictChange}
-                                                    required
-                                                    invalid={!!errors.district_id}
-                                                />
-                                                <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
                                             </Field.Root>
 
                                             <Field.Root>
@@ -417,6 +442,18 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                                     items={filteredGroups}
                                                     disabled={!currentOldGroupName}
                                                 />
+                                            </Field.Root>
+
+                                            <Field.Root required invalid={!!errors.district_id}>
+                                                <DistrictIdCombobox
+                                                    value={currentDistrictName}
+                                                    onChange={onDistrictChange}
+                                                    required
+                                                    invalid={!!errors.district_id}
+                                                    items={filteredDistricts}
+                                                    disabled={!watchedGroupId && !currentGroupName}
+                                                />
+                                                <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
                                             </Field.Root>
 
                                         </>
