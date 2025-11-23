@@ -14,9 +14,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { regionSchema, type RegionFormData } from "../../../schemas/region.schema"
 import type { Region } from "@/types/regions.type"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 
 interface RegionDialogProps {
@@ -31,9 +32,11 @@ interface RegionDialogProps {
 const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: RegionDialogProps) => {
     const { user } = useMe()
     const { states, isLoading: isStatesLoading } = useStates()
+    const { regions = [] } = useRegions()
     const [selectedStateName, setSelectedStateName] = useState('')
     const userStateId = user?.state_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const generatedCodesCache = useRef<Set<string>>(new Set())
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<RegionFormData>({
         resolver: zodResolver(regionSchema),
@@ -49,12 +52,24 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     const currentCode = watch('code')
 
     // Helper function to generate state code from state name
-    const generateRegionCode = (stateName: string): string => {
-        if (!stateName) return ''
-
-        // Remove "State" from the name if present and take first 3 letters in uppercase
-        const cleanName = stateName.replace(/state/gi, '').trim()
-        return cleanName.substring(0, 3).toUpperCase()
+    const generateRegionCode = (regionName: string): string => {
+        const words = regionName.trim().split(/\s+/).filter(Boolean)
+        const prefix = words.map(w => w.slice(0, 1).toUpperCase()).join('')
+        const d = new Date()
+        const yy = String(d.getFullYear()).slice(2)
+        const mm = String(d.getMonth() + 1).padStart(2, '0')
+        const dd = String(d.getDate()).padStart(2, '0')
+        const base = `${prefix}_${yy}${mm}${dd}`
+        let code = base
+        const existingCodes = (regions || []).map(r => r.code)
+        let suffix = 1
+        while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
+            code = `${base}_${suffix}`
+            suffix++
+            if (suffix > 20) break
+        }
+        generatedCodesCache.current.add(code)
+        return code
     }
 
     const onSubmit = (data: RegionFormData) => {
@@ -123,7 +138,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             const generatedCode = generateRegionCode(currentName)
             setValue('code', generatedCode)
         }
-    }, [currentName, mode, setValue, currentCode])
+    }, [currentName, mode])
 
     useEffect(() => {
         if (!isOpen || !isSuperAdmin || !region || selectedStateName) {

@@ -8,6 +8,7 @@ export const groupSchema = z.object({
     region_id: z.number().min(1, "Region is required"),
     old_group_id: z.number().optional(),
     old_group_name: z.string().optional(), // Temporary field for UI, not sent to API
+    code: z.string().min(1, "Group code is required"),
 });
 
 export type GroupFormData = z.infer<typeof groupSchema>;

@@ -14,9 +14,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
@@ -35,10 +36,12 @@ interface GroupDialogProps {
 const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupDialogProps) => {
     const { user } = useMe()
     const { oldGroups } = useOldGroups()
+    const { groups } = useGroups()
     const { states, isLoading: isStatesLoading } = useStates()
     const { regions, isLoading: isRegionsLoading } = useRegions()
     const [selectedStateName, setSelectedStateName] = useState('')
     const [selectedRegionName, setSelectedRegionName] = useState('')
+    const generatedCodesCache = useRef<Set<string>>(new Set())
     const userStateId = user?.state_id ?? 0
     const userRegionId = user?.region_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
@@ -51,10 +54,12 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             state_id: group?.state_id || 0,
             region_id: group?.region_id || 0,
             old_group_id: group?.old_group_id || undefined,
+            code: group?.code || '',
         }
     })
 
     const currentOldGroupName = watch('old_group_name')
+    const currentGroupName = watch('group_name')
     const watchedStateId = watch('state_id')
     const watchedRegionId = watch('region_id')
 
@@ -306,6 +311,38 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
         }
     }, [isOpen, group, regions, setValue, watchedRegionId])
 
+    const genUuidFragment = () => {
+        if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+            return (crypto as any).randomUUID().slice(0, 4)
+        }
+        return Math.random().toString(16).slice(2, 6)
+    }
+
+    const generateUniqueGroupCode = (name: string) => {
+        const words = name.trim().split(/\s+/).filter(Boolean)
+        const prefix = words.map(w => w.slice(0, 2).toUpperCase()).join('')
+        let code = `${prefix}_${genUuidFragment()}`
+        const existingCodes = (groups || []).map(g => g.code)
+        let attempt = 0
+        while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
+            code = `${prefix}_${genUuidFragment()}`
+            attempt++
+            if (attempt > 10) break
+        }
+        generatedCodesCache.current.add(code)
+        return code
+    }
+
+    useEffect(() => {
+        if (mode !== 'add') return
+        if (!currentGroupName) {
+            setValue('code', '')
+            return
+        }
+        const code = generateUniqueGroupCode(currentGroupName)
+        setValue('code', code)
+    }, [currentGroupName, mode])
+
     return (
         <Dialog.Root
             role="alertdialog"
@@ -390,11 +427,25 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                         <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
                                     </Field.Root>
 
+                                    <Field.Root required invalid={!!errors.code}>
+                                        <Field.Label>Group Code
+                                            <Field.RequiredIndicator />
+                                        </Field.Label>
+                                        <Input
+                                            rounded="lg"
+                                            placeholder="Group code will be auto-generated"
+                                            readOnly
+                                            {...register('code')}
+                                        />
+                                        <Field.ErrorText>{errors.code?.message}</Field.ErrorText>
+                                    </Field.Root>
+
                                     {/* Hidden inputs for state_id, region_id, and old_group_id */}
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('old_group_name')} />
+                                    <input type="hidden" {...register('code')} />
                                 </VStack>
                             </form>
                         </Dialog.Body>

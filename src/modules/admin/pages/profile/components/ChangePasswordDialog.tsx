@@ -11,6 +11,7 @@ import {
     HStack,
     Progress,
     Text,
+    InputGroup,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,11 +23,18 @@ interface ChangePasswordDialogProps {
     isOpen: boolean
     onClose: () => void
 }
+import { useState } from "react"
+import { IconButton } from "@chakra-ui/react"
+import { Eye, EyeSlash } from "iconsax-reactjs"
 
 export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogProps) => {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch } = useForm<ChangePasswordFormData>({
         resolver: zodResolver(changePasswordSchema),
     })
+
+    const [showCurrent, setShowCurrent] = useState(false)
+    const [showNew, setShowNew] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
 
     const onSubmit = async (data: ChangePasswordFormData) => {
         try {
@@ -93,6 +101,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
 
     return (
         <Dialog.Root
+            role="alertdialog"
             open={isOpen}
             onOpenChange={(e) => !e.open && handleClose()}
         >
@@ -102,7 +111,6 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                     <Dialog.Content rounded="2xl" maxW="md">
                         <Dialog.Header>
                             <Dialog.Title>Change Password</Dialog.Title>
-                            <Text color="gray.600">Update your account password</Text>
                         </Dialog.Header>
 
                         <Dialog.Body>
@@ -110,23 +118,61 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                                 <VStack gap="4">
                                     <Field.Root required invalid={!!errors.currentPassword}>
                                         <Field.Label>Current Password</Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            type="password"
-                                            placeholder="Enter current password"
-                                            {...register('currentPassword')}
-                                        />
+                                        <InputGroup
+                                            endElement={
+                                                <IconButton
+                                                    aria-label="Toggle current password visibility"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    position="absolute"
+                                                    right="2"
+                                                    top="50%"
+                                                    transform="translateY(-50%)"
+                                                    onClick={() => setShowCurrent((v) => !v)}
+                                                >
+                                                    {showCurrent ? <EyeSlash /> : <Eye />}
+                                                </IconButton>
+                                            }
+                                        >
+                                            <Input
+                                                rounded="lg"
+                                                type={showCurrent ? 'text' : 'password'}
+                                                placeholder="Enter current password"
+                                                pr="10"
+                                                {...register('currentPassword')}
+                                            />
+                                        </InputGroup>
+
                                         <Field.ErrorText>{errors.currentPassword?.message}</Field.ErrorText>
                                     </Field.Root>
 
                                     <Field.Root required invalid={!!errors.newPassword}>
                                         <Field.Label>New Password</Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            type="password"
-                                            placeholder="Enter new password"
-                                            {...register('newPassword')}
-                                        />
+                                        <InputGroup
+                                            endElement={
+                                                <IconButton
+                                                    aria-label="Toggle new password visibility"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    position="absolute"
+                                                    right="2"
+                                                    top="50%"
+                                                    transform="translateY(-50%)"
+                                                    onClick={() => setShowNew((v) => !v)}
+                                                >
+                                                    {showNew ? <EyeSlash /> : <Eye />}
+                                                </IconButton>
+                                            }
+                                        >
+                                            <Input
+                                                rounded="lg"
+                                                type={showNew ? 'text' : 'password'}
+                                                placeholder="Enter new password"
+                                                pr="10"
+                                                {...register('newPassword')}
+                                            />
+                                        </InputGroup>
+
                                         {newPassword && (
                                             <VStack gap="2" align="start" w="full" mt="2">
                                                 <HStack justify="space-between" w="full">
@@ -147,12 +193,30 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
 
                                     <Field.Root required invalid={!!errors.confirmPassword}>
                                         <Field.Label>Confirm New Password</Field.Label>
-                                        <Input
-                                            rounded="lg"
-                                            type="password"
-                                            placeholder="Confirm new password"
-                                            {...register('confirmPassword')}
-                                        />
+                                        <InputGroup
+                                            endElement={
+                                                <IconButton
+                                                    aria-label="Toggle confirm password visibility"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    position="absolute"
+                                                    right="2"
+                                                    top="50%"
+                                                    transform="translateY(-50%)"
+                                                    onClick={() => setShowConfirm((v) => !v)}
+                                                >
+                                                    {showConfirm ? <EyeSlash /> : <Eye />}
+                                                </IconButton>
+                                            }
+                                        >
+                                            <Input
+                                                rounded="lg"
+                                                type={showConfirm ? 'text' : 'password'}
+                                                placeholder="Confirm new password"
+                                                pr="10"
+                                                {...register('confirmPassword')}
+                                            />
+                                        </InputGroup>
                                         <Field.ErrorText>{errors.confirmPassword?.message}</Field.ErrorText>
                                     </Field.Root>
                                 </VStack>

@@ -13,7 +13,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { stateSchema, type StateFormData } from "../../../schemas/states.schemas"
 import type { State } from "@/types/states.type"
-import { useEffect } from "react"
+import { useEffect, useMemo, useRef } from "react"
+import { useStates } from "@/modules/admin/hooks/useState"
 import StateCombobox from "@/modules/admin/components/StateCombobox"
 
 interface StateDialogProps {
@@ -26,6 +27,8 @@ interface StateDialogProps {
 }
 
 const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateDialogProps) => {
+    const { states = [] } = useStates()
+    const generatedCodesCache = useRef<Set<string>>(new Set())
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<StateFormData>({
         resolver: zodResolver(stateSchema),
@@ -41,18 +44,24 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
 
     const handleStateChange = (value: string) => {
         setValue('stateName', value)
-        // Generate state code from state name
         const stateCode = value ? generateStateCode(value) : ''
         setValue('stateCode', stateCode)
     }
 
     // Helper function to generate state code from state name
     const generateStateCode = (stateName: string): string => {
-        if (!stateName) return ''
-
-        // Remove "State" from the name if present and take first 3 letters in uppercase
-        const cleanName = stateName.replace(/state/gi, '').trim()
-        return cleanName.substring(0, 3).toUpperCase()
+        const words = stateName.trim().split(/\s+/).filter(Boolean)
+        const base = words.map(w => w.slice(0, 3).toUpperCase()).join('_')
+        let code = base
+        const existingCodes = (states || []).map(s => s.code)
+        let suffix = 1
+        while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
+            code = `${base}_${suffix}`
+            suffix++
+            if (suffix > 99) break
+        }
+        generatedCodesCache.current.add(code)
+        return code
     }
 
     const onSubmit = (data: StateFormData) => {

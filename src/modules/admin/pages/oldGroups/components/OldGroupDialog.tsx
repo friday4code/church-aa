@@ -14,10 +14,11 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
@@ -34,11 +35,13 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
     const { user } = useMe()
     const { states, isLoading: isStatesLoading } = useStates()
     const { regions, isLoading: isRegionsLoading } = useRegions()
+    const { oldGroups = [] } = useOldGroups()
     const [selectedStateName, setSelectedStateName] = useState('')
     const [selectedRegionName, setSelectedRegionName] = useState('')
     const userStateId = user?.state_id ?? 0
     const userRegionId = user?.region_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const generatedCodesCache = useRef<Set<string>>(new Set())
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
@@ -91,15 +94,30 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
 
     const handleNameChange = (value: string) => {
         setValue('name', value)
-        // Generate code from name
         const generatedCode = value ? generateGroupCode(value) : ''
         setValue('code', generatedCode)
     }
 
+    const genUuidFragment = () => {
+        if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+            return (crypto as any).randomUUID().slice(0, 4)
+        }
+        return Math.random().toString(16).slice(2, 6)
+    }
+
     const generateGroupCode = (groupName: string): string => {
-        if (!groupName) return ''
-        const cleanName = groupName.replace(/group/gi, '').trim()
-        return `GRP-${cleanName.substring(0, 3).toUpperCase()}`
+        const words = groupName.trim().split(/\s+/).filter(Boolean)
+        const prefix = words.map(w => w.slice(0, 2).toUpperCase()).join('')
+        let code = `${prefix}_${genUuidFragment()}`
+        const existingCodes = (oldGroups || []).map(g => g.code)
+        let attempt = 0
+        while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
+            code = `${prefix}_${genUuidFragment()}`
+            attempt++
+            if (attempt > 10) break
+        }
+        generatedCodesCache.current.add(code)
+        return code
     }
 
     const onSubmit = (data: OldGroupFormData) => {

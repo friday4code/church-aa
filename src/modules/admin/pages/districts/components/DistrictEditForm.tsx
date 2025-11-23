@@ -11,17 +11,14 @@ import {
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { districtSchema, type DistrictFormData } from "../../../schemas/districts.schema"
+import { type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
-import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
-import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
-import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
-import { useGroups } from "@/modules/admin/hooks/useGroup"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
+import { z } from "zod"
 
 
 interface DistrictEditFormProps {
@@ -33,20 +30,27 @@ interface DistrictEditFormProps {
 const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProps) => {
     const { states } = useStates()
     const { regions } = useRegions()
-    const { oldGroups } = useOldGroups()
-    const { groups: allGroups } = useGroups()
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
-        resolver: zodResolver(districtSchema),
+
+    const districtEditSchema = z.object({
+        state_id: z.number().min(1, 'State is required'),
+        region_id: z.number().min(1, 'Region (LGA) is required'),
+        name: z.string().min(1, 'District name is required'),
+        leader: z.string().min(1, 'District leader is required'),
+        code: z.string().min(1, 'District code is required'),
+        state_name: z.string().optional(),
+        region_name: z.string().optional(),
+    })
+
+    type DistrictEditFormData = z.infer<typeof districtEditSchema>
+
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictEditFormData>({
+        resolver: zodResolver(districtEditSchema),
         defaultValues: {
             state_id: district.state_id || 0,
             region_id: district.region_id || 0,
             name: district.name,
             leader: district.leader,
             code: district.code || '',
-            old_group_id: district.old_group_id || 0,
-            group_id: district.group_id || 0,
-            old_group_name: district.old_group || '',
-            group_name: district.group || '',
             state_name: district.state || '',
             region_name: district.region || '',
         }
@@ -54,8 +58,6 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
 
     const currentStateName = watch('state_name')
     const currentRegionName = watch('region_name')
-    const currentOldGroupName = watch('old_group_name')
-    const currentGroupName = watch('group_name')
     const watchedStateId = watch('state_id')
 
     const filteredRegions = (regions || []).filter((region) => {
@@ -67,13 +69,6 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
         }
         return false
     })
-
-    const filteredGroups = useMemo(() => {
-        if (!currentOldGroupName || !oldGroups || !allGroups) return []
-        const selectedOldGroup = oldGroups.find(og => og.name === currentOldGroupName)
-        if (!selectedOldGroup) return []
-        return allGroups.filter(group => group.old_group === selectedOldGroup.name)
-    }, [currentOldGroupName, oldGroups, allGroups])
 
     const handleStateChange = (stateName: string) => {
         const state = states?.find(s => s.name === stateName)
@@ -93,23 +88,7 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
         }
     }
 
-    const handleOldGroupChange = (oldGroupName: string) => {
-        const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
-        if (oldGroup) {
-            setValue('old_group_id', oldGroup.id, { shouldValidate: true })
-            setValue('old_group_name', oldGroupName)
-            setValue('group_id', 0, { shouldValidate: true })
-            setValue('group_name', '')
-        }
-    }
-
-    const handleGroupChange = (groupName: string) => {
-        const group = filteredGroups.find(g => g.name === groupName)
-        if (group) {
-            setValue('group_id', group.id, { shouldValidate: true })
-            setValue('group_name', groupName)
-        }
-    }
+    
 
     const generateDistrictCode = (districtName: string): string => {
         if (!districtName) return ''
@@ -131,18 +110,14 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
             name: district.name,
             leader: district.leader,
             code: district.code || '',
-            old_group_id: district.old_group_id || 0,
-            group_id: district.group_id || 0,
-            old_group_name: district.old_group || '',
-            group_name: district.group || '',
             state_name: district.state || '',
             region_name: district.region || '',
         })
     }, [district, reset])
 
-    const onSubmit = (data: DistrictFormData) => {
-        const { old_group_name, group_name, state_name, region_name, ...apiData } = data
-        onUpdate(apiData)
+    const onSubmit = (data: DistrictEditFormData) => {
+        const { state_name, region_name, ...apiData } = data
+        onUpdate(apiData as Partial<DistrictFormData>)
     }
 
     return (
@@ -173,25 +148,7 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                     </Field.Root>
 
-                    <Field.Root required invalid={!!errors.old_group_id}>
-                        <OldGroupIdCombobox
-                            value={currentOldGroupName}
-                            onChange={handleOldGroupChange}
-                            invalid={!!errors.old_group_id}
-                        />
-                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                    </Field.Root>
-
-                    <Field.Root required invalid={!!errors.group_id}>
-                        <GroupIdCombobox
-                            value={currentGroupName}
-                            onChange={handleGroupChange}
-                            invalid={!!errors.group_id}
-                            items={filteredGroups}
-                            disabled={!currentOldGroupName}
-                        />
-                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
-                    </Field.Root>
+                    
 
                     <Field.Root required invalid={!!errors.name}>
                         <Field.Label>District Name
@@ -231,12 +188,8 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                     </Field.Root>
                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
-                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
-                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
                     <input type="hidden" {...register('state_name')} />
                     <input type="hidden" {...register('region_name')} />
-                    <input type="hidden" {...register('old_group_name')} />
-                    <input type="hidden" {...register('group_name')} />
                 </VStack>
             </form>
 
