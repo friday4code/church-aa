@@ -13,6 +13,7 @@ import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteTe
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuth } from "@/hooks/useAuth";
 import { ColorModeButton } from "@/components/ui/color-mode";
+import AIChatWidget from "@/components/AIChatWidget";
 import { Tooltip } from "@/components/ui/tooltip";
 
 
@@ -88,7 +89,8 @@ const AdminSidebar: React.FC = () => {
     }, [allLinks, isLinkVisible]);
 
 
-    return <ScrollArea.Root bg="accent/70" backdropFilter={"blur(10px)"} rounded="xl" h="full" size={"xs"}>
+    return <>
+    <ScrollArea.Root bg="accent/70" backdropFilter={"blur(10px)"} rounded="xl" h="full" size={"xs"}>
         <ScrollArea.Viewport>
             <ScrollArea.Content h="full">
                 <Stack rounded="xl" p='4' w="full" h="full">
@@ -171,6 +173,8 @@ const AdminSidebar: React.FC = () => {
         </ScrollArea.Scrollbar>
         <ScrollArea.Corner />
     </ScrollArea.Root >
+    <AIChatWidget />
+    </>
 
 }
 
