@@ -31,41 +31,33 @@ const AdminSidebar: React.FC = () => {
 
     // Determine if a link should be visible based on user role
     const isLinkVisible = React.useCallback((href: string): boolean => {
-        // Super Admin sees everything
-        if (hasRole('Super Admin')) {
-            return true;
-        }
+        if (hasRole('Super Admin')) return true;
 
-        // State Admin sees everything
         if (hasRole('State Admin')) {
-            return true;
+            const allowed = ['/admin/states', '/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users'];
+            return allowed.some(link => href.includes(link));
         }
 
-        // Region Admin - hide States
         if (hasRole('Region Admin')) {
-            const hiddenLinks = ['/admin/states'];
-            return !hiddenLinks.some(hidden => href.includes(hidden));
+            const allowed = ['/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users'];
+            return allowed.some(link => href.includes(link));
         }
 
-        // Group Admin - hide States and Regions
-        if (hasRole('Group Admin')) {
-            const hiddenLinks = ['/admin/states', '/admin/regions'];
-            return !hiddenLinks.some(hidden => href.includes(hidden));
-        }
-
-        // District Admin - hide States, Regions, Groups, and Old Groups
         if (hasRole('District Admin')) {
-            const hiddenLinks = ['/admin/states', '/admin/regions', '/admin/groups', '/admin/old_groups', '/admin/old-groups'];
-            return !hiddenLinks.some(hidden => href.includes(hidden));
+            const allowed = ['/admin/districts', '/admin/groups', '/admin/old_groups', '/admin/users'];
+            return allowed.some(link => href.includes(link));
         }
 
-        // Viewer - minimal access (only dashboard and attendance maybe)
+        if (hasRole('Group Admin')) {
+            const allowed = ['/admin/groups', '/admin/old_groups', '/admin/users'];
+            return allowed.some(link => href.includes(link));
+        }
+
         if (hasRole('Viewer')) {
-            const visibleLinks = ['/admin/dashboard', '/admin/attendance'];
-            return visibleLinks.some(visible => href.includes(visible));
+            const allowed = ['/admin/dashboard'];
+            return allowed.some(link => href.includes(link));
         }
 
-        // Default: no access
         return false;
     }, [hasRole]);
 

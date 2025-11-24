@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { VStack, SimpleGrid, Heading, Text, Card, Button } from "@chakra-ui/react"
 import { Profile2User, UserOctagon, Calendar, TrendUp, ChartSquare } from "iconsax-reactjs"
 import { useAttendance } from "@/modules/admin/hooks/useAttendance"
@@ -20,9 +20,11 @@ import StateAttendanceReport from "./StateAttendanceReport"
 import RegionAttendanceReport from "./RegionAttendanceReport"
 import GroupAttendanceReport from "./GroupAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
- 
+
 import type { ReportFormValues } from "./ReportFilters"
 import { exportStateReportToExcel, transformApiToStore } from "@/utils/report.utils"
+import { useAuth } from "@/hooks/useAuth"
+import { toaster } from "@/components/ui/toaster"
 
 export const ReportsContent = () => {
     const { data: attendanceData = [], isLoading: isLoadingAttendance } = useAttendance()
@@ -33,6 +35,7 @@ export const ReportsContent = () => {
     const { districts = [] } = useDistricts()
     const { data: weeklyResp, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
     const { data: revivalResp, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
+    const { user: authUser, hasRole } = useAuth()
 
     const attendances: AttendanceRecord[] = attendanceData
     const youthWeeklyAttendances: YouthAttendance[] = useMemo(() => weeklyResp?.data ?? [], [weeklyResp])
@@ -136,6 +139,103 @@ export const ReportsContent = () => {
         { label: "December", value: "12" },
     ]
 
+    const allowedReportTypes = useMemo(() => {
+        if (hasRole('Super Admin')) return ['state', 'region', 'group', 'youth'] as const
+        if (hasRole('State Admin')) return ['state', 'region', 'group', 'youth'] as const
+        if (hasRole('Region Admin')) return ['region', 'group', 'youth'] as const
+        if (hasRole('District Admin')) return ['group'] as const
+        if (hasRole('Group Admin')) return ['group'] as const
+        return [] as const
+    }, [hasRole])
+
+    const restrictByScope = useCallback((records: AttendanceRecord[]): AttendanceRecord[] => {
+        if (hasRole('Super Admin')) return records
+        if (hasRole('State Admin') && authUser?.state_id) {
+            return records.filter(a => a.state_id === authUser.state_id)
+        }
+        if (hasRole('Region Admin') && authUser?.region_id) {
+            return records.filter(a => a.region_id === authUser.region_id)
+        }
+        if (hasRole('District Admin') && authUser?.district_id) {
+            return records.filter(a => a.district_id === authUser.district_id)
+        }
+        const gId = (authUser as any)?.group_id as number | undefined
+        if (hasRole('Group Admin') && gId) {
+            return records.filter(a => a.group_id === gId)
+        }
+        return []
+    }, [hasRole, authUser])
+
+    const isReportTypeAllowed = useCallback((type: string) => {
+        return (allowedReportTypes as readonly string[]).includes(type)
+    }, [allowedReportTypes])
+
+    const scopedStatesCollection = useMemo(() => {
+        if (hasRole('Super Admin')) return statesCollection
+        const sid = authUser?.state_id ?? 0
+        if (sid) {
+            const s = states.find(x => x.id === sid)
+            if (s) {
+                const label = s.name || (s as { stateName?: string }).stateName || ''
+                return label ? [{ label, value: label }] : []
+            }
+        }
+        return statesCollection
+    }, [statesCollection, hasRole, authUser, states])
+
+    const scopedRegionsCollection = useMemo(() => {
+        if (hasRole('Super Admin')) return regionsCollection
+        const rid = authUser?.region_id ?? 0
+        const sid = authUser?.state_id ?? 0
+        if (rid) {
+            const r = regions.find(x => x.id === rid)
+            if (r) {
+                const label = r.name || (r as { regionName?: string }).regionName || ''
+                return label ? [{ label, value: label }] : []
+            }
+        }
+        if (sid) {
+            const filtered = regions.filter(r => (r as any).state_id != null ? Number((r as any).state_id) === Number(sid) : true)
+            return filtered.map(r => ({ label: r.name || (r as { regionName?: string }).regionName, value: r.name || (r as { regionName?: string }).regionName })).sort((a, b) => a.label.localeCompare(b.label))
+        }
+        return regionsCollection
+    }, [regionsCollection, hasRole, authUser, regions])
+
+    const scopedOldGroupsCollection = useMemo(() => {
+        if (hasRole('Super Admin')) return oldGroupsCollection
+        const sid = authUser?.state_id ?? 0
+        const rid = authUser?.region_id ?? 0
+        const filtered = oldGroups.filter(og => {
+            const byState = sid ? ((og as any).state_id != null ? Number((og as any).state_id) === Number(sid) : true) : true
+            const byRegion = rid ? ((og as any).region_id != null ? Number((og as any).region_id) === Number(rid) : true) : true
+            return byState && byRegion
+        })
+        return filtered.map(g => ({ label: g.name || (g as { groupName?: string }).groupName, value: g.name || (g as { groupName?: string }).groupName })).sort((a, b) => a.label.localeCompare(b.label))
+    }, [oldGroupsCollection, hasRole, authUser, oldGroups])
+
+    const scopedGroupsCollection = useMemo(() => {
+        if (hasRole('Super Admin')) return groupsCollection
+        const gid = (authUser as any)?.group_id as number | undefined
+        const rid = authUser?.region_id ?? 0
+        const did = authUser?.district_id ?? 0
+        if (gid) {
+            const g = groups.find(x => x.id === gid)
+            if (g) {
+                const label = g.name || (g as { groupName?: string }).groupName || ''
+                return label ? [{ label, value: label }] : []
+            }
+        }
+        if (rid) {
+            const filtered = groups.filter(g => (g as any).region_id != null ? Number((g as any).region_id) === Number(rid) : (g as any).region ? String((g as any).region).toLowerCase() === String(regions.find(r => r.id === rid)?.name || '').toLowerCase() : false)
+            return filtered.map(g => ({ label: g.name || (g as { groupName?: string }).groupName, value: g.name || (g as { groupName?: string }).groupName })).sort((a, b) => a.label.localeCompare(b.label))
+        }
+        if (did) {
+            const filtered = groups.filter(g => (g as any).district_id != null ? Number((g as any).district_id) === Number(did) : true)
+            return filtered.map(g => ({ label: g.name || (g as { groupName?: string }).groupName, value: g.name || (g as { groupName?: string }).groupName })).sort((a, b) => a.label.localeCompare(b.label))
+        }
+        return groupsCollection
+    }, [groupsCollection, hasRole, authUser, groups, regions])
+
     useEffect(() => {
         const totalAttendance = attendances.reduce((sum, att) =>
             sum + (att.men || 0) + (att.women || 0) + (att.youth_boys || 0) + (att.youth_girls || 0) + (att.children_boys || 0) + (att.children_girls || 0), 0
@@ -189,6 +289,12 @@ export const ReportsContent = () => {
     const handleDownloadReport = (data: ReportFormValues) => {
         setIsLoading(true)
         try {
+            if (!isReportTypeAllowed(selectedReport)) {
+                toaster.error({ description: 'You do not have permission to generate this report type.', closable: true })
+                console.warn(`Permission denied: report type ${selectedReport}`)
+                return
+            }
+
             const months = [
                 "January",
                 "February",
@@ -204,12 +310,17 @@ export const ReportsContent = () => {
                 "December",
             ]
 
-            let filtered = attendances
+            let filtered = restrictByScope(attendances)
             let stateName = 'AKWA IBOM'
 
             if (data.state) {
                 const stateObj = states.find((s) => (s.name || (s as { stateName?: string }).stateName) === data.state || String(s.id) === data.state)
                 if (stateObj) {
+                    if (hasRole('State Admin') && authUser?.state_id && stateObj.id !== authUser.state_id) {
+                        toaster.error({ description: 'You can only download reports for your state.', closable: true })
+                        console.warn('Permission denied: state filter outside scope')
+                        return
+                    }
                     filtered = filtered.filter((att) => att.state_id === stateObj.id)
                     stateName = (stateObj.name || (stateObj as { stateName?: string }).stateName || stateName)
                 }
@@ -218,6 +329,11 @@ export const ReportsContent = () => {
             if (data.region) {
                 const regionObj = regions.find((r) => (r.name || (r as { regionName?: string }).regionName) === data.region || String(r.id) === data.region)
                 if (regionObj) {
+                    if (hasRole('Region Admin') && authUser?.region_id && regionObj.id !== authUser.region_id) {
+                        toaster.error({ description: 'You can only download reports for your region.', closable: true })
+                        console.warn('Permission denied: region filter outside scope')
+                        return
+                    }
                     filtered = filtered.filter((att) => att.region_id === regionObj.id)
                 }
             }
@@ -225,6 +341,11 @@ export const ReportsContent = () => {
             if (data.district) {
                 const districtObj = districts.find((d) => d.name === data.district || String(d.id) === data.district)
                 if (districtObj) {
+                    if (hasRole('District Admin') && authUser?.district_id && districtObj.id !== authUser.district_id) {
+                        toaster.error({ description: 'You can only download reports for your district.', closable: true })
+                        console.warn('Permission denied: district filter outside scope')
+                        return
+                    }
                     filtered = filtered.filter((att) => att.district_id === districtObj.id)
                 }
             }
@@ -232,6 +353,12 @@ export const ReportsContent = () => {
             if (data.group) {
                 const groupObj = groups.find((g) => (g.name || (g as { groupName?: string }).groupName) === data.group || String(g.id) === data.group)
                 if (groupObj) {
+                    const authGroupId = (authUser as any)?.group_id as number | undefined
+                    if (hasRole('Group Admin') && authGroupId && groupObj.id !== authGroupId) {
+                        toaster.error({ description: 'You can only download reports for your group.', closable: true })
+                        console.warn('Permission denied: group filter outside scope')
+                        return
+                    }
                     filtered = filtered.filter((att) => att.group_id === groupObj.id)
                 }
             }
@@ -287,7 +414,7 @@ export const ReportsContent = () => {
             case "state":
                 return (
                     <StateAttendanceReport
-                        statesCollection={statesCollection}
+                        statesCollection={scopedStatesCollection}
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
@@ -297,8 +424,8 @@ export const ReportsContent = () => {
             case "region":
                 return (
                     <RegionAttendanceReport
-                        statesCollection={statesCollection}
-                        regionsCollection={regionsCollection}
+                        statesCollection={scopedStatesCollection}
+                        regionsCollection={scopedRegionsCollection}
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
@@ -308,10 +435,10 @@ export const ReportsContent = () => {
             case "group":
                 return (
                     <GroupAttendanceReport
-                        statesCollection={statesCollection}
-                        regionsCollection={regionsCollection}
-                        groupsCollection={groupsCollection}
-                        oldGroupsCollection={oldGroupsCollection}
+                        statesCollection={scopedStatesCollection}
+                        regionsCollection={scopedRegionsCollection}
+                        groupsCollection={scopedGroupsCollection}
+                        oldGroupsCollection={scopedOldGroupsCollection}
                         yearsCollection={yearsCollection}
                         onDownload={handleDownloadReport}
                         isLoading={isLoading || isLoadingAttendance || isLoadingStates || isLoadingRegions || isLoadingGroups || isLoadingOldGroups}
@@ -320,8 +447,8 @@ export const ReportsContent = () => {
             case "youth":
                 return (
                     <YouthAttendanceReport
-                        statesCollection={statesCollection}
-                        regionsCollection={regionsCollection}
+                        statesCollection={scopedStatesCollection}
+                        regionsCollection={scopedRegionsCollection}
                         yearsCollection={yearsCollection}
                         monthsCollection={monthsCollection}
                         onDownload={handleDownloadReport}
@@ -422,7 +549,15 @@ export const ReportsContent = () => {
                             _hover={{
                                 bg: selectedReport === "state" ? "accent.emphasized" : "bg.subtle",
                             }}
-                            onClick={() => setSelectedReport("state")}
+                            onClick={() => {
+                                if (!isReportTypeAllowed('state')) {
+                                    toaster.error({ description: 'You do not have permission to access State reports.', closable: true })
+                                    console.warn('Permission denied: navigate state report')
+                                    return
+                                }
+                                setSelectedReport("state")
+                            }}
+                            disabled={!isReportTypeAllowed('state')}
                             rounded="xl"
                         >
                             State Report
@@ -435,7 +570,15 @@ export const ReportsContent = () => {
                             _hover={{
                                 bg: selectedReport === "region" ? "accent.emphasized" : "bg.subtle",
                             }}
-                            onClick={() => setSelectedReport("region")}
+                            onClick={() => {
+                                if (!isReportTypeAllowed('region')) {
+                                    toaster.error({ description: 'You do not have permission to access Region reports.', closable: true })
+                                    console.warn('Permission denied: navigate region report')
+                                    return
+                                }
+                                setSelectedReport("region")
+                            }}
+                            disabled={!isReportTypeAllowed('region')}
                             rounded="xl"
                         >
                             Region Report
@@ -448,7 +591,15 @@ export const ReportsContent = () => {
                             _hover={{
                                 bg: selectedReport === "group" ? "accent.emphasized" : "bg.subtle",
                             }}
-                            onClick={() => setSelectedReport("group")}
+                            onClick={() => {
+                                if (!isReportTypeAllowed('group')) {
+                                    toaster.error({ description: 'You do not have permission to access Group reports.', closable: true })
+                                    console.warn('Permission denied: navigate group report')
+                                    return
+                                }
+                                setSelectedReport("group")
+                            }}
+                            disabled={!isReportTypeAllowed('group')}
                             rounded="xl"
                         >
                             Group Report
@@ -461,7 +612,15 @@ export const ReportsContent = () => {
                             _hover={{
                                 bg: selectedReport === "youth" ? "accent.emphasized" : "bg.subtle",
                             }}
-                            onClick={() => setSelectedReport("youth")}
+                            onClick={() => {
+                                if (!isReportTypeAllowed('youth')) {
+                                    toaster.error({ description: 'You do not have permission to access Youth reports.', closable: true })
+                                    console.warn('Permission denied: navigate youth report')
+                                    return
+                                }
+                                setSelectedReport("youth")
+                            }}
+                            disabled={!isReportTypeAllowed('youth')}
                             rounded="xl"
                         >
                             Youth Report

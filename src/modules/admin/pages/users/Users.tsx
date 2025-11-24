@@ -19,6 +19,8 @@ import { toaster } from "@/components/ui/toaster"
 import type { UserFormData } from "../../schemas/users.schema"
 import { useUserMutations, useUsers } from "../../hooks/useUser"
 import type { User } from "@/types/users.type"
+import { useAuth } from "@/hooks/useAuth"
+import { Badge, HStack, Text as CText } from "@chakra-ui/react"
 
 // Lazy load components
 const UsersHeader = lazy(() => import("./components/users/UsersHeader"))
@@ -96,6 +98,7 @@ const Content = () => {
     const { data, isLoading } = useUsers();
     const users = data?.users || [];
     const { createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUserMutations()
+    const { user: authUser, hasRole } = useAuth()
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -109,9 +112,32 @@ const Content = () => {
         user?: any
     }>({ isOpen: false })
 
-    // Filter and sort users
+    // Filter and sort users with hierarchical restrictions
     const filteredAndSortedUsers = useMemo(() => {
-        let filtered = users.filter((user: any) =>
+        const isSuperAdmin = hasRole('Super Admin')
+        const isStateAdmin = hasRole('State Admin')
+        const isRegionAdmin = hasRole('Region Admin')
+        const isDistrictAdmin = hasRole('District Admin')
+
+        const byHierarchy = users.filter((u: any) => {
+            if (isSuperAdmin) return true
+            if (isStateAdmin) {
+                return u.state_id === authUser?.state_id && !(u.roles || []).includes('Super Admin')
+            }
+            if (isRegionAdmin) {
+                const roles = u.roles || []
+                const allowed = ['Region Admin', 'District Admin', 'Group Admin', 'Viewer']
+                return u.region_id === authUser?.region_id && roles.some((r: any) => allowed.includes(r))
+            }
+            if (isDistrictAdmin) {
+                const roles = u.roles || []
+                const allowed = ['District Admin', 'Group Admin', 'Viewer']
+                return u.district_id === authUser?.district_id && roles.some((r: any) => allowed.includes(r))
+            }
+            return false
+        })
+
+        let filtered = byHierarchy.filter((user: any) =>
             user?.firstName?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
             user?.lastName?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
             user?.email?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
@@ -138,7 +164,7 @@ const Content = () => {
         })
 
         return filtered
-    }, [users, searchQuery, sortField, sortOrder])
+    }, [users, searchQuery, sortField, sortOrder, hasRole, authUser])
 
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedUsers.length / pageSize)
@@ -347,6 +373,21 @@ const Content = () => {
 
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
+                                {!hasRole('Super Admin') && (
+                                    <HStack mb="3">
+                                        <Badge colorPalette="blue" variant="solid">
+                                            {hasRole('State Admin') && (
+                                                <CText>Scope: State-only users</CText>
+                                            )}
+                                            {hasRole('Region Admin') && (
+                                                <CText>Scope: Region-only users</CText>
+                                            )}
+                                            {hasRole('District Admin') && (
+                                                <CText>Scope: District-only users</CText>
+                                            )}
+                                        </Badge>
+                                    </HStack>
+                                )}
                                 <UsersTable
                                     paginatedUsers={paginatedUsers}
                                     selectedUsers={selectedUsers}
