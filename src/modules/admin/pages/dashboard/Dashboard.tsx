@@ -197,11 +197,11 @@ const Content = () => {
                 'Total Old Groups',
                 'Total Districts',
                 'Total Youth Attendance',
-                'Total Viewers',
+                // 'Total Viewers',
                 'Total State Admins',
                 'Total Region Admins',
+                'Total Group Admins',
                 'Total District Admins',
-                'Total Group Admins'
             ];
             return visibleForStateAdmin.includes(label);
         }
@@ -214,10 +214,10 @@ const Content = () => {
                 'Total Old Groups',
                 'Total Districts',
                 'Total Youth Attendance',
-                'Total Viewers',
+                // 'Total Viewers',
                 'Total Region Admins',
+                'Total Group Admins',
                 'Total District Admins',
-                'Total Group Admins'
             ];
             return visibleForRegionAdmin.includes(label);
         }
@@ -230,10 +230,10 @@ const Content = () => {
                 'Total Old Groups',
                 'Total Districts',
                 'Total Youth Attendance',
-                'Total Viewers',
-                'Total Region Admins',
+                // 'Total Viewers',
+                // 'Total Region Admins',
+                'Total Group Admins',
                 'Total District Admins',
-                'Total Group Admins'
             ];
             return visibleForGroupAdmin.includes(label);
         }
@@ -241,13 +241,13 @@ const Content = () => {
         // District Admin - if needed, add similar logic
         if (hasRole('District Admin')) {
             const visibleForDistrictAdmin = [
-                'Total Groups',
-                'Total Old Groups',
+                // 'Total Groups',
+                // 'Total Old Groups',
                 'Total Districts',
                 'Total Youth Attendance',
-                'Total Viewers',
+                // 'Total Viewers',
                 'Total District Admins',
-                'Total Group Admins'
+                // 'Total Group Admins'
             ];
             return visibleForDistrictAdmin.includes(label);
         }

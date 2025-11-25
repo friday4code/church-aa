@@ -29,7 +29,7 @@ const getRouteAccess = (pathname: string): {
     // Regions route - blocked for Group Admin, District Admin, Viewer
     if (path.includes('/admin/regions')) {
         return {
-            blockedForRoles: ['Region Admin','Group Admin', 'District Admin', 'Viewer']
+            blockedForRoles: ['Region Admin', 'Group Admin', 'District Admin', 'Viewer']
         };
     }
 
@@ -57,7 +57,14 @@ const getRouteAccess = (pathname: string): {
     // Old Groups route - blocked for District Admin
     if (path.includes('/admin/attendance-logs') || path.includes('/admin/attendance-logs')) {
         return {
-            blockedForRoles: ['State Admin', 'Region Admin','Oldgroup Admin', 'Group Admin', 'District Admin', 'Viewer']
+            blockedForRoles: ['State Admin', 'Region Admin', 'Oldgroup Admin', 'Group Admin', 'District Admin', 'Viewer']
+        };
+    }
+    
+    // users route - blocked for District Admin
+    if (path.includes('/admin/users') || path.includes('/admin/users')) {
+        return {
+            blockedForRoles: ['State Admin', 'Region Admin', 'Oldgroup Admin', 'Group Admin', 'District Admin', 'Viewer']
         };
     }
 

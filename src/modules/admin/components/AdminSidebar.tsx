@@ -79,7 +79,7 @@ const AdminSidebar: React.FC = () => {
 
     // Filter links based on user role
     const links = React.useMemo(() => {
-        return allLinks.filter(link => isLinkVisible(link.href));
+        return allLinks.filter(link => link.href == "/admin/attendance-logs" && !hasRole("Super Admin") ? false : true).filter(link => isLinkVisible(link.href));
     }, [allLinks, isLinkVisible]);
 
 

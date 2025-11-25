@@ -49,7 +49,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
                 }))
                 setApiDistricts(mapped)
                 setApiError("")
-            } catch (e) {
+            } catch {
                 setApiDistricts([])
                 setApiError("Failed to load districts")
             } finally {
@@ -97,9 +97,9 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             if (noScopeIds) return []
             const source = apiDistricts || []
             return source.filter((d) => {
-                const stateMatch = sId != null ? d.state_id === sId : true
-                const regionMatch = rId != null ? d.region_id === rId : true
-                const oldGroupMatch = ogId != null ? d.old_group_id === ogId : true
+                const stateMatch = sId != null && d.state_id != null ? d.state_id === sId : true
+                const regionMatch = rId != null && d.region_id != null ? d.region_id === rId : true
+                const oldGroupMatch = ogId != null && d.old_group_id != null ? d.old_group_id === ogId : true
                 const groupMatch = gId != null ? d.group_id === gId : true
                 return stateMatch && regionMatch && oldGroupMatch && groupMatch
             })
