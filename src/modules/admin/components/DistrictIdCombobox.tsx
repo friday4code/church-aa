@@ -29,6 +29,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
 
     useEffect(() => {
         const fetchDistricts = async () => {
+            console.log("gropuid", groupId)
             if (typeof groupId !== "number" || groupId === 0) {
                 setApiDistricts([])
                 return
@@ -36,6 +37,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             setApiLoading(true)
             try {
                 const data = await adminApi.getDistrictsByGroupId(groupId)
+                console.log("districts",data)
                 const mapped: District[] = (data || []).map(d => ({
                     id: d.id,
                     name: d.name,

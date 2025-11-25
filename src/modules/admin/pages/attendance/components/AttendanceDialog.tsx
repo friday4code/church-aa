@@ -83,15 +83,23 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
         return getRoleBasedVisibility(user.roles as RoleType[])
     }, [user?.roles])
 
-    const isGroupAdmin = useMemo(() => {
+    const isStateAdmin = useMemo(() => {
         const roles = user?.roles || []
-        return roles.includes("Group Admin")
+        return roles.includes("State Admin")
     }, [user?.roles])
+
 
     const isRegionAdmin = useMemo(() => {
         const roles = user?.roles || []
         return roles.includes("Region Admin")
     }, [user?.roles])
+
+    const isGroupAdmin = useMemo(() => {
+        const roles = user?.roles || []
+        return roles.includes("Group Admin")
+    }, [user?.roles])
+
+
 
 
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<AttendanceFormData>({
@@ -117,7 +125,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 
     // Auto-populate hidden fields based on user's role and data
     useEffect(() => {
-        if (!user) return
+        if (!user || !isOpen) return
 
         // Auto-populate state_id if State combobox is hidden
         if (!roleVisibility.showState && user.state_id) {
@@ -131,11 +139,12 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             trigger('region_id')
         }
 
-        // Auto-populate district_id if District combobox is hidden
-        if (!roleVisibility.showDistrict && user.district_id) {
-            setValue('district_id', user.district_id, { shouldValidate: true })
-            trigger('district_id')
+        // Auto-populate old_group_id if Old Group combobox is hidden
+        if (!roleVisibility.showOldGroup && user.old_group_id) {
+            setValue('old_group_id', user.old_group_id, { shouldValidate: true })
+            trigger('old_group_id')
         }
+
 
         // Auto-populate group_id if Group combobox is hidden
         if (!roleVisibility.showGroup && user.group_id) {
@@ -143,18 +152,27 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             trigger('group_id')
         }
 
-        // Auto-populate old_group_id if Old Group combobox is hidden
-        if (!roleVisibility.showOldGroup && user.old_group_id) {
-            setValue('old_group_id', user.old_group_id, { shouldValidate: true })
-            trigger('old_group_id')
+        // Auto-populate district_id if District combobox is hidden
+        if (!roleVisibility.showDistrict && user.district_id) {
+            setValue('district_id', user.district_id, { shouldValidate: true })
+            trigger('district_id')
         }
-    }, [user, roleVisibility, setValue, trigger])
+
+    }, [user, roleVisibility, setValue, trigger, isOpen])
 
     const onSubmit = (data: AttendanceFormData) => {
+        console.log("payload", data)
         onSave(data)
-        console.log("payload", data);
+    }
 
-        reset()
+    const onInvalid = (err: unknown) => {
+        console.log("validation_errors", err, {
+            state_id: watch('state_id'),
+            region_id: watch('region_id'),
+            group_id: watch('group_id'),
+            district_id: watch('district_id'),
+        })
+        toaster.create({ title: 'Please fix validation errors', type: 'error' })
     }
 
     const handleClose = () => {
@@ -184,11 +202,11 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             })
         } else if (isOpen && !attendance) {
             reset({
-                state_id: 0,
-                region_id: 0,
-                district_id: 0,
-                group_id: 0,
-                old_group_id: undefined,
+                state_id: roleVisibility.showState ? 0 : (user?.state_id ?? 0),
+                region_id: roleVisibility.showRegion ? 0 : (user?.region_id ?? 0),
+                district_id: roleVisibility.showDistrict ? 0 : (user?.district_id ?? 0),
+                group_id: roleVisibility.showGroup ? 0 : (user?.group_id ?? 0),
+                old_group_id: roleVisibility.showOldGroup ? undefined : (user?.old_group_id ?? undefined),
                 service_type: serviceName.toLowerCase(),
                 month: '',
                 week: 1,
@@ -201,7 +219,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                 year: new Date().getFullYear(),
             })
         }
-    }, [isOpen, attendance, reset, serviceName])
+    }, [isOpen, attendance, reset, serviceName, user?.state_id, user?.region_id, user?.district_id, user?.group_id, user?.old_group_id, roleVisibility])
 
     // hooks for name lookup and display
     const { states } = useStates()
@@ -216,6 +234,20 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
         () => states?.find(s => s.id === currentStateId)?.name || '',
         [states, currentStateId]
     )
+
+    useEffect(() => {
+        if (isRegionAdmin && isOpen) {
+            console.log("region_admin_scope", {
+                user_state_id: user?.state_id,
+                user_region_id: user?.region_id,
+                state_id: currentStateId,
+                region_id: currentRegionId,
+                group_id: currentGroupId,
+                district_id: currentDistrictId,
+                has_errors: !!Object.keys(errors || {}).length,
+            })
+        }
+    }, [isRegionAdmin, isOpen, user?.state_id, user?.region_id, currentStateId, currentRegionId, currentGroupId, currentDistrictId, errors])
 
     const clearBelowDistrict = () => {
         setValue('district_id', 0, { shouldValidate: false })
@@ -291,7 +323,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                         </Dialog.Header>
 
                         <Dialog.Body>
-                            <form noValidate id="attendance-form" onSubmit={handleSubmit(onSubmit)}>
+                            <form noValidate id="attendance-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
                                 <VStack gap="4" colorPalette={"accent"}>
                                     {roleVisibility.showState && (
                                         <Field.Root required invalid={!!errors.state_id}>
@@ -312,7 +344,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 onChange={handleRegionChange}
                                                 required
                                                 invalid={!!errors.region_id}
-                                                stateId={currentStateId}
+                                                stateId={isStateAdmin ? user?.state_id as number : currentStateId}
                                                 disabled={!currentStateId}
                                             />
                                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
@@ -341,7 +373,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 onChange={handleGroupChange}
                                                 required
                                                 invalid={!!errors.group_id}
-                                                oldGroupId={currentOldGroupId as number | undefined}
+                                                oldGroupId={currentOldGroupId as number}
                                                 disabled={!currentOldGroupId}
                                             />
                                             <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
@@ -359,7 +391,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 stateId={user?.state_id as number | undefined}
                                                 regionId={user?.region_id as number | undefined}
                                                 oldGroupId={user?.old_group_id ?? undefined}
-                                                groupId={user?.group_id as number | undefined}
+                                                groupId={currentGroupId || user?.group_id as number | undefined}
                                                 isGroupAdmin={isGroupAdmin}
                                             />
                                             <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
@@ -387,7 +419,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                             </Select.Control>
                                             <Select.Positioner>
                                                 <Select.Content>
-                                                    {monthCollection.items.map((item: any) => (
+                                                    {monthCollection.items.map((item) => (
                                                         <Select.Item item={item} key={item.value}>
                                                             {item.label}
                                                             <Select.ItemIndicator />
@@ -404,7 +436,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('district_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
-                                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('old_group_id')} />
                                     <input type="hidden" {...register('service_type')} />
 
                                     <HStack gap="4" w="full">
@@ -429,7 +461,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 </Select.Control>
                                                 <Select.Positioner>
                                                     <Select.Content>
-                                                        {weekCollection.items.map((item: any) => (
+                                                        {weekCollection.items.map((item) => (
                                                             <Select.Item item={item} key={item.value}>
                                                                 {item.label}
                                                                 <Select.ItemIndicator />
@@ -462,7 +494,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                                 </Select.Control>
                                                 <Select.Positioner>
                                                     <Select.Content>
-                                                        {yearCollection.items.map((item: any) => (
+                                                        {yearCollection.items.map((item) => (
                                                             <Select.Item item={item} key={item.value}>
                                                                 {item.label}
                                                                 <Select.ItemIndicator />

@@ -5,8 +5,8 @@ export const ROLE_HIERARCHY: Record<RoleType, number> = {
   "admin": 5,
   "State Admin": 4,
   "Region Admin": 3,
-  "District Admin": 2,
-  "Group Admin": 1,
+  "Group Admin": 2,
+  "District Admin": 1,
   "Viewer": 0,
 };
 

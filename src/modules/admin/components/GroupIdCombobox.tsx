@@ -23,7 +23,8 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
 
     useEffect(() => {
         const fetchGroups = async () => {
-            if (typeof oldGroupId !== "number" || oldGroupId === 0) {
+            console.log("old grup id", oldGroupId)
+            if (typeof oldGroupId !== "number" || oldGroupId == 0) {
                 setApiGroups([])
                 return
             }

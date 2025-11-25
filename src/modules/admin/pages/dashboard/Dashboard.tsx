@@ -411,8 +411,10 @@ const Content = () => {
                             {item.loading ? (
                                 <>
                                     <Skeleton height="28px" width="64px" rounded="md" />
-                                    <Skeleton height="30px" width="110px" mt="4" rounded="md" />
-                                    <Skeleton height="26px" width="120px" mt="6" rounded="md" />
+                                    {/* <Skeleton height="30px" width="110px" mt="4" rounded="md" /> */}
+                                    <Stat.Label fontSize="sm" mt="1">{item.label}</Stat.Label>
+                                    <Text fontSize="xs" mt="1">{item.description}</Text>
+                                    {/* <Skeleton height="26px" width="120px" mt="6" rounded="md" /> */}
                                 </>
                             ) : item.error ? (
                                 <>
