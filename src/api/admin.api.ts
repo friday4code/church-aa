@@ -6,6 +6,23 @@ import type { AttendanceMonitoring } from "@/types/attendance-monitoring.type";
 
 export const adminApi = {
     // Users
+    getRegionsByStateId: async (stateId: number): Promise<{ id: number, name: string }[]> => {
+        const { data } = await axiosClient.get<{ id: number, name: string }[]>(`/hierarchy/regions/by_state/${stateId}`);
+        return data;
+    },
+    getOldGroupsByRegionId: async (regionId: number): Promise<{ id: number, name: string }[]> => {
+        const { data } = await axiosClient.get<{ id: number, name: string }[]>(`/hierarchy/oldgroups/by_region/${regionId}`);
+        return data;
+    },
+    getGroupsByOldGroupId: async (oldGroupId: number): Promise<{ id: number, name: string }[]> => {
+        const { data } = await axiosClient.get<{ id: number, name: string }[]>(`/hierarchy/groups/by_oldgroup/${oldGroupId}`);
+        return data;
+    },
+    getDistrictsByGroupId: async (groupId: number): Promise<{ id: number, name: string }[]> => {
+        const { data } = await axiosClient.get<{ id: number, name: string }[]>(`/hierarchy/districts/by_group/${groupId}`);
+        return data;
+    },
+
     getAttendanceMonitoring: async (): Promise<AttendanceMonitoring> => {
         const { data } = await axiosClient.get<any>("/attendance-monitor/monitor/attendance");
         return data;

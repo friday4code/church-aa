@@ -10,8 +10,8 @@ export const axiosClient = axios.create({
   timeout: ENV.API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
+    // "Accept-Encoding": "gzip, deflate, br",
+    // "Connection": "keep-alive",
   },
   // Enable response compression
   decompress: true,
@@ -249,7 +249,7 @@ axiosClient.interceptors.response.use(
       console.error("🌐 Network error or no response from server:", error.message);
       toaster.error({
         title: "Network Error",
-        description: "Please check your internet connection and try again.",
+        description: error.response?.data?.error || "Please check your internet connection and try again.",
         closable: true
       });
     }

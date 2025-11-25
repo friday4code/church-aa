@@ -256,16 +256,16 @@ export const DistrictsContent = () => {
         }
     }, [selectedDistricts, isActionBarOpen])
 
-    if (isLoading && districts.length === 0) {
-        return (
-            <Center h="400px">
-                <VStack gap="4">
-                    <Spinner size="xl" color="accent.500" />
-                    <Text fontSize="lg" color="gray.600">Loading districts...</Text>
-                </VStack>
-            </Center>
-        )
-    }
+    // if (isLoading && districts.length === 0) {
+    //     return (
+    //         <Center h="400px">
+    //             <VStack gap="4">
+    //                 <Spinner size="xl" color="accent.500" />
+    //                 <Text fontSize="lg" color="gray.600">Loading districts...</Text>
+    //             </VStack>
+    //         </Center>
+    //     )
+    // }
 
     return (
         <>
@@ -310,6 +310,15 @@ export const DistrictsContent = () => {
                                     isLoading={isLoading}
                                 />
                             </Suspense>
+
+                            {isLoading && <Center h="400px">
+                                <VStack gap="4">
+                                    <Spinner size="xl" color="accent.500" />
+                                    <Text fontSize="lg" color="gray.600">Loading districts...</Text>
+                                </VStack>
+                            </Center>
+                            }
+
                         </VStack>
                     </Card.Body>
                 </Card.Root>

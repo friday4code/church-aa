@@ -131,13 +131,13 @@ const AttendanceTable = ({
                             >
                                 S/N
                             </Table.ColumnHeader>
-                            <Table.ColumnHeader
+                            {/* <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
                                 onClick={() => onSort('district_id')}
                             >
                                 District {sortField === 'district_id' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader>
+                            </Table.ColumnHeader> */}
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
@@ -222,9 +222,9 @@ const AttendanceTable = ({
                                     </Checkbox.Root>
                                 </Table.Cell>
                                 <Table.Cell>{index + 1}</Table.Cell>
-                                <Table.Cell fontWeight="medium">
+                                {/* <Table.Cell fontWeight="medium">
                                     {getDistrictName(attendance.district_id)}
-                                </Table.Cell>
+                                </Table.Cell> */}
                                 <Table.Cell>{attendance.month}</Table.Cell>
                                 <Table.Cell>Week {attendance.week}</Table.Cell>
                                 <Table.Cell>{attendance.year}</Table.Cell>

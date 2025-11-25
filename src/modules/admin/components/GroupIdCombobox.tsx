@@ -1,23 +1,60 @@
 // components/oldgroups/components/GroupIdCombobox.tsx
 "use client"
 
-import { useGroups } from "@/modules/admin/hooks/useGroup";
 import type { Group } from "@/types/groups.type";
 import { Combobox, Field, useListCollection } from "@chakra-ui/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { adminApi } from "@/api/admin.api"
 
-const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
-    value?: string;
-    onChange: (value: string) => void;
-    required?: boolean;
-    invalid?: boolean;
-    disabled?: boolean;
-    items?: Group[];
-}) => {
+interface GroupIdComboboxProps {
+    value?: number
+    onChange: (value?: number) => void
+    required?: boolean
+    invalid?: boolean
+    disabled?: boolean
+    oldGroupId?: number
+}
+
+const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, oldGroupId }: GroupIdComboboxProps) => {
     const [inputValue, setInputValue] = useState("")
-    const { groups: allGroups = [], isLoading } = useGroups()
-    const groups: Group[] = items || allGroups || [];
-    const shouldShowLoading = !items && isLoading
+    const [apiGroups, setApiGroups] = useState<Group[]>([])
+    const [apiLoading, setApiLoading] = useState(false)
+    const [apiError, setApiError] = useState<string>("")
+
+    useEffect(() => {
+        const fetchGroups = async () => {
+            if (typeof oldGroupId !== "number" || oldGroupId === 0) {
+                setApiGroups([])
+                return
+            }
+            setApiLoading(true)
+            try {
+                const data = await adminApi.getGroupsByOldGroupId(oldGroupId)
+                const mapped: Group[] = (data || []).map(g => ({
+                    id: g.id,
+                    name: g.name,
+                    code: "",
+                    leader: null,
+                    state: "",
+                    region: "",
+                    district: "",
+                    old_group_id: oldGroupId,
+                    old_group: "",
+                }))
+                setApiGroups(mapped)
+                setApiError("")
+            } catch (e) {
+                setApiGroups([])
+                setApiError("Failed to load groups")
+            } finally {
+                setApiLoading(false)
+            }
+        }
+        fetchGroups()
+    }, [oldGroupId])
+
+    const groups: Group[] = apiGroups
+    const shouldShowLoading = apiLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -29,7 +66,7 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
         if (!groups || groups.length === 0) return []
         return groups
             .filter((group) => group.name.toLowerCase().includes(inputValue.toLowerCase()))
-            .map((group) => ({ label: group.name, value: group.name }))
+            .map((group) => ({ label: group.name, value: String(group.id) }))
     }, [groups, inputValue])
 
     useEffect(() => {
@@ -38,28 +75,30 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
 
     const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            onChange(details.value[0])
+            const id = parseInt(details.value[0], 10)
+            onChange(Number.isNaN(id) ? undefined : id)
         } else {
-            onChange('')
+            onChange(undefined)
         }
     }, [onChange])
 
-    // Sync the input value with the selected value
-    useEffect(() => {
-        if (value) {
-            setInputValue(value)
-        } else {
-            setInputValue("")
+    const selectedLabel = useMemo(() => {
+        if (typeof value === 'number' && value > 0) {
+            return groups.find(g => g.id === value)?.name || ""
         }
-    }, [value])
+        return ""
+    }, [groups, value])
+    useEffect(() => {
+        setInputValue(selectedLabel)
+    }, [selectedLabel])
 
     return (
         <Combobox.Root
             required={required}
             disabled={disabled || shouldShowLoading}
             collection={collection}
-            value={value ? [value] : []}
-            defaultInputValue={value ? value : ""}
+            value={typeof value === 'number' && value > 0 ? [String(value)] : []}
+            defaultInputValue={selectedLabel}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
@@ -72,7 +111,7 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={shouldShowLoading ? "Loading groups..." : "Select group"}
+                    placeholder={shouldShowLoading ? "Loading groups..." : (apiError ? apiError : "Select group")}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -84,6 +123,8 @@ const GroupIdCombobox = ({ required, value, onChange, invalid = false, disabled 
                 <Combobox.Content rounded="xl">
                     {shouldShowLoading ? (
                         <Combobox.Empty>Loading groups...</Combobox.Empty>
+                    ) : apiError ? (
+                        <Combobox.Empty>{apiError}</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No groups found</Combobox.Empty>
                     ) : (

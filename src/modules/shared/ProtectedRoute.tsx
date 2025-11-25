@@ -54,6 +54,13 @@ const getRouteAccess = (pathname: string): {
         };
     }
 
+    // Old Groups route - blocked for District Admin
+    if (path.includes('/admin/attendance-logs') || path.includes('/admin/attendance-logs')) {
+        return {
+            blockedForRoles: ['State Admin', 'Region Admin','Oldgroup Admin', 'Group Admin', 'District Admin', 'Viewer']
+        };
+    }
+
     // Users route - accessible to all roles (no restrictions)
     // Removed restrictions to allow all admins to access users
 

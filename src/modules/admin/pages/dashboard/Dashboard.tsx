@@ -378,31 +378,67 @@ const Content = () => {
         navigate(path);
     };
 
-    const isLoading = usersLoading || statesLoading || regionsLoading ||
-        districtsLoading || groupsLoading || oldGroupsLoading || attendanceLoading;
-
-    if (isLoading) {
-        return (
-            <Box>
-                <Heading size="3xl" mb="6" color="bg.inverted">
-                    Dashboard
-                </Heading>
-                <Grid
-                    templateColumns={{
-                        base: "repeat(1, 1fr)",
-                        md: "repeat(2, 1fr)",
-                        lg: "repeat(3, 1fr)",
-                        xl: "repeat(4, 1fr)"
-                    }}
-                    gap="5"
-                >
-                    {Array.from({ length: 14 }).map((_, index) => (
-                        <Skeleton key={index} height="120px" borderRadius="xl" />
-                    ))}
-                </Grid>
-            </Box>
-        );
+    type StatItem = {
+        label: string
+        value: number
+        icon: React.ReactNode
+        color: string
+        description: string
+        path: string
+        loading?: boolean
+        error?: string | null
     }
+
+    const StatCard = React.memo(({ item, onClick }: { item: StatItem, onClick: (path: string) => void }) => {
+        return (
+            <Card.Root
+                height="full"
+                variant="outline"
+                rounded="xl"
+                bg="bg"
+                _hover={{
+                    transform: "translateY(-2px)",
+                    shadow: "md",
+                    cursor: "pointer",
+                    borderColor: `${item.color}.200`
+                }}
+                transition="all 0.2s"
+                onClick={() => onClick(item.path)}
+            >
+                <Card.Body>
+                    <HStack justify="start" align="flex-start">
+                        <Stat.Root>
+                            {item.loading ? (
+                                <>
+                                    <Skeleton height="28px" width="64px" rounded="md" />
+                                    <Skeleton height="30px" width="110px" mt="4" rounded="md" />
+                                    <Skeleton height="26px" width="120px" mt="6" rounded="md" />
+                                </>
+                            ) : item.error ? (
+                                <>
+                                    <Stat.ValueText fontSize="md" fontWeight="bold" color="red.500">Error</Stat.ValueText>
+                                    <Text fontSize="xs" mt="1" color="red.500">{item.error}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Stat.ValueText fontSize="2xl" fontWeight="bold">{item.value}</Stat.ValueText>
+                                    <Stat.Label fontSize="sm" mt="1">{item.label}</Stat.Label>
+                                    <Text fontSize="xs" mt="1">{item.description}</Text>
+                                </>
+                            )}
+                        </Stat.Root>
+
+                        <HStack>
+                            <Box p="2" borderRadius="md" bg={`${item.color}/10`} color={`${item.color}`} flexShrink={0}>
+                                {item.icon}
+                            </Box>
+                            <ArrowRight2 size="16" color="gray.400" />
+                        </HStack>
+                    </HStack>
+                </Card.Body>
+            </Card.Root>
+        )
+    })
 
     return (
         <Box>
@@ -421,60 +457,38 @@ const Content = () => {
                 gap="5"
                 mb="8"
             >
-                {statsData.map((stat, index) => (
-                    <Card.Root
-                        key={index}
-                        height="full"
-                        variant="outline"
-                        rounded="xl"
-                        bg="bg"
-                        _hover={{
-                            transform: "translateY(-2px)",
-                            shadow: "md",
-                            cursor: "pointer",
-                            borderColor: `${stat.color}.200`
-                        }}
-                        transition="all 0.2s"
-                        onClick={() => handleCardClick(stat.path)}
-                    >
-                        <Card.Body>
-                            <HStack justify="space-between" align="flex-start">
-                                <Stat.Root>
-                                    <Stat.ValueText
-                                        fontSize="2xl"
-                                        fontWeight="bold"
-                                    // color="gray.800"
-                                    >
-                                        {stat.value}
-                                    </Stat.ValueText>
-                                    <Stat.Label
-                                        fontSize="sm"
-                                        // color="gray.600"
-                                        mt="1"
-                                    >
-                                        {stat.label}
-                                    </Stat.Label>
-                                    <Text fontSize="xs" mt="1">
-                                        {stat.description}
-                                    </Text>
-                                </Stat.Root>
-
-                                <HStack>
-                                    <Box
-                                        p="2"
-                                        borderRadius="md"
-                                        bg={`${stat.color}/10`}
-                                        color={`${stat.color}`}
-                                        flexShrink={0}
-                                    >
-                                        {stat.icon}
-                                    </Box>
-                                    <ArrowRight2 size="16" color="gray.400" />
-                                </HStack>
-                            </HStack>
-                        </Card.Body>
-                    </Card.Root>
-                ))}
+                {statsData.map((stat, index) => {
+                    const loadingMap: Record<string, boolean> = {
+                        "Total States": !!statesLoading,
+                        "Total Regions": !!regionsLoading,
+                        "Total Old Groups": !!oldGroupsLoading,
+                        "Total Groups": !!groupsLoading,
+                        "Total Districts": !!districtsLoading,
+                        "Total Youth Attendance": !!attendanceLoading,
+                        "Total Super Admins": !!usersLoading,
+                        "Total Admins": !!usersLoading,
+                        "Total State Admins": !!usersLoading,
+                        "Total Region Admins": !!usersLoading,
+                        "Total District Admins": !!usersLoading,
+                        "Total Group Admins": !!usersLoading,
+                    }
+                    const errorMap: Record<string, string | null> = {
+                        "Total States": statesError ? "Failed to load states" : null,
+                        "Total Regions": regionsError ? "Failed to load regions" : null,
+                        "Total Old Groups": oldGroupsError ? "Failed to load old groups" : null,
+                        "Total Groups": groupsError ? "Failed to load groups" : null,
+                        "Total Districts": districtsError ? "Failed to load districts" : null,
+                        "Total Youth Attendance": attendanceError ? "Failed to load attendance" : null,
+                        "Total Super Admins": usersError ? "Failed to load users" : null,
+                        "Total Admins": usersError ? "Failed to load users" : null,
+                        "Total State Admins": usersError ? "Failed to load users" : null,
+                        "Total Region Admins": usersError ? "Failed to load users" : null,
+                        "Total District Admins": usersError ? "Failed to load users" : null,
+                        "Total Group Admins": usersError ? "Failed to load users" : null,
+                    }
+                    const item: StatItem = { ...stat, loading: loadingMap[stat.label] || false, error: errorMap[stat.label] || null }
+                    return <StatCard key={index} item={item} onClick={handleCardClick} />
+                })}
             </Grid>
 
             {/* Charts Section */}

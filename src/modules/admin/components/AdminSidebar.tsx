@@ -35,23 +35,23 @@ const AdminSidebar: React.FC = () => {
         if (hasRole('admin')) return true;
 
         if (hasRole('State Admin')) {
-            const allowed = ['/admin/dashboard', '/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry", '/admin/reports'];
+            const allowed = ['/admin/dashboard', '/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/attendance', "/admin/youth_ministry", '/admin/reports'];
             return allowed.some(link => href.includes(link));
         }
 
         if (hasRole('Region Admin')) {
-            const allowed = ['/admin/dashboard', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry", '/admin/reports'];
+            const allowed = ['/admin/dashboard', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/attendance', "/admin/youth_ministry", '/admin/reports'];
             return allowed.some(link => href.includes(link));
         }
 
 
         if (hasRole('Group Admin')) {
-            const allowed = ['/admin/dashboard', '/admin/districts', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry", '/admin/reports'];
+            const allowed = ['/admin/dashboard', '/admin/districts', '/admin/attendance', "/admin/youth_ministry", '/admin/reports'];
             return allowed.some(link => href.includes(link));
         }
 
         if (hasRole('District Admin')) {
-            const allowed = ['/admin/dashboard', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry"];
+            const allowed = ['/admin/dashboard', '/admin/attendance', "/admin/youth_ministry"];
             return allowed.some(link => href.includes(link));
         }
 

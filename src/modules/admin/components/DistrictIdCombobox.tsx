@@ -1,19 +1,18 @@
 // components/oldgroups/components/DistrictIdCombobox.tsx
 "use client"
 
-import { useDistricts } from "@/modules/admin/hooks/useDistrict";
 import type { District } from "@/types/districts.type";
 import { Combobox, Field, useListCollection } from "@chakra-ui/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useMe } from "@/hooks/useMe"
+import { adminApi } from "@/api/admin.api"
 
 interface DistrictIdComboboxProps {
-    value?: string
-    onChange: (value: string) => void
+    value?: number
+    onChange: (value?: number) => void
     required?: boolean
     invalid?: boolean
     disabled?: boolean
-    items?: District[]
     stateId?: number
     regionId?: number
     oldGroupId?: number
@@ -21,12 +20,44 @@ interface DistrictIdComboboxProps {
     isGroupAdmin?: boolean
 }
 
-const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items, stateId, regionId, oldGroupId, groupId, isGroupAdmin }: DistrictIdComboboxProps) => {
+const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, stateId, regionId, oldGroupId, groupId, isGroupAdmin }: DistrictIdComboboxProps) => {
     const [inputValue, setInputValue] = useState("")
-    const { districts: allDistricts = [], isLoading } = useDistricts()
     const { user } = useMe()
+    const [apiDistricts, setApiDistricts] = useState<District[]>([])
+    const [apiLoading, setApiLoading] = useState(false)
+    const [apiError, setApiError] = useState<string>("")
 
-    console.log(items, stateId, regionId, oldGroupId, groupId, isGroupAdmin)
+    useEffect(() => {
+        const fetchDistricts = async () => {
+            if (typeof groupId !== "number" || groupId === 0) {
+                setApiDistricts([])
+                return
+            }
+            setApiLoading(true)
+            try {
+                const data = await adminApi.getDistrictsByGroupId(groupId)
+                const mapped: District[] = (data || []).map(d => ({
+                    id: d.id,
+                    name: d.name,
+                    code: "",
+                    leader: "",
+                    state: "",
+                    region: "",
+                    group_id: groupId,
+                }))
+                setApiDistricts(mapped)
+                setApiError("")
+            } catch (e) {
+                setApiDistricts([])
+                setApiError("Failed to load districts")
+            } finally {
+                setApiLoading(false)
+            }
+        }
+        fetchDistricts()
+    }, [groupId])
+
+    
 
     const isGroupAdminEffective = useMemo(() => {
         if (typeof isGroupAdmin === "boolean") return isGroupAdmin
@@ -50,23 +81,19 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
     }, [user?.roles, isGroupAdminEffective, stateId, regionId, oldGroupId, groupId])
 
     const effectiveDistricts: District[] = useMemo(() => {
-        // Super Admin: preserve existing behavior using passed-in items or all districts
         const roles = user?.roles || []
         const isSuperAdmin = roles.includes("Super Admin")
         if (isSuperAdmin) {
-            return items || allDistricts || []
+            return apiDistricts || []
         }
-
-        // Group Admin: use provided scope IDs exclusively
         if (isGroupAdminEffective) {
             const sId = typeof stateId === "number" ? stateId : undefined
             const rId = typeof regionId === "number" ? regionId : undefined
             const ogId = typeof oldGroupId === "number" ? oldGroupId : undefined
             const gId = typeof groupId === "number" ? groupId : undefined
-
             const noScopeIds = sId == null && rId == null && ogId == null && gId == null
             if (noScopeIds) return []
-            const source = allDistricts || []
+            const source = apiDistricts || []
             return source.filter((d) => {
                 const stateMatch = sId != null ? d.state_id === sId : true
                 const regionMatch = rId != null ? d.region_id === rId : true
@@ -75,13 +102,11 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
                 return stateMatch && regionMatch && oldGroupMatch && groupMatch
             })
         }
-
-        // Other roles: preserve existing behavior using passed-in items or all districts
-        return items || allDistricts || []
-    }, [user?.roles, isGroupAdminEffective, stateId, regionId, oldGroupId, groupId, items, allDistricts])
+        return apiDistricts || []
+    }, [user?.roles, isGroupAdminEffective, stateId, regionId, oldGroupId, groupId, apiDistricts])
 
     const districts: District[] = effectiveDistricts
-    const shouldShowLoading = !items && isLoading
+    const shouldShowLoading = apiLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -93,7 +118,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
         if (!districts || districts.length === 0) return []
         return districts
             .filter((district) => district.name.toLowerCase().includes(inputValue.toLowerCase()))
-            .map((district) => ({ label: district.name, value: district.name }))
+            .map((district) => ({ label: district.name, value: String(district.id) }))
     }, [districts, inputValue])
 
     useEffect(() => {
@@ -102,28 +127,30 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
 
     const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            onChange(details.value[0])
+            const id = parseInt(details.value[0], 10)
+            onChange(Number.isNaN(id) ? undefined : id)
         } else {
-            onChange('')
+            onChange(undefined)
         }
     }, [onChange])
 
-    // Sync the input value with the selected value
-    useEffect(() => {
-        if (value) {
-            setInputValue(value)
-        } else {
-            setInputValue("")
+    const selectedLabel = useMemo(() => {
+        if (typeof value === 'number' && value > 0) {
+            return districts.find(d => d.id === value)?.name || ""
         }
-    }, [value])
+        return ""
+    }, [districts, value])
+    useEffect(() => {
+        setInputValue(selectedLabel)
+    }, [selectedLabel])
 
     return (
         <Combobox.Root
             required={required}
             disabled={disabled || shouldShowLoading}
             collection={collection}
-            value={value ? [value] : []}
-            defaultInputValue={value ? value : ""}
+            value={typeof value === 'number' && value > 0 ? [String(value)] : []}
+            defaultInputValue={selectedLabel}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
@@ -136,7 +163,7 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={shouldShowLoading ? "Loading districts..." : "Select district"}
+                    placeholder={shouldShowLoading ? "Loading districts..." : (apiError ? apiError : "Select district")}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -148,6 +175,8 @@ const DistrictIdCombobox = ({ required, value, onChange, invalid = false, disabl
                 <Combobox.Content rounded="xl">
                     {shouldShowLoading ? (
                         <Combobox.Empty>Loading districts...</Combobox.Empty>
+                    ) : apiError ? (
+                        <Combobox.Empty>{apiError}</Combobox.Empty>
                     ) : errorMessage ? (
                         <Combobox.Empty>{errorMessage}</Combobox.Empty>
                     ) : collection.items.length === 0 ? (

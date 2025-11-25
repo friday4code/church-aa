@@ -1,23 +1,50 @@
 // components/oldgroups/components/RegionIdCombobox.tsx
 "use client"
 
-import { useRegions } from "@/modules/admin/hooks/useRegion";
 import type { Region } from "@/types/regions.type";
 import { Combobox, Field, useListCollection } from "@chakra-ui/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
+import { adminApi } from "@/api/admin.api"
 
-const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, items }: {
-    value?: string;
-    onChange: (value: string) => void;
-    required?: boolean;
-    invalid?: boolean;
-    disabled?: boolean;
-    items?: Region[];
-}) => {
+interface RegionIdComboboxProps {
+    value?: number
+    onChange: (value?: number) => void
+    required?: boolean
+    invalid?: boolean
+    disabled?: boolean
+    stateId?: number
+}
+
+const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled = false, stateId }: RegionIdComboboxProps) => {
     const [inputValue, setInputValue] = useState("")
-    const { regions: allRegions = [], isLoading } = useRegions()
-    const regions: Region[] = items || allRegions || [];
-    const shouldShowLoading = !items && isLoading
+    const [apiRegions, setApiRegions] = useState<Region[]>([])
+    const [apiLoading, setApiLoading] = useState(false)
+    const [apiError, setApiError] = useState<string>("")
+
+    useEffect(() => {
+        const fetchRegions = async () => {
+            if (typeof stateId !== "number" || stateId === 0) {
+                setApiRegions([])
+                return
+            }
+            setApiLoading(true)
+            try {
+                const data = await adminApi.getRegionsByStateId(stateId)
+                const mapped: Region[] = (data || []).map(r => ({ id: r.id, name: r.name, code: "", leader: "", state: "", state_id: stateId }))
+                setApiRegions(mapped)
+                setApiError("")
+            } catch (e) {
+                setApiRegions([])
+                setApiError("Failed to load regions")
+            } finally {
+                setApiLoading(false)
+            }
+        }
+        fetchRegions()
+    }, [stateId])
+
+    const regions: Region[] = apiRegions
+    const shouldShowLoading = apiLoading
 
     const { collection, set } = useListCollection({
         initialItems: [] as { label: string, value: string }[],
@@ -29,7 +56,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
         if (!regions || regions.length === 0) return []
         return regions
             .filter((region) => region.name.toLowerCase().includes(inputValue.toLowerCase()))
-            .map((region) => ({ label: region.name, value: region.name }))
+            .map((region) => ({ label: region.name, value: String(region.id) }))
     }, [regions, inputValue])
 
     useEffect(() => {
@@ -38,28 +65,30 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
 
     const handleValueChange = useCallback((details: { value: string[] }) => {
         if (details.value && details.value.length > 0) {
-            onChange(details.value[0])
+            const id = parseInt(details.value[0], 10)
+            onChange(Number.isNaN(id) ? undefined : id)
         } else {
-            onChange('')
+            onChange(undefined)
         }
     }, [onChange])
 
-    // Sync the input value with the selected value
-    useEffect(() => {
-        if (value) {
-            setInputValue(value)
-        } else {
-            setInputValue("")
+    const selectedLabel = useMemo(() => {
+        if (typeof value === 'number' && value > 0) {
+            return regions.find(r => r.id === value)?.name || ""
         }
-    }, [value])
+        return ""
+    }, [regions, value])
+    useEffect(() => {
+        setInputValue(selectedLabel)
+    }, [selectedLabel])
 
     return (
         <Combobox.Root
             required={required}
             disabled={disabled || shouldShowLoading}
             collection={collection}
-            value={value ? [value] : []}
-            defaultInputValue={value ? value : ""}
+            value={typeof value === 'number' && value > 0 ? [String(value)] : []}
+            defaultInputValue={selectedLabel}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}
@@ -72,7 +101,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             <Combobox.Control>
                 <Combobox.Input
                     rounded="xl"
-                    placeholder={shouldShowLoading ? "Loading regions..." : "Select region"}
+                    placeholder={shouldShowLoading ? "Loading regions..." : (apiError ? apiError : (stateId ? "Select region for state" : "Select region"))}
                 />
                 <Combobox.IndicatorGroup>
                     <Combobox.ClearTrigger />
@@ -84,6 +113,8 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
                 <Combobox.Content rounded="xl">
                     {shouldShowLoading ? (
                         <Combobox.Empty>Loading regions...</Combobox.Empty>
+                    ) : apiError ? (
+                        <Combobox.Empty>{apiError}</Combobox.Empty>
                     ) : collection.items.length === 0 ? (
                         <Combobox.Empty>No regions found</Combobox.Empty>
                     ) : (

@@ -20,18 +20,15 @@ import { useEffect, useMemo } from "react"
 import { createListCollection } from "@chakra-ui/react"
 import { getMonthOptions, getWeekOptions, getYearOptions } from "@/utils/attendance.utils"
 import { useStates } from "../../../hooks/useState"
-import { useRegions } from "../../../hooks/useRegion"
-import { useDistricts } from "../../../hooks/useDistrict"
-import { useGroups } from "../../../hooks/useGroup"
-import { useOldGroups } from "../../../hooks/useOldGroup"
 import StateIdCombobox from "../../../components/StateIdCombobox"
 import RegionIdCombobox from "../../../components/RegionIdCombobox"
 import DistrictIdCombobox from "../../../components/DistrictIdCombobox"
 import GroupIdCombobox from "../../../components/GroupIdCombobox"
 import OldGroupIdCombobox from "../../../components/OldGroupIdCombobox"
-import { useAuth } from "@/hooks/useAuth"
 import { useMe } from "@/hooks/useMe"
 import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
+import { useLocation } from "react-router"
+import { toaster } from "@/components/ui/toaster"
 
 // Collections for Select components
 const monthCollection = createListCollection({
@@ -66,8 +63,19 @@ interface AttendanceDialogProps {
 }
 
 const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceName, isLoading }: AttendanceDialogProps) => {
+
+    // rest toasts
+    const loc = useLocation();
+    useEffect(() => {
+        toaster.dismiss()
+        toaster.remove();
+    }, [loc.pathname]);
+
+
     const { user } = useMe()
-    const { hasRole } = useAuth()
+
+
+
 
     // Get role-based visibility configuration
     const roleVisibility = useMemo(() => {
@@ -78,6 +86,11 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     const isGroupAdmin = useMemo(() => {
         const roles = user?.roles || []
         return roles.includes("Group Admin")
+    }, [user?.roles])
+
+    const isRegionAdmin = useMemo(() => {
+        const roles = user?.roles || []
+        return roles.includes("Region Admin")
     }, [user?.roles])
 
 
@@ -122,6 +135,18 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
         if (!roleVisibility.showDistrict && user.district_id) {
             setValue('district_id', user.district_id, { shouldValidate: true })
             trigger('district_id')
+        }
+
+        // Auto-populate group_id if Group combobox is hidden
+        if (!roleVisibility.showGroup && user.group_id) {
+            setValue('group_id', user.group_id, { shouldValidate: true })
+            trigger('group_id')
+        }
+
+        // Auto-populate old_group_id if Old Group combobox is hidden
+        if (!roleVisibility.showOldGroup && user.old_group_id) {
+            setValue('old_group_id', user.old_group_id, { shouldValidate: true })
+            trigger('old_group_id')
         }
     }, [user, roleVisibility, setValue, trigger])
 
@@ -180,10 +205,6 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
 
     // hooks for name lookup and display
     const { states } = useStates()
-    const { regions } = useRegions()
-    const { districts } = useDistricts()
-    const { groups } = useGroups()
-    const { oldGroups } = useOldGroups()
 
     const currentStateId = watch('state_id')
     const currentRegionId = watch('region_id')
@@ -195,158 +216,57 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
         () => states?.find(s => s.id === currentStateId)?.name || '',
         [states, currentStateId]
     )
-    const selectedRegionName = useMemo(
-        () => regions?.find(r => r.id === currentRegionId)?.name || '',
-        [regions, currentRegionId]
-    )
-    const selectedDistrictName = useMemo(
-        () => districts?.find(d => d.id === currentDistrictId)?.name || '',
-        [districts, currentDistrictId]
-    )
-    const selectedOldGroupName = useMemo(
-        () => oldGroups?.find(g => g.id === currentOldGroupId)?.name || '',
-        [oldGroups, currentOldGroupId]
-    )
-    const selectedGroupName = useMemo(
-        () => groups?.find(g => g.id === currentGroupId)?.name || '',
-        [groups, currentGroupId]
-    )
-
-    const filteredRegions = useMemo(() => {
-        if (!regions || regions.length === 0) return []
-        if (!currentStateId) return regions
-        return regions.filter(region => {
-            if (region.state_id != null) {
-                return Number(region.state_id) === Number(currentStateId)
-            }
-            if (!selectedStateName) return false
-            return region.state?.toLowerCase() === selectedStateName.toLowerCase()
-        })
-    }, [regions, currentStateId, selectedStateName])
-
-    const filteredOldGroups = useMemo(() => {
-        if (!oldGroups || oldGroups.length === 0) return []
-        return oldGroups.filter(oldGroup => {
-            const matchesState = currentStateId
-                ? oldGroup.state_id != null
-                    ? Number(oldGroup.state_id) === Number(currentStateId)
-                    : oldGroup.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? oldGroup.region_id != null
-                    ? Number(oldGroup.region_id) === Number(currentRegionId)
-                    : oldGroup.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion
-        })
-    }, [oldGroups, currentStateId, currentRegionId, selectedStateName, selectedRegionName])
-
-    const filteredGroups = useMemo(() => {
-        if (!groups || groups.length === 0) return []
-        return groups.filter(group => {
-            const matchesState = currentStateId
-                ? group.state_id != null
-                    ? Number(group.state_id) === Number(currentStateId)
-                    : group.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? group.region_id != null
-                    ? Number(group.region_id) === Number(currentRegionId)
-                    : group.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            const matchesOldGroup = currentOldGroupId
-                ? group.old_group_id != null
-                    ? Number(group.old_group_id) === Number(currentOldGroupId)
-                    : group.old_group?.toLowerCase() === selectedOldGroupName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion && matchesOldGroup
-        })
-    }, [groups, currentStateId, currentRegionId, currentOldGroupId, selectedStateName, selectedRegionName, selectedOldGroupName])
-
-    const filteredDistricts = useMemo(() => {
-        if (!districts || districts.length === 0) return []
-        return districts.filter(district => {
-            const matchesState = currentStateId
-                ? district.state_id != null
-                    ? Number(district.state_id) === Number(currentStateId)
-                    : district.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? district.region_id != null
-                    ? Number(district.region_id) === Number(currentRegionId)
-                    : district.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            const matchesGroup = currentGroupId
-                ? district.group_id != null
-                    ? Number(district.group_id) === Number(currentGroupId)
-                    : district.group?.toLowerCase() === selectedGroupName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion && matchesGroup
-        })
-    }, [districts, currentStateId, currentRegionId, currentGroupId, selectedStateName, selectedRegionName, selectedGroupName])
 
     const clearBelowDistrict = () => {
-        setValue('district_id', 0, { shouldValidate: true })
+        setValue('district_id', 0, { shouldValidate: false })
         trigger('district_id')
     }
 
     const clearBelowGroup = () => {
-        setValue('group_id', 0, { shouldValidate: true })
+        setValue('group_id', 0, { shouldValidate: false })
         trigger('group_id')
         clearBelowDistrict()
     }
 
     const clearBelowOldGroup = () => {
-        setValue('old_group_id', undefined, { shouldValidate: true })
+        setValue('old_group_id', undefined, { shouldValidate: false })
         trigger('old_group_id')
         clearBelowGroup()
     }
 
     const clearBelowRegion = () => {
-        setValue('region_id', 0, { shouldValidate: true })
+        setValue('region_id', 0, { shouldValidate: false })
         trigger('region_id')
         clearBelowOldGroup()
     }
 
     const handleStateChange = (stateName: string) => {
         const state = states?.find(s => s.name === stateName)
-        setValue('state_id', state?.id || 0, { shouldValidate: true })
+        setValue('state_id', state?.id || 0, { shouldValidate: false })
         trigger('state_id')
         clearBelowRegion()
     }
 
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        setValue('region_id', region?.id || 0, { shouldValidate: true })
+    const handleRegionChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: false })
         trigger('region_id')
         clearBelowOldGroup()
     }
 
-    const handleOldGroupChange = (oldGroupName: string) => {
-        const oldGroup = oldGroups?.find(g => g.name === oldGroupName)
-        setValue('old_group_id', oldGroup?.id, { shouldValidate: true })
+    const handleOldGroupChange = (oldGroupId?: number) => {
+        setValue('old_group_id', oldGroupId, { shouldValidate: false })
         trigger('old_group_id')
         clearBelowGroup()
     }
 
-    const handleGroupChange = (groupName: string) => {
-        const group = groups?.find(g => g.name === groupName)
-        setValue('group_id', group?.id || 0, { shouldValidate: true })
+    const handleGroupChange = (groupId?: number) => {
+        setValue('group_id', groupId || 0, { shouldValidate: false })
         trigger('group_id')
         clearBelowDistrict()
     }
 
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        setValue('district_id', district?.id || 0, { shouldValidate: true })
+    const handleDistrictChange = (districtId?: number) => {
+        setValue('district_id', districtId || 0, { shouldValidate: false })
         trigger('district_id')
     }
 
@@ -388,11 +308,11 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     {roleVisibility.showRegion && (
                                         <Field.Root required invalid={!!errors.region_id}>
                                             <RegionIdCombobox
-                                                value={selectedRegionName}
+                                                value={currentRegionId}
                                                 onChange={handleRegionChange}
                                                 required
                                                 invalid={!!errors.region_id}
-                                                items={filteredRegions}
+                                                stateId={currentStateId}
                                                 disabled={!currentStateId}
                                             />
                                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
@@ -402,11 +322,13 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     {roleVisibility.showOldGroup && (
                                         <Field.Root invalid={!!errors.old_group_id}>
                                             <OldGroupIdCombobox
-                                                value={selectedOldGroupName}
+                                                value={currentOldGroupId as number}
                                                 onChange={handleOldGroupChange}
                                                 invalid={!!errors.old_group_id}
-                                                items={filteredOldGroups}
-                                                disabled={!currentRegionId}
+                                                disabled={isRegionAdmin ? false : !currentRegionId}
+                                                stateId={user?.state_id as number | undefined}
+                                                regionId={isRegionAdmin ? (user?.region_id as number | undefined) : currentRegionId}
+                                                isRegionAdmin={isRegionAdmin}
                                             />
                                             <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
                                         </Field.Root>
@@ -415,11 +337,11 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     {roleVisibility.showGroup && !isGroupAdmin && (
                                         <Field.Root required invalid={!!errors.group_id}>
                                             <GroupIdCombobox
-                                                value={selectedGroupName}
+                                                value={currentGroupId}
                                                 onChange={handleGroupChange}
                                                 required
                                                 invalid={!!errors.group_id}
-                                                items={filteredGroups}
+                                                oldGroupId={currentOldGroupId as number | undefined}
                                                 disabled={!currentOldGroupId}
                                             />
                                             <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
@@ -429,16 +351,15 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                     {roleVisibility.showDistrict && (
                                         <Field.Root required invalid={!!errors.district_id}>
                                             <DistrictIdCombobox
-                                                value={selectedDistrictName}
+                                                value={currentDistrictId}
                                                 onChange={handleDistrictChange}
                                                 required
                                                 invalid={!!errors.district_id}
-                                                items={isGroupAdmin ? undefined : filteredDistricts}
                                                 disabled={isGroupAdmin ? false : !currentGroupId}
                                                 stateId={user?.state_id as number | undefined}
                                                 regionId={user?.region_id as number | undefined}
                                                 oldGroupId={user?.old_group_id ?? undefined}
-                                                groupId={user?.group_id as number | undefined}  
+                                                groupId={user?.group_id as number | undefined}
                                                 isGroupAdmin={isGroupAdmin}
                                             />
                                             <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
@@ -664,4 +585,4 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     )
 }
 
-export default AttendanceDialog
+export default AttendanceDialog;

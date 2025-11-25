@@ -60,19 +60,12 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
         }
     }
 
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
+    const handleRegionChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: true })
+        trigger('region_id')
     }
 
-    // Filter regions by selected state
-    const filteredRegions = regions?.filter(r => {
-        const stateName = states?.find(s => s.id === currentStateId)?.name
-        return stateName ? r.state === stateName : false
-    }) || []
+    
 
     const generateGroupCode = (groupName: string): string => {
         if (!groupName) return ''
@@ -157,11 +150,11 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
                     {/* Region Selection */}
                     <Field.Root required invalid={!!errors.region_id}>
                         <RegionIdCombobox
-                            value={getSelectedRegionName()}
+                            value={currentRegionId}
                             onChange={handleRegionChange}
                             required
                             invalid={!!errors.region_id}
-                            items={filteredRegions}
+                            stateId={currentStateId}
                             disabled={!currentStateId || currentStateId === 0}
                         />
                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
