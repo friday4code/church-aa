@@ -22,35 +22,35 @@ const getRouteAccess = (pathname: string): {
     // States route - only Super Admin and State Admin
     if (path.includes('/admin/states')) {
         return {
-            blockedForRoles: ['Region Admin', 'Group Admin', 'District Admin', 'Viewer']
+            blockedForRoles: ['State Admin', 'Region Admin', 'Group Admin', 'District Admin', 'Viewer']
         };
     }
 
     // Regions route - blocked for Group Admin, District Admin, Viewer
     if (path.includes('/admin/regions')) {
         return {
-            blockedForRoles: ['Group Admin', 'District Admin', 'Viewer']
+            blockedForRoles: ['Region Admin','Group Admin', 'District Admin', 'Viewer']
         };
     }
 
     // Groups route - blocked for District Admin, Viewer
     if (path.includes('/admin/groups')) {
         return {
-            blockedForRoles: ['District Admin', 'Viewer']
+            blockedForRoles: ['Group Admin', 'District Admin', 'Viewer']
         };
     }
 
     // Districts route - accessible to all admins except Viewer
     if (path.includes('/admin/districts')) {
         return {
-            blockedForRoles: ['Viewer']
+            blockedForRoles: ['District Admin', 'Viewer']
         };
     }
 
     // Old Groups route - blocked for District Admin
     if (path.includes('/admin/old_groups') || path.includes('/admin/old-groups')) {
         return {
-            blockedForRoles: ['District Admin', 'Viewer']
+            blockedForRoles: ['Oldgroup Admin', 'Group Admin', 'District Admin', 'Viewer']
         };
     }
 
@@ -93,11 +93,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // 🛡️ Check route-specific access based on role hierarchy
     const routeAccess = getRouteAccess(location.pathname);
-    
+
     // Check if user's role is blocked for this route
     if (routeAccess.blockedForRoles) {
         const userHasBlockedRole = routeAccess.blockedForRoles.some(role => hasRole(role));
-        
+
         // Super Admin can access everything
         if (hasRole('Super Admin')) {
             // Super Admin bypasses all restrictions

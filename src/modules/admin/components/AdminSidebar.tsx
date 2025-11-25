@@ -34,22 +34,23 @@ const AdminSidebar: React.FC = () => {
         if (hasRole('Super Admin')) return true;
 
         if (hasRole('State Admin')) {
-            const allowed = ['/admin/states', '/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users'];
+            const allowed = ['/admin/dashboard', '/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry",'/admin/reports'];
             return allowed.some(link => href.includes(link));
         }
 
         if (hasRole('Region Admin')) {
-            const allowed = ['/admin/regions', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users'];
+            const allowed = ['/admin/dashboard', '/admin/old_groups', '/admin/groups', '/admin/districts', '/admin/users', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry",'/admin/reports'];
+            return allowed.some(link => href.includes(link));
+        }
+
+
+        if (hasRole('Group Admin')) {
+            const allowed = ['/admin/dashboard', '/admin/districts', '/admin/users', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry",'/admin/reports'];
             return allowed.some(link => href.includes(link));
         }
 
         if (hasRole('District Admin')) {
-            const allowed = ['/admin/districts', '/admin/groups', '/admin/old_groups', '/admin/users'];
-            return allowed.some(link => href.includes(link));
-        }
-
-        if (hasRole('Group Admin')) {
-            const allowed = ['/admin/groups', '/admin/old_groups', '/admin/users'];
+            const allowed = ['/admin/dashboard', '/admin/users', '/admin/attendance', '/admin/attendance-logs', "/admin/youth_ministry"];
             return allowed.some(link => href.includes(link));
         }
 
@@ -82,90 +83,90 @@ const AdminSidebar: React.FC = () => {
 
 
     return <>
-    <ScrollArea.Root bg="accent/70" backdropFilter={"blur(10px)"} rounded="xl" h="full" size={"xs"}>
-        <ScrollArea.Viewport>
-            <ScrollArea.Content h="full">
-                <Stack rounded="xl" p='4' w="full" h="full">
-                    {links?.map((link, i) => (
-                        <NavLink key={i} to={link.href}>
-                            <Tooltip openDelay={0} positioning={{ placement: "right" }}
-                                contentProps={{
-                                    bg: "bg",
-                                    p: "3",
-                                    color:"black",
-                                    _dark: {
-                                        color: "white"
-                                    }
-                                }}
-                                content={link.name}>
-                                <HStack
-                                    color="white"
-                                    rounded="lg"
-                                    p="2"
-                                    w={isCollapsed ? "fit" : "full"}
-                                    fontSize={"sm"}
-                                    fontWeight={"semibold"}
-                                    bg={{
-                                        _light: isLinkActive(link.href) ? "accent" : "transparent",
-                                        _dark: isLinkActive(link.href) ? "accent.900" : "transparent",
-                                    }}
-                                    _hover={{
-                                        bg: {
-                                            _light: isLinkActive(link.href) ? "accent.600" : "accent.50/20",
-                                            _dark: isLinkActive(link.href) ? "accent.900" : "accent.50/20"
+        <ScrollArea.Root bg="accent/70" backdropFilter={"blur(10px)"} rounded="xl" h="full" size={"xs"}>
+            <ScrollArea.Viewport>
+                <ScrollArea.Content h="full">
+                    <Stack rounded="xl" p='4' w="full" h="full">
+                        {links?.map((link, i) => (
+                            <NavLink key={i} to={link.href}>
+                                <Tooltip openDelay={0} positioning={{ placement: "right" }}
+                                    contentProps={{
+                                        bg: "bg",
+                                        p: "3",
+                                        color: "black",
+                                        _dark: {
+                                            color: "white"
                                         }
                                     }}
-                                >
-                                    <Center>
-                                        {link.icon}
-                                    </Center>
+                                    content={link.name}>
+                                    <HStack
+                                        color="white"
+                                        rounded="lg"
+                                        p="2"
+                                        w={isCollapsed ? "fit" : "full"}
+                                        fontSize={"sm"}
+                                        fontWeight={"semibold"}
+                                        bg={{
+                                            _light: isLinkActive(link.href) ? "accent" : "transparent",
+                                            _dark: isLinkActive(link.href) ? "accent.900" : "transparent",
+                                        }}
+                                        _hover={{
+                                            bg: {
+                                                _light: isLinkActive(link.href) ? "accent.600" : "accent.50/20",
+                                                _dark: isLinkActive(link.href) ? "accent.900" : "accent.50/20"
+                                            }
+                                        }}
+                                    >
+                                        <Center>
+                                            {link.icon}
+                                        </Center>
 
-                                    {!isCollapsed && <Box lineClamp={1}>
-                                        {link.name}
-                                    </Box>}
-                                </HStack>
-                            </Tooltip>
-                        </NavLink>
-                    ))}
-                    <Separator />
-                </Stack>
+                                        {!isCollapsed && <Box lineClamp={1}>
+                                            {link.name}
+                                        </Box>}
+                                    </HStack>
+                                </Tooltip>
+                            </NavLink>
+                        ))}
+                        <Separator />
+                    </Stack>
 
-                <HStack
-                    pos="absolute"
-                    bottom={4}
-                    w="full"
-                    left={0}
-                    right={0}
-                    px={isCollapsed ? "5" : 6}
-                    justify={isCollapsed ? "start" : "space-between"}
-                >
-                    {/* {!isCollapsed && <Image src="/logo.png" w="10" />} */}
-
-                    <IconButton
-                        // bg={"white"}
-                        color="white"
-                        _hover={{ color: "accent" }}
-                        size='sm'
-                        rounded="xl"
-                        variant={"ghost"}
-                        onClick={toggle}
+                    <HStack
+                        pos="absolute"
+                        bottom={4}
+                        w="full"
+                        left={0}
+                        right={0}
+                        px={isCollapsed ? "5" : 6}
+                        justify={isCollapsed ? "start" : "space-between"}
                     >
-                        {isCollapsed ? <SidebarRight /> : <SidebarLeft />}
-                    </IconButton>
+                        {/* {!isCollapsed && <Image src="/logo.png" w="10" />} */}
 
-                    {!isCollapsed && <ColorModeButton bg={{ base: "whiteAlpha.900", _dark: "transparent" }} rounded='lg' size="xs" />}
+                        <IconButton
+                            // bg={"white"}
+                            color="white"
+                            _hover={{ color: "accent" }}
+                            size='sm'
+                            rounded="xl"
+                            variant={"ghost"}
+                            onClick={toggle}
+                        >
+                            {isCollapsed ? <SidebarRight /> : <SidebarLeft />}
+                        </IconButton>
 
-                    {!isCollapsed && <ProfileAvatar />}
+                        {!isCollapsed && <ColorModeButton bg={{ base: "whiteAlpha.900", _dark: "transparent" }} rounded='lg' size="xs" />}
 
-                </HStack>
-            </ScrollArea.Content>
-        </ScrollArea.Viewport>
-        <ScrollArea.Scrollbar>
-            <ScrollArea.Thumb />
-        </ScrollArea.Scrollbar>
-        <ScrollArea.Corner />
-    </ScrollArea.Root >
-    <AIChatWidget />
+                        {!isCollapsed && <ProfileAvatar />}
+
+                    </HStack>
+                </ScrollArea.Content>
+            </ScrollArea.Viewport>
+            <ScrollArea.Scrollbar>
+                <ScrollArea.Thumb />
+            </ScrollArea.Scrollbar>
+            <ScrollArea.Corner />
+        </ScrollArea.Root >
+        <AIChatWidget />
     </>
 
 }

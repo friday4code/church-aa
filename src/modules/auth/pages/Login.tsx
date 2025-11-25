@@ -61,7 +61,7 @@ const Login = () => {
         }
 
         // If no admin role, redirect to user dashboard
-        return "/user/dashboard";
+        return "/admin/dashboard";
     };
 
     const mutation = useMutation({
