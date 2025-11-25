@@ -6,6 +6,7 @@ import { memo, useMemo, useCallback } from "react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import TableLoading from "./OldGroupsTableLoading"
 import type { OldGroup } from "@/types/oldGroups.type"
+import { useAuth } from "@/hooks/useAuth"
 
 interface OldGroupsTableProps {
     paginatedGroups: OldGroup[]
@@ -40,43 +41,49 @@ const OldGroupsTable = ({
     onDeleteGroup,
     onPageChange,
 }: OldGroupsTableProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const handleSelect = useCallback((id: number) => onSelectGroup(id), [onSelectGroup])
     const handleEdit = useCallback((g: OldGroup) => onEditGroup(g), [onEditGroup])
     const handleDelete = useCallback((g: OldGroup) => onDeleteGroup(g), [onDeleteGroup])
 
     const Row = memo(({ group, index }: { group: OldGroup; index: number }) => (
         <Table.Row key={group.id}>
-            <Table.Cell>
-                <Checkbox.Root colorPalette={"accent"} checked={selectedGroups.includes(group.id)} onCheckedChange={() => handleSelect(group.id)}>
-                    <Checkbox.HiddenInput />
-                    <Checkbox.Control cursor="pointer" rounded="md" />
-                </Checkbox.Root>
-            </Table.Cell>
+            {isSuperAdmin && (
+                <Table.Cell>
+                    <Checkbox.Root colorPalette={"accent"} checked={selectedGroups.includes(group.id)} onCheckedChange={() => handleSelect(group.id)}>
+                        <Checkbox.HiddenInput />
+                        <Checkbox.Control cursor="pointer" rounded="md" />
+                    </Checkbox.Root>
+                </Table.Cell>
+            )}
             <Table.Cell>{index + 1}</Table.Cell>
             <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
             <Table.Cell>{group.code}</Table.Cell>
             <Table.Cell>{group.leader}</Table.Cell>
-            <Table.Cell textAlign="center">
-                <Menu.Root>
-                    <Menu.Trigger asChild>
-                        <IconButton rounded="xl" variant="ghost" size="sm">
-                            <More />
-                        </IconButton>
-                    </Menu.Trigger>
-                    <Portal>
-                        <Menu.Positioner>
-                            <Menu.Content rounded="lg">
-                                <Menu.Item value="edit" onClick={() => handleEdit(group)}>
-                                    <Edit /> Edit
-                                </Menu.Item>
-                                <Menu.Item color="red" value="delete" colorPalette="red" onClick={() => handleDelete(group)}>
-                                    <Trash /> Delete
-                                </Menu.Item>
-                            </Menu.Content>
-                        </Menu.Positioner>
-                    </Portal>
-                </Menu.Root>
-            </Table.Cell>
+            {isSuperAdmin && (
+                <Table.Cell textAlign="center">
+                    <Menu.Root>
+                        <Menu.Trigger asChild>
+                            <IconButton rounded="xl" variant="ghost" size="sm">
+                                <More />
+                            </IconButton>
+                        </Menu.Trigger>
+                        <Portal>
+                            <Menu.Positioner>
+                                <Menu.Content rounded="lg">
+                                    <Menu.Item value="edit" onClick={() => handleEdit(group)}>
+                                        <Edit /> Edit
+                                    </Menu.Item>
+                                    <Menu.Item color="red" value="delete" colorPalette="red" onClick={() => handleDelete(group)}>
+                                        <Trash /> Delete
+                                    </Menu.Item>
+                                </Menu.Content>
+                            </Menu.Positioner>
+                        </Portal>
+                    </Menu.Root>
+                </Table.Cell>
+            )}
         </Table.Row>
     ), (a, b) => a.group === b.group && a.index === b.index)
 
@@ -92,16 +99,18 @@ const OldGroupsTable = ({
                 <Table.Root size="sm">
                     <Table.Header>
                         <Table.Row fontSize={"md"}>
-                            <Table.ColumnHeader w="50px">
-                                <Checkbox.Root
-                                    colorPalette={"accent"}
-                                    checked={isAllSelectedOnPage}
-                                    onCheckedChange={onSelectAllOnPage}
-                                >
-                                    <Checkbox.HiddenInput />
-                                    <Checkbox.Control rounded="md" cursor={"pointer"} />
-                                </Checkbox.Root>
-                            </Table.ColumnHeader>
+                            {isSuperAdmin && (
+                                <Table.ColumnHeader w="50px">
+                                    <Checkbox.Root
+                                        colorPalette={"accent"}
+                                        checked={isAllSelectedOnPage}
+                                        onCheckedChange={onSelectAllOnPage}
+                                    >
+                                        <Checkbox.HiddenInput />
+                                        <Checkbox.Control rounded="md" cursor={"pointer"} />
+                                    </Checkbox.Root>
+                                </Table.ColumnHeader>
+                            )}
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
@@ -130,11 +139,13 @@ const OldGroupsTable = ({
                             >
                                 Group Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
-                            <Table.ColumnHeader
-                                fontWeight={"bold"}
-                                textAlign="center">
-                                Action
-                            </Table.ColumnHeader>
+                            {isSuperAdmin && (
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    textAlign="center">
+                                    Action
+                                </Table.ColumnHeader>
+                            )}
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>

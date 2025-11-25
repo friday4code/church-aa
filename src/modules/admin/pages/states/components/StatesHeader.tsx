@@ -4,6 +4,7 @@ import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, Cl
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import UploadStatesFromFile from "../../../components/PortingFile"
 import type { State } from "@/types/states.type"
+import { useAuth } from "@/hooks/useAuth"
 
 interface StatesHeaderProps {
     states: State[]
@@ -14,6 +15,8 @@ interface StatesHeaderProps {
 import { useState, useCallback } from "react"
 
 const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -42,7 +45,7 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
             </HStack>
 
             <HStack gap="4">
-                <UploadStatesFromFile data={states} />
+                {isSuperAdmin && <UploadStatesFromFile data={states} />}
                 <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                     <Input
                         bg="bg"
@@ -52,14 +55,16 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
                         onChange={handleChange}
                     />
                 </InputGroup>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddState}
-                >
-                    <Add />
-                    Add State
-                </Button>
+                {isSuperAdmin && (
+                    <Button
+                        colorPalette="accent"
+                        rounded="xl"
+                        onClick={onAddState}
+                    >
+                        <Add />
+                        Add State
+                    </Button>
+                )}
             </HStack>
         </Flex>
     )

@@ -15,6 +15,7 @@ import { useRegions } from "@/modules/admin/hooks/useRegion"
 import type { Region } from "@/types/regions.type"
 import RegionsTableLoading from "./RegionsTableLoading"
 import { Toaster } from "@/components/ui/toaster"
+import { useAuth } from "@/hooks/useAuth"
 
 
 // Import lazy loaded components
@@ -49,6 +50,8 @@ const ActionBarLoading = () => (
 
 
 const RegionsContent = () => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof Region>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -255,7 +258,7 @@ const RegionsContent = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <ExportButtons regions={regions} />
+                                {isSuperAdmin && <ExportButtons regions={regions} />}
                             </Suspense>
 
                             {/* Table */}
@@ -283,7 +286,7 @@ const RegionsContent = () => {
             </VStack>
 
             {/* Action Bar for selected items */}
-            {isActionBarOpen && (
+            {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <RegionsActionBar
                         close={closeActionBar}

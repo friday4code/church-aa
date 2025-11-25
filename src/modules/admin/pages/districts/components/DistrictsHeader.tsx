@@ -13,8 +13,11 @@ interface DistrictsHeaderProps {
 }
 
 import { useState, useCallback } from "react"
+import { useAuth } from "@/hooks/useAuth"
 
 const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeaderProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -42,7 +45,7 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
             </HStack>
 
             <HStack gap="4">
-                <UploadDistrictsFromFile data={districts} />
+                {isSuperAdmin && <UploadDistrictsFromFile data={districts} />}
                 <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                     <Input
                         bg="bg"
@@ -52,14 +55,16 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
                         onChange={handleChange}
                     />
                 </InputGroup>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddDistrict}
-                >
-                    <Add />
-                    Add District
-                </Button>
+                {isSuperAdmin && (
+                    <Button
+                        colorPalette="accent"
+                        rounded="xl"
+                        onClick={onAddDistrict}
+                    >
+                        <Add />
+                        Add District
+                    </Button>
+                )}
             </HStack>
         </Flex>
     )

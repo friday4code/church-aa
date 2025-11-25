@@ -13,8 +13,11 @@ interface RegionsHeaderProps {
 }
 
 import { useState, useCallback } from "react"
+import { useAuth } from "@/hooks/useAuth"
 
 const RegionsHeader = ({ regions, onAddRegion, onSearch }: RegionsHeaderProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -42,7 +45,7 @@ const RegionsHeader = ({ regions, onAddRegion, onSearch }: RegionsHeaderProps) =
             </HStack>
 
             <HStack gap="4">
-                <UploadRegionsFromFile data={regions} />
+                {isSuperAdmin && <UploadRegionsFromFile data={regions} />}
                 <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                     <Input
                         bg="bg"
@@ -52,14 +55,16 @@ const RegionsHeader = ({ regions, onAddRegion, onSearch }: RegionsHeaderProps) =
                         onChange={handleChange}
                     />
                 </InputGroup>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddRegion}
-                >
-                    <Add />
-                    Add Region
-                </Button>
+                {isSuperAdmin && (
+                    <Button
+                        colorPalette="accent"
+                        rounded="xl"
+                        onClick={onAddRegion}
+                    >
+                        <Add />
+                        Add Region
+                    </Button>
+                )}
             </HStack>
         </Flex>
     )

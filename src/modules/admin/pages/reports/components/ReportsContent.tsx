@@ -141,7 +141,7 @@ export const ReportsContent = () => {
 
     const allowedReportTypes = useMemo(() => {
         if (hasRole('Super Admin')) return ['state', 'region', 'group', 'youth'] as const
-        if (hasRole('State Admin')) return ['state', 'region', 'group', 'youth'] as const
+        if (hasRole('State Admin')) return ['region', 'group', 'youth'] as const
         if (hasRole('Region Admin')) return ['region', 'group', 'youth'] as const
         if (hasRole('District Admin')) return ['group'] as const
         if (hasRole('Group Admin')) return ['group'] as const
@@ -312,6 +312,26 @@ export const ReportsContent = () => {
 
             let filtered = restrictByScope(attendances)
             let stateName = 'AKWA IBOM'
+
+            if (selectedReport === 'region' && !hasRole('Super Admin')) {
+                const rid = authUser?.region_id
+                if (!rid) {
+                    toaster.error({ description: 'No region assigned to your account.', closable: true })
+                    return
+                }
+                data.region = String(rid)
+            }
+
+            if (selectedReport === 'group' && !hasRole('Super Admin')) {
+                const gid = (authUser as any)?.group_id as number | undefined
+                if (!gid) {
+                    toaster.error({ description: 'No group assigned to your account.', closable: true })
+                    return
+                }
+                data.group = String(gid)
+                const ogid = (authUser as any)?.old_group_id as number | undefined
+                if (ogid) data.oldGroup = String(ogid)
+            }
 
             if (data.state) {
                 const stateObj = states.find((s) => (s.name || (s as { stateName?: string }).stateName) === data.state || String(s.id) === data.state)

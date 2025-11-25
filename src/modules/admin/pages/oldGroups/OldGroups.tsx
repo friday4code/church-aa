@@ -20,6 +20,7 @@ import { useOldGroups } from "../../hooks/useOldGroup"
 import type { OldGroupFormData } from "../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
 import { delay } from "@/utils/helpers"
+import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components
 const OldGroupsHeader = lazy(() => import("./components/OldGroupsHeader"))
@@ -84,6 +85,8 @@ export const OldGroups: React.FC = () => {
 export default OldGroups;
 
 const Content = () => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof OldGroup>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -300,7 +303,7 @@ const Content = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <ExportButtons oldGroups={oldGroups} />
+                                {isSuperAdmin && <ExportButtons oldGroups={oldGroups} />}
                             </Suspense>
 
                             {/* Table */}
@@ -328,7 +331,7 @@ const Content = () => {
             </VStack>
 
             {/* Action Bar for selected items */}
-            {isActionBarOpen && (
+            {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <OldGroupsActionBar
                         close={closeActionBar}

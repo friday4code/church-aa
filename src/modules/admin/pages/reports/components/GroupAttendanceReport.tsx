@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
+import { useAuth } from "@/hooks/useAuth"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -39,13 +40,14 @@ export const GroupAttendanceReport = ({
     onDownload,
     isLoading = false,
 }: GroupAttendanceReportProps) => {
+    const { user: authUser, hasRole } = useAuth()
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
             state: "",
             region: "",
-            group: "",
-            oldGroup: "",
+            group: hasRole('Super Admin') ? "" : ((authUser as any)?.group_id ? String((authUser as any).group_id) : ""),
+            oldGroup: (hasRole('Super Admin') ? "" : ((authUser as any)?.old_group_id ? String((authUser as any).old_group_id) : "")),
             year: "",
         },
     })
@@ -77,36 +79,42 @@ export const GroupAttendanceReport = ({
             </Card.Header>
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
-                    <Grid templateColumns="repeat(5, 1fr)" gap="4" mb={4}>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="state"
-                                label="State"
-                                items={statesCollection}
-                                placeholder="Type to search state"
-                                required
-                            />
-                        </GridItem>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="region"
-                                label="Region"
-                                items={regionsCollection}
-                                placeholder="Type to search region"
-                                required
-                            />
-                        </GridItem>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="oldGroup"
-                                label="Old Group"
-                                items={oldGroupsCollection}
-                                placeholder="Type to search old group"
-                            />
-                        </GridItem>
+                    <Grid templateColumns="repeat(3, 1fr)" gap="4" mb={4}>
+                        {hasRole('Super Admin') && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="state"
+                                    label="State"
+                                    items={statesCollection}
+                                    placeholder="Type to search state"
+                                    required
+                                />
+                            </GridItem>
+                        )}
+                        {hasRole('Super Admin') && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="region"
+                                    label="Region"
+                                    items={regionsCollection}
+                                    placeholder="Type to search region"
+                                    required
+                                />
+                            </GridItem>
+                        )}
+                        {hasRole('Super Admin') && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="oldGroup"
+                                    label="Old Group"
+                                    items={oldGroupsCollection}
+                                    placeholder="Type to search old group"
+                                />
+                            </GridItem>
+                        )}
                         <GridItem>
                             <CustomComboboxField
                                 form={form}

@@ -18,6 +18,7 @@ import ErrorFallback from "@/components/ErrorFallback"
 import type { State } from "@/types/states.type"
 import { useStates } from "../../hooks/useState"
 import { Toaster } from "@/components/ui/toaster"
+import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components with proper loading states
 const StatesHeader = lazy(() => import("./components/StatesHeader"))
@@ -82,6 +83,8 @@ export const States: React.FC = () => {
 export default States;
 
 const Content = () => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof State>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -293,7 +296,7 @@ const Content = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <ExportButtons states={states} /> {/* Use states directly */}
+                                {isSuperAdmin && <ExportButtons states={states} />}
                             </Suspense>
 
                             {/* Table */}
@@ -321,7 +324,7 @@ const Content = () => {
                 </Card.Root>
             </VStack>
             {/* Action Bar for selected items */}
-            {isActionBarOpen && (
+            {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <StatesActionBar
                         close={closeActionBar}

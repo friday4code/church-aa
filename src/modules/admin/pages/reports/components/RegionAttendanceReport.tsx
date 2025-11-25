@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
+import { useAuth } from "@/hooks/useAuth"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -37,11 +38,12 @@ export const RegionAttendanceReport = ({
     onDownload,
     isLoading = false,
 }: RegionAttendanceReportProps) => {
+    const { user: authUser, hasRole } = useAuth()
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
             state: "",
-            region: "",
+            region: hasRole('Super Admin') ? "" : (authUser?.region_id ? String(authUser.region_id) : ""),
             year: "",
             fromMonth: "",
             toMonth: "",
@@ -75,17 +77,19 @@ export const RegionAttendanceReport = ({
             </Card.Header>
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
-                    <Grid templateColumns="repeat(5, 1fr)" gap="4" mb={4}>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="state"
-                                label="State"
-                                items={statesCollection}
-                                placeholder="Type to search state"
-                                required
-                            />
-                        </GridItem>
+                    <Grid templateColumns="repeat(4, 1fr)" gap="4" mb={4}>
+                        {hasRole('Super Admin') && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="state"
+                                    label="State"
+                                    items={statesCollection}
+                                    placeholder="Type to search state"
+                                    required
+                                />
+                            </GridItem>
+                        )}
                         <GridItem>
                             <CustomComboboxField
                                 form={form}

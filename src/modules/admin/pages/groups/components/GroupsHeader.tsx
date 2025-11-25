@@ -5,6 +5,7 @@ import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, Cl
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import type { Group } from "@/types/groups.type"
 import UploadGroupsFromFile from "./PortingFile"
+import { useAuth } from "@/hooks/useAuth"
 
 interface GroupsHeaderProps {
     groups: Group[]
@@ -15,6 +16,8 @@ interface GroupsHeaderProps {
 import { useState, useCallback } from "react"
 
 const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -41,7 +44,7 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
             </HStack>
 
             <HStack gap="4">
-                <UploadGroupsFromFile data={groups} />
+                {isSuperAdmin && <UploadGroupsFromFile data={groups} />}
                 <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                     <Input
                         bg="bg"
@@ -51,14 +54,16 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
                         onChange={handleChange}
                     />
                 </InputGroup>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddGroup}
-                >
-                    <Add />
-                    Add Group
-                </Button>
+                {isSuperAdmin && (
+                    <Button
+                        colorPalette="accent"
+                        rounded="xl"
+                        onClick={onAddGroup}
+                    >
+                        <Add />
+                        Add Group
+                    </Button>
+                )}
             </HStack>
         </Flex>
     )

@@ -12,6 +12,7 @@ import {
     Text,
 } from "@chakra-ui/react"
 import { Toaster } from "@/components/ui/toaster"
+import { useAuth } from "@/hooks/useAuth"
 import type { District, Districts } from "@/types/districts.type"
 import type { DistrictFormData } from "@/modules/admin/schemas/districts.schema"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
@@ -55,6 +56,8 @@ const ActionBarLoading = () => (
 )
 
 export const DistrictsContent = () => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof District>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -285,7 +288,7 @@ export const DistrictsContent = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <DistrictsExport districts={districts} />
+                                {isSuperAdmin && <DistrictsExport districts={districts} />}
                             </Suspense>
 
                             {/* Table */}
@@ -313,7 +316,7 @@ export const DistrictsContent = () => {
             </VStack>
 
             {/* Action Bar for selected items */}
-            {isActionBarOpen && (
+            {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <DistrictsActionBar
                         close={closeActionBar}

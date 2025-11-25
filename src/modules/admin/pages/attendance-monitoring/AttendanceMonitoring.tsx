@@ -9,6 +9,7 @@ import { ArrowLeft3, Eye } from "iconsax-reactjs";
 import { useMemo, useCallback } from "react";
 import Reminder from "./components/Reminder";
 import { Toaster } from "@/components/ui/toaster";
+import { useAuth } from "@/hooks/useAuth";
 
 const AttendanceMonitoringPage: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
@@ -35,6 +36,7 @@ const AttendanceMonitoringPage: React.FC = () => {
 export default AttendanceMonitoringPage;
 
 const Content = () => {
+    const { hasRole } = useAuth()
     const { data, isLoading } = useQuery<AttendanceMonitoring>({
         queryKey: ["attendance-monitoring"],
         queryFn: adminApi.getAttendanceMonitoring,
@@ -97,45 +99,63 @@ const Content = () => {
         districts: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
         groups: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
         old_groups: { id: number; name: string; status: 'red' | 'yellow' | 'green'; last_filled_week: number }[];
-    }) => (
-        <>
-            <Table.Row>
-                <Table.Cell fontWeight="medium">States</Table.Cell>
-                <Table.Cell>{section.states.length}</Table.Cell>
-                <Table.Cell>
-                    {renderItemHover('States', section.states)}
-                </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-                <Table.Cell fontWeight="medium">Regions</Table.Cell>
-                <Table.Cell>{section.regions.length}</Table.Cell>
-                <Table.Cell>
-                    {renderItemHover('Regions', section.regions)}
-                </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-                <Table.Cell fontWeight="medium">Districts</Table.Cell>
-                <Table.Cell>{section.districts.length}</Table.Cell>
-                <Table.Cell>
-                    {renderItemHover('Districts', section.districts)}
-                </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-                <Table.Cell fontWeight="medium">Groups</Table.Cell>
-                <Table.Cell>{section.groups.length}</Table.Cell>
-                <Table.Cell>
-                    {renderItemHover('Groups', section.groups)}
-                </Table.Cell>
-            </Table.Row>
-            <Table.Row>
-                <Table.Cell fontWeight="medium">Old Groups</Table.Cell>
-                <Table.Cell>{section.old_groups.length}</Table.Cell>
-                <Table.Cell>
-                    {renderItemHover('Old Groups', section.old_groups)}
-                </Table.Cell>
-            </Table.Row>
-        </>
-    ), [renderItemHover])
+    }) => {
+        const showStates = hasRole('Super Admin')
+        const showRegions = hasRole('Super Admin') || hasRole('State Admin')
+        const showDistricts = hasRole('Super Admin') || hasRole('State Admin') || hasRole('Region Admin') || hasRole('Group Admin')
+        const showGroups = hasRole('Super Admin') || hasRole('State Admin') || hasRole('Region Admin')
+        const showOldGroups = hasRole('Super Admin') || hasRole('State Admin') || hasRole('Region Admin')
+
+        return (
+            <>
+                {showStates && (
+                    <Table.Row>
+                        <Table.Cell fontWeight="medium">States</Table.Cell>
+                        <Table.Cell>{section.states.length}</Table.Cell>
+                        <Table.Cell>
+                            {renderItemHover('States', section.states)}
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+                {showRegions && (
+                    <Table.Row>
+                        <Table.Cell fontWeight="medium">Regions</Table.Cell>
+                        <Table.Cell>{section.regions.length}</Table.Cell>
+                        <Table.Cell>
+                            {renderItemHover('Regions', section.regions)}
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+                {showDistricts && (
+                    <Table.Row>
+                        <Table.Cell fontWeight="medium">Districts</Table.Cell>
+                        <Table.Cell>{section.districts.length}</Table.Cell>
+                        <Table.Cell>
+                            {renderItemHover('Districts', section.districts)}
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+                {showGroups && (
+                    <Table.Row>
+                        <Table.Cell fontWeight="medium">Groups</Table.Cell>
+                        <Table.Cell>{section.groups.length}</Table.Cell>
+                        <Table.Cell>
+                            {renderItemHover('Groups', section.groups)}
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+                {showOldGroups && (
+                    <Table.Row>
+                        <Table.Cell fontWeight="medium">Old Groups</Table.Cell>
+                        <Table.Cell>{section.old_groups.length}</Table.Cell>
+                        <Table.Cell>
+                            {renderItemHover('Old Groups', section.old_groups)}
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+            </>
+        )
+    }, [renderItemHover, hasRole])
 
     return (
         <>
@@ -150,13 +170,21 @@ const Content = () => {
                 </HStack>
                 <Text color={{ base: "gray.600", _dark: "gray.300" }}>Overview of pending and submitted attendance by hierarchy</Text>
 
-                <Reminder />
+                <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+                    <Card.Header>
+                        <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Send Reminders</Heading>
+                        <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Notify appropriate levels based on your role</Text>
+                    </Card.Header>
+                    <Card.Body>
+                        <Reminder />
+                    </Card.Body>
+                </Card.Root>
 
                 <SimpleGrid columns={{ base: 1, lg: 2 }} gap="6">
                     <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Pending</Heading>
-                            <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Awaiting submission</Text>
+                            <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Awaiting submission at visible levels</Text>
                         </Card.Header>
                         <Card.Body>
                             <Table.Root rounded="md" overflow="hidden" variant="outline" size="sm">
@@ -177,7 +205,7 @@ const Content = () => {
                     <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Submitted</Heading>
-                            <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Received submissions</Text>
+                            <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Received submissions at visible levels</Text>
                         </Card.Header>
                         <Card.Body>
                             <Table.Root rounded="md" overflow="hidden" variant="outline" size="sm">

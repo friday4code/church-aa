@@ -18,6 +18,7 @@ import ErrorFallback from "@/components/ErrorFallback"
 import type { Group } from "@/types/groups.type"
 import { useGroups } from "../../hooks/useGroup"
 import { Toaster } from "@/components/ui/toaster"
+import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components with proper loading states
 const GroupsHeader = lazy(() => import("./components/GroupsHeader"))
@@ -82,6 +83,8 @@ export const Groups: React.FC = () => {
 export default Groups;
 
 const Content = () => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof Group>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -309,7 +312,7 @@ const Content = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                <ExportButtons groups={groups} />
+                                {isSuperAdmin && <ExportButtons groups={groups} />}
                             </Suspense>
 
                             {/* Table */}
@@ -337,7 +340,7 @@ const Content = () => {
             </VStack>
 
             {/* Action Bar for selected items */}
-            {isActionBarOpen && (
+            {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>
                     <GroupsActionBar
                         close={closeActionBar}

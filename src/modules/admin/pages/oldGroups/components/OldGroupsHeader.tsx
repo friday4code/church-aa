@@ -5,6 +5,7 @@ import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, Cl
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import UploadOldGroupsFromFile from "../../../components/PortingFile"
 import type { OldGroup } from "@/types/oldGroups.type"
+import { useAuth } from "@/hooks/useAuth"
 
 interface OldGroupsHeaderProps {
     oldGroups: OldGroup[]
@@ -15,6 +16,8 @@ interface OldGroupsHeaderProps {
 import { useState, useCallback } from "react"
 
 const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch }: OldGroupsHeaderProps) => {
+    const { hasRole } = useAuth()
+    const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -42,7 +45,7 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch }: OldGroupsHeaderPro
             </HStack>
 
             <HStack gap="4">
-                <UploadOldGroupsFromFile data={oldGroups} />
+                {isSuperAdmin && <UploadOldGroupsFromFile data={oldGroups} />}
                 <InputGroup maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />} endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}>
                     <Input
                         bg="bg"
@@ -52,14 +55,16 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch }: OldGroupsHeaderPro
                         onChange={handleChange}
                     />
                 </InputGroup>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddGroup}
-                >
-                    <Add />
-                    Add Old Group
-                </Button>
+                {isSuperAdmin && (
+                    <Button
+                        colorPalette="accent"
+                        rounded="xl"
+                        onClick={onAddGroup}
+                    >
+                        <Add />
+                        Add Old Group
+                    </Button>
+                )}
             </HStack>
         </Flex>
     )
