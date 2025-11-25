@@ -5,9 +5,12 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { useEffect } from "react"
+import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useAuth } from "@/hooks/useAuth"
+import { useMe } from "@/hooks/useMe"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -38,17 +41,39 @@ export const RegionAttendanceReport = ({
     onDownload,
     isLoading = false,
 }: RegionAttendanceReportProps) => {
-    const { user: authUser, hasRole } = useAuth()
+    const { user: authUser } = useAuth()
+    const { user } = useMe()
+    const { getRoles } = useAuth()
+    const userRoles = getRoles()
+    const roleVisibility = getRoleBasedVisibility(userRoles)
+
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
             state: "",
-            region: hasRole('Super Admin') ? "" : (authUser?.region_id ? String(authUser.region_id) : ""),
+            region: roleVisibility.showRegion ? "" : (authUser?.region_id ? String(authUser.region_id) : ""),
             year: "",
             fromMonth: "",
             toMonth: "",
         },
     })
+
+    const { setValue, trigger } = form
+
+    // Auto-populate hidden fields with user data
+    useEffect(() => {
+        if (!user) return
+
+        if (!roleVisibility.showState && user.state_id) {
+            setValue('state', String(user.state_id), { shouldValidate: true })
+            trigger('state')
+        }
+
+        if (!roleVisibility.showRegion && user.region_id) {
+            setValue('region', String(user.region_id), { shouldValidate: true })
+            trigger('region')
+        }
+    }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
         onDownload(data)
@@ -78,7 +103,7 @@ export const RegionAttendanceReport = ({
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
                     <Grid templateColumns="repeat(4, 1fr)" gap="4" mb={4}>
-                        {hasRole('Super Admin') && (
+                        {roleVisibility.showState && (
                             <GridItem>
                                 <CustomComboboxField
                                     form={form}
@@ -90,16 +115,18 @@ export const RegionAttendanceReport = ({
                                 />
                             </GridItem>
                         )}
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="region"
-                                label="Region"
-                                items={regionsCollection}
-                                placeholder="Type to search region"
-                                required
-                            />
-                        </GridItem>
+                        {roleVisibility.showRegion && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="region"
+                                    label="Region"
+                                    items={regionsCollection}
+                                    placeholder="Type to search region"
+                                    required
+                                />
+                            </GridItem>
+                        )}
                         <GridItem>
                             <CustomComboboxField
                                 form={form}

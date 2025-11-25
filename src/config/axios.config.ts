@@ -3,13 +3,21 @@ import { toaster } from "@/components/ui/toaster"
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios"
 import { ENV } from "./env"
 import { useAuthStore } from "@/store/auth.store"
+import { networkMonitor } from "@/utils/network.utils"
 
 export const axiosClient = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: ENV.API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
   },
+  // Enable response compression
+  decompress: true,
+  // Optimize for large datasets
+  maxContentLength: 50 * 1024 * 1024, // 50MB
+  maxBodyLength: 50 * 1024 * 1024, // 50MB
 })
 
 // List of public endpoints that don't require auth token
@@ -113,6 +121,11 @@ axiosClient.interceptors.request.use(
       if (tokens?.access_token && config.headers) {
         config.headers.Authorization = `Bearer ${tokens.access_token}`
       }
+    }
+
+    // Start network monitoring
+    if (config.url) {
+      networkMonitor.startRequest(config.url);
     }
 
     return config

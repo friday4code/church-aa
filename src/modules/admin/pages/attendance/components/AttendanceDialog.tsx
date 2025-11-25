@@ -29,6 +29,9 @@ import RegionIdCombobox from "../../../components/RegionIdCombobox"
 import DistrictIdCombobox from "../../../components/DistrictIdCombobox"
 import GroupIdCombobox from "../../../components/GroupIdCombobox"
 import OldGroupIdCombobox from "../../../components/OldGroupIdCombobox"
+import { useAuth } from "@/hooks/useAuth"
+import { useMe } from "@/hooks/useMe"
+import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
 
 // Collections for Select components
 const monthCollection = createListCollection({
@@ -63,6 +66,21 @@ interface AttendanceDialogProps {
 }
 
 const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceName, isLoading }: AttendanceDialogProps) => {
+    const { user } = useMe()
+    const { hasRole } = useAuth()
+
+    // Get role-based visibility configuration
+    const roleVisibility = useMemo(() => {
+        if (!user?.roles) return getRoleBasedVisibility([])
+        return getRoleBasedVisibility(user.roles as RoleType[])
+    }, [user?.roles])
+
+    const isGroupAdmin = useMemo(() => {
+        const roles = user?.roles || []
+        return roles.includes("Group Admin")
+    }, [user?.roles])
+
+
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<AttendanceFormData>({
         resolver: zodResolver(AttendanceSchema),
         defaultValues: {
@@ -83,6 +101,29 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             year: attendance?.year || new Date().getFullYear(),
         }
     })
+
+    // Auto-populate hidden fields based on user's role and data
+    useEffect(() => {
+        if (!user) return
+
+        // Auto-populate state_id if State combobox is hidden
+        if (!roleVisibility.showState && user.state_id) {
+            setValue('state_id', user.state_id, { shouldValidate: true })
+            trigger('state_id')
+        }
+
+        // Auto-populate region_id if Region combobox is hidden
+        if (!roleVisibility.showRegion && user.region_id) {
+            setValue('region_id', user.region_id, { shouldValidate: true })
+            trigger('region_id')
+        }
+
+        // Auto-populate district_id if District combobox is hidden
+        if (!roleVisibility.showDistrict && user.district_id) {
+            setValue('district_id', user.district_id, { shouldValidate: true })
+            trigger('district_id')
+        }
+    }, [user, roleVisibility, setValue, trigger])
 
     const onSubmit = (data: AttendanceFormData) => {
         onSave(data)
@@ -332,62 +373,77 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                         <Dialog.Body>
                             <form noValidate id="attendance-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4" colorPalette={"accent"}>
-                                    <Field.Root required invalid={!!errors.state_id}>
-                                        <StateIdCombobox
-                                            value={selectedStateName}
-                                            onChange={handleStateChange}
-                                            required
-                                            invalid={!!errors.state_id}
-                                        />
-                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showState && (
+                                        <Field.Root required invalid={!!errors.state_id}>
+                                            <StateIdCombobox
+                                                value={selectedStateName}
+                                                onChange={handleStateChange}
+                                                required
+                                                invalid={!!errors.state_id}
+                                            />
+                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.region_id}>
-                                        <RegionIdCombobox
-                                            value={selectedRegionName}
-                                            onChange={handleRegionChange}
-                                            required
-                                            invalid={!!errors.region_id}
-                                            items={filteredRegions}
-                                            disabled={!currentStateId}
-                                        />
-                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showRegion && (
+                                        <Field.Root required invalid={!!errors.region_id}>
+                                            <RegionIdCombobox
+                                                value={selectedRegionName}
+                                                onChange={handleRegionChange}
+                                                required
+                                                invalid={!!errors.region_id}
+                                                items={filteredRegions}
+                                                disabled={!currentStateId}
+                                            />
+                                            <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root invalid={!!errors.old_group_id}>
-                                        <OldGroupIdCombobox
-                                            value={selectedOldGroupName}
-                                            onChange={handleOldGroupChange}
-                                            invalid={!!errors.old_group_id}
-                                            items={filteredOldGroups}
-                                            disabled={!currentRegionId}
-                                        />
-                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showOldGroup && (
+                                        <Field.Root invalid={!!errors.old_group_id}>
+                                            <OldGroupIdCombobox
+                                                value={selectedOldGroupName}
+                                                onChange={handleOldGroupChange}
+                                                invalid={!!errors.old_group_id}
+                                                items={filteredOldGroups}
+                                                disabled={!currentRegionId}
+                                            />
+                                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.group_id}>
-                                        <GroupIdCombobox
-                                            value={selectedGroupName}
-                                            onChange={handleGroupChange}
-                                            required
-                                            invalid={!!errors.group_id}
-                                            items={filteredGroups}
-                                            disabled={!currentOldGroupId}
-                                        />
-                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showGroup && !isGroupAdmin && (
+                                        <Field.Root required invalid={!!errors.group_id}>
+                                            <GroupIdCombobox
+                                                value={selectedGroupName}
+                                                onChange={handleGroupChange}
+                                                required
+                                                invalid={!!errors.group_id}
+                                                items={filteredGroups}
+                                                disabled={!currentOldGroupId}
+                                            />
+                                            <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.district_id}>
-                                        <DistrictIdCombobox
-                                            value={selectedDistrictName}
-                                            onChange={handleDistrictChange}
-                                            required
-                                            invalid={!!errors.district_id}
-                                            items={filteredDistricts}
-                                            disabled={!currentGroupId}
-                                        />
-                                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showDistrict && (
+                                        <Field.Root required invalid={!!errors.district_id}>
+                                            <DistrictIdCombobox
+                                                value={selectedDistrictName}
+                                                onChange={handleDistrictChange}
+                                                required
+                                                invalid={!!errors.district_id}
+                                                items={isGroupAdmin ? undefined : filteredDistricts}
+                                                disabled={isGroupAdmin ? false : !currentGroupId}
+                                                stateId={user?.state_id as number | undefined}
+                                                regionId={user?.region_id as number | undefined}
+                                                oldGroupId={user?.old_group_id ?? undefined}
+                                                groupId={user?.group_id as number | undefined}  
+                                                isGroupAdmin={isGroupAdmin}
+                                            />
+                                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
                                     <Field.Root required invalid={!!errors.month}>
                                         <Field.Label>Month

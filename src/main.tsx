@@ -10,8 +10,13 @@ import { Provider } from "./components/ui/provider";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: false,
-      refetchOnWindowFocus: false
+      retry: 1,
+      retryDelay: 1000,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     }
   }
 });

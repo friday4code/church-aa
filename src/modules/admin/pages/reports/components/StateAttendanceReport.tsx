@@ -5,8 +5,12 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
+import { useEffect } from "react"
+import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
+import { useMe } from "@/hooks/useMe"
+import { useAuth } from "@/hooks/useAuth"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -35,6 +39,11 @@ export const StateAttendanceReport = ({
     onDownload,
     isLoading = false,
 }: StateAttendanceReportProps) => {
+    const { user } = useMe()
+    const { getRoles } = useAuth()
+    const userRoles = getRoles()
+    const roleVisibility = getRoleBasedVisibility(userRoles)
+
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
@@ -44,6 +53,18 @@ export const StateAttendanceReport = ({
             toMonth: "",
         },
     })
+
+    const { setValue, trigger } = form
+
+    // Auto-populate hidden fields with user data
+    useEffect(() => {
+        if (!user) return
+
+        if (!roleVisibility.showState && user.state_id) {
+            setValue('state', user.state_id.toString(), { shouldValidate: true })
+            trigger('state')
+        }
+    }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
         onDownload(data)
@@ -73,16 +94,18 @@ export const StateAttendanceReport = ({
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
                     <Grid templateColumns="repeat(4, 1fr)" gap="4" mb={4}>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="state"
-                                label="State"
-                                items={statesCollection}
-                                placeholder="Type to search state"
-                                required
-                            />
-                        </GridItem>
+                        {roleVisibility.showState && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="state"
+                                    label="State"
+                                    items={statesCollection}
+                                    placeholder="Type to search state"
+                                    required
+                                />
+                            </GridItem>
+                        )}
                         <GridItem>
                             <CustomComboboxField
                                 form={form}

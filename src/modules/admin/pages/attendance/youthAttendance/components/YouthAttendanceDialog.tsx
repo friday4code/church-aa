@@ -29,6 +29,9 @@ import { useEffect, useMemo } from "react"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useGroups } from "@/modules/admin/hooks/useGroup"
 import type { YouthAttendance } from "@/types/youthAttendance.type"
+import { useAuth } from "@/hooks/useAuth"
+import { useMe } from "@/hooks/useMe"
+import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
 
 interface YouthAttendanceDialogProps {
     isOpen: boolean
@@ -62,6 +65,14 @@ export const YouthAttendanceDialog = ({
     const { districts } = useDistricts()
     const { groups } = useGroups()
     const { oldGroups } = useOldGroups()
+    const { user } = useMe()
+    const { hasRole } = useAuth()
+    
+    // Get role-based visibility configuration
+    const roleVisibility = useMemo(() => {
+        if (!user?.roles) return getRoleBasedVisibility([])
+        return getRoleBasedVisibility(user.roles as RoleType[])
+    }, [user?.roles])
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<YouthAttendanceFormData>({
         resolver: zodResolver(youthAttendanceSchema),
@@ -130,6 +141,29 @@ export const YouthAttendanceDialog = ({
             })
         }
     }, [isOpen, attendance, mode, attendanceType, reset])
+
+    // Auto-populate hidden fields based on user's role and data
+    useEffect(() => {
+        if (!user) return
+        
+        // Auto-populate state_id if State combobox is hidden
+        if (!roleVisibility.showState && user.state_id) {
+            setValue('state_id', user.state_id, { shouldValidate: true })
+            trigger('state_id')
+        }
+        
+        // Auto-populate region_id if Region combobox is hidden
+        if (!roleVisibility.showRegion && user.region_id) {
+            setValue('region_id', user.region_id, { shouldValidate: true })
+            trigger('region_id')
+        }
+        
+        // Auto-populate district_id if District combobox is hidden
+        if (!roleVisibility.showDistrict && user.district_id) {
+            setValue('district_id', user.district_id, { shouldValidate: true })
+            trigger('district_id')
+        }
+    }, [user, roleVisibility, setValue, trigger])
 
     const currentStateId = watch('state_id')
     const currentRegionId = watch('region_id')
@@ -362,62 +396,72 @@ export const YouthAttendanceDialog = ({
                             <form noValidate id="youth-attendance-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4">
                                     {/* Location Selection */}
-                                    <Field.Root required invalid={!!errors.state_id}>
-                                        <StateIdCombobox
-                                            value={getSelectedStateName()}
-                                            onChange={handleStateChange}
-                                            required
-                                            invalid={!!errors.state_id}
-                                        />
-                                        <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showState && (
+                                        <Field.Root required invalid={!!errors.state_id}>
+                                            <StateIdCombobox
+                                                value={getSelectedStateName()}
+                                                onChange={handleStateChange}
+                                                required
+                                                invalid={!!errors.state_id}
+                                            />
+                                            <Field.ErrorText>{errors.state_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.region_id}>
-                                        <RegionIdCombobox
-                                            value={getSelectedRegionName()}
-                                            onChange={handleRegionChange}
-                                            required
-                                            invalid={!!errors.region_id}
-                                            items={filteredRegions}
-                                            disabled={!currentStateId}
-                                        />
-                                        <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showRegion && (
+                                        <Field.Root required invalid={!!errors.region_id}>
+                                            <RegionIdCombobox
+                                                value={getSelectedRegionName()}
+                                                onChange={handleRegionChange}
+                                                required
+                                                invalid={!!errors.region_id}
+                                                items={filteredRegions}
+                                                disabled={!currentStateId}
+                                            />
+                                            <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root invalid={!!errors.old_group_id}>
-                                        <OldGroupIdCombobox
-                                            value={getOldGroupNameById(currentOldGroupId)}
-                                            onChange={handleOldGroupChange}
-                                            invalid={!!errors.old_group_id}
-                                            items={filteredOldGroups}
-                                            disabled={!currentRegionId}
-                                        />
-                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showOldGroup && (
+                                        <Field.Root invalid={!!errors.old_group_id}>
+                                            <OldGroupIdCombobox
+                                                value={getOldGroupNameById(currentOldGroupId)}
+                                                onChange={handleOldGroupChange}
+                                                invalid={!!errors.old_group_id}
+                                                items={filteredOldGroups}
+                                                disabled={!currentRegionId}
+                                            />
+                                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.group_id}>
-                                        <GroupIdCombobox
-                                            value={getSelectedGroupName()}
-                                            onChange={handleGroupChange}
-                                            required
-                                            invalid={!!errors.group_id}
-                                            items={filteredGroups}
-                                            disabled={!currentOldGroupId}
-                                        />
-                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showGroup && (
+                                        <Field.Root required invalid={!!errors.group_id}>
+                                            <GroupIdCombobox
+                                                value={getSelectedGroupName()}
+                                                onChange={handleGroupChange}
+                                                required
+                                                invalid={!!errors.group_id}
+                                                items={filteredGroups}
+                                                disabled={!currentOldGroupId}
+                                            />
+                                            <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
-                                    <Field.Root required invalid={!!errors.district_id}>
-                                        <DistrictIdCombobox
-                                            value={getSelectedDistrictName()}
-                                            onChange={handleDistrictChange}
-                                            required
-                                            invalid={!!errors.district_id}
-                                            items={filteredDistricts}
-                                            disabled={!currentGroupId}
-                                        />
-                                        <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
-                                    </Field.Root>
+                                    {roleVisibility.showDistrict && (
+                                        <Field.Root required invalid={!!errors.district_id}>
+                                            <DistrictIdCombobox
+                                                value={getSelectedDistrictName()}
+                                                onChange={handleDistrictChange}
+                                                required
+                                                invalid={!!errors.district_id}
+                                                items={filteredDistricts}
+                                                disabled={!currentGroupId}
+                                            />
+                                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                                        </Field.Root>
+                                    )}
 
                                     {/* Date Selection */}
                                     <HStack gap="4" w="full">

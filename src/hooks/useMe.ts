@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "@/api/auth.api";
-import type { User } from "@/types/auth.type";
+import type { User } from "@/types/users.type";
 
 interface UseMeReturn {
   user: User | null;
