@@ -67,6 +67,7 @@ export const StateAttendanceReport = ({
     }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
+        console.log("data",data)
         onDownload(data)
     }
 
