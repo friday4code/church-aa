@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getReportFileName, buildStateReportSheet, buildRegionReportSheet } from '../exporters'
+import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet } from '../exporters'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import XLSX from 'xlsx-js-style'
@@ -24,6 +24,22 @@ describe('getReportFileName', () => {
     expect(name.startsWith('Region Report Sheet File_')).toBe(true)
     expect(name.endsWith('.xlsx')).toBe(true)
     const stamp = name.replace('Region Report Sheet File_', '').replace('.xlsx', '')
+    expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
+  })
+
+  it('generates group filename with correct pattern', () => {
+    const name = getReportFileName('group')
+    expect(name.startsWith('Group Report Sheet File_')).toBe(true)
+    expect(name.endsWith('.xlsx')).toBe(true)
+    const stamp = name.replace('Group Report Sheet File_', '').replace('.xlsx', '')
+    expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
+  })
+
+  it('generates district filename with correct pattern', () => {
+    const name = getReportFileName('district')
+    expect(name.startsWith('District Report Sheet File_')).toBe(true)
+    expect(name.endsWith('.xlsx')).toBe(true)
+    const stamp = name.replace('District Report Sheet File_', '').replace('.xlsx', '')
     expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
   })
 })
@@ -155,5 +171,22 @@ describe('buildRegionReportSheet', () => {
     expect(a1.s.font.bold).toBe(true)
     const c4 = (sheet as unknown as Record<string, unknown>)['C4'] as { s: { font: { bold: boolean } } }
     expect(c4.s.font.bold).toBe(true)
+  })
+})
+
+describe('buildGroupReportSheet', () => {
+  it('builds sheet with districts and subtotal', () => {
+    const districts = [
+      { id: 10, name: 'Alu District', group_id: 100 },
+      { id: 11, name: 'Beta District', group_id: 100 },
+    ]
+    const sheet = buildGroupReportSheet(sampleAttendance, districts, 'Alu Group', 2025, { months: ['January'] }, 100)
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][]
+    expect(data[0][0]).toBe('Deeper Life Bible Church, Alu Group (Group)')
+    expect(data[5][0]).toBe('Districts')
+    const aluRow = data.find((r: (string | number)[]) => r[0] === 'Alu District')
+    expect(aluRow).toBeTruthy()
+    const subtotalRows = data.filter(r => r[0] === 'SubTotal')
+    expect(subtotalRows.length).toBeGreaterThanOrEqual(1)
   })
 })

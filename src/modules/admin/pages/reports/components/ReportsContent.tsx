@@ -18,7 +18,7 @@ import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
 import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, exportSheet, getReportFileName } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -26,8 +26,9 @@ import type { Region } from "@/types/regions.type"
 import { getRegionsByStateName, getOldGroupsByRegion } from "./regionFilters"
 import { adminApi } from "@/api/admin.api"
 import { useAuth } from "@/hooks/useAuth"
+// role type import not required here; 'hasRole' covers verification
 import type { User } from "@/types/users.type"
-import { toaster } from "@/components/ui/toaster"
+import { Toaster, toaster } from "@/components/ui/toaster"
 
 // ----------------------------------------------------------------------
 // 1. STRICT MEMOIZATION
@@ -113,6 +114,9 @@ export const ReportsContent = () => {
         }
     }, [attendances, youthWeeklyAttendances, youthRevivalAttendances])
 
+
+
+
     // ----------------------------------------------------------------------
     // 5. COLLECTIONS (Maps & Lists)
     // ----------------------------------------------------------------------
@@ -150,8 +154,8 @@ export const ReportsContent = () => {
         // Default to base collections
         let s = collections.states
         let r = collections.regions
-        let g = collections.groups
         let og = collections.oldGroups
+        let g = collections.groups
 
         if (!hasRole('Super Admin')) {
             const authUserTyped = authUser as User | null
@@ -215,27 +219,38 @@ export const ReportsContent = () => {
     // ----------------------------------------------------------------------
     // 6. UI STATE MANAGEMENT (The Fix for Freezing)
     // ----------------------------------------------------------------------
-    const [selectedTab, setSelectedTab] = useState<string>("state")
-    const [deferredTab, setDeferredTab] = useState<string>("state")
+    type ReportType = 'state' | 'region' | 'oldGroup' | 'group' | 'district' | 'youth'
+    const memoizedReportTypes = useMemo<ReportType[]>(() => ['state', 'region', 'oldGroup', 'group', 'district', 'youth'], [])
+    const [selectedTab, setSelectedTab] = useState<ReportType>('state')
+    const [deferredTab, setDeferredTab] = useState<ReportType>('state')
     const [isTransitioning, startTransition] = useTransition()
     const [isReportGenerating, setIsReportGenerating] = useState(false)
 
     // Handle Tab Click - Updates UI immediately, defers heavy content
-    const handleTabChange = (val: string) => {
+    const handleTabChange = (val: ReportType) => {
         setSelectedTab(val) // Update buttons instantly
         startTransition(() => {
             setDeferredTab(val) // Update heavy content in background
         })
     }
 
-    const allowedReportTypes = useMemo(() => {
-        if (hasRole('Super Admin')) return ['state', 'region', 'oldGroup', 'group', 'district', 'youth']
-        if (hasRole('State Admin')) return ['region', 'oldGroup', 'group', 'district', 'youth']
-        if (hasRole('Region Admin')) return ['oldGroup', 'group', 'district', 'youth']
-        if (hasRole('Group Admin')) return ['district','youth']
-        if (hasRole('District Admin')) return ['youth']
+    const allowedReportTypes = useMemo<ReportType[]>(() => {
+        if (hasRole('Super Admin')) return memoizedReportTypes
+        if (hasRole('State Admin')) return ['state', 'region', 'oldGroup', 'group', 'district', 'youth']
+        if (hasRole('Region Admin')) return ['region', 'oldGroup', 'group', 'district', 'youth']
+        if (hasRole('Old Group Admin')) return ['oldGroup', 'group', 'district', 'youth']
+        if (hasRole('Group Admin')) return ['group', 'district', 'youth']
+        if (hasRole('District Admin')) return ['district', 'youth']
         return []
-    }, [hasRole])
+    }, [hasRole, memoizedReportTypes])
+
+    useEffect(() => {
+        if (!allowedReportTypes.includes(selectedTab)) {
+            const next = allowedReportTypes[0] ?? 'youth'
+            setSelectedTab(next)
+            setDeferredTab(next)
+        }
+    }, [allowedReportTypes, selectedTab])
 
     // ----------------------------------------------------------------------
     // 7. DOWNLOAD HANDLER (Stable Identity)
@@ -279,19 +294,28 @@ export const ReportsContent = () => {
             }
 
             if (data.state) {
-                const sObj = Array.from(maps.state.values()).find(s => (s.name || s.stateName) === data.state)
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                console.log("state", sObj);
+
                 if (sObj) { filterCriteria.stateId = sObj.id; stateName = sObj.name || sObj.stateName || stateName }
             }
             if (data.region) {
-                const rObj = Array.from(maps.region.values()).find(r => (r.name || r.regionName) === data.region)
+                const rObj = Array.from(maps.region.values()).find(r => (r.id || r.regionName) === Number(data.region))
+                console.log("state", rObj);
                 if (rObj) filterCriteria.regionId = rObj.id
             }
             if (data.group) {
-                const gObj = Array.from(maps.group.values()).find(g => (g.name || g.groupName) === data.group)
+                const gObj = Array.from(maps.group.values()).find(g => (g.id || g.groupName) === Number(data.group))
+                console.log("state", gObj);
                 if (gObj) filterCriteria.groupId = gObj.id
             }
+            if (data.district) {
+                const dId = parseInt(data.district, 10)
+                if (!Number.isNaN(dId)) filterCriteria.districtId = dId
+            }
             if (data.oldGroup) {
-                const ogObj = oldGroups.find(g => (g.name || g.groupName) === data.oldGroup)
+                const ogObj = oldGroups.find(g => (g.id || g.groupName) === Number(data.oldGroup))
+                console.log("state", ogObj);
                 if (ogObj) filterCriteria.oldGroupId = ogObj.id
             }
             if (data.year) filterCriteria.year = parseInt(data.year, 10)
@@ -307,6 +331,9 @@ export const ReportsContent = () => {
             }
 
             filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            console.log("filtered attendances", filtered);
+            console.log("filtered criteria", filterCriteria);
+
 
             if (deferredTab === 'state') {
                 if (!filterCriteria.stateId) {
@@ -329,13 +356,10 @@ export const ReportsContent = () => {
                 const apiOldGroups = await adminApi.getOldGroupsByRegionId(Number(filterCriteria.regionId))
                 if (apiOldGroups && apiOldGroups.length) {
                     const names = new Set(apiOldGroups.map(x => x.name))
-                    console.log("oldgropus by region set", names)
                     sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name))
                 }
 
-                console.log("source oldgrups", sourceOldGroups)
                 const filteredOldGroups = getOldGroupsByRegion(rName, sourceOldGroups)
-                console.log("filtered oldgrups", filteredOldGroups)
 
                 const sheet = buildRegionReportSheet(filtered, filteredOldGroups, rName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.regionId))
                 exportSheet(sheet, getReportFileName('region'), 'Region Report')
@@ -349,20 +373,52 @@ export const ReportsContent = () => {
                 const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
                 const sheet = buildOldGroupReportSheet(filtered, groups, ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
                 exportSheet(sheet, getReportFileName('state'), 'Old Group Report')
-            } else if (deferredTab === 'district') {
+            } else if (deferredTab === 'group') {
                 if (!filterCriteria.groupId) {
                     toaster.error({ description: 'Select a group', closable: true })
                     return
                 }
                 const gObj = groups.find(g => Number(g.id) === Number(filterCriteria.groupId))
                 const gName = gObj?.name || 'Group'
-                // derive districts from filtered attendance to avoid extra fetch
                 const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
-                // fall back: derive districts from attendance records if district_id present
-                const districtIds = Array.from(new Set(filtered.filter(x => x.group_id === Number(filterCriteria.groupId)).map(x => x.district_id).filter(Boolean))) as number[]
-                const districts: Array<{ id: number; name: string; group_id?: number }> = districtIds.map(id => ({ id, name: `District ${id}`, group_id: Number(filterCriteria.groupId) }))
-                const sheet = buildDistrictReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
-                exportSheet(sheet, getReportFileName('state'), 'District Report')
+                let districts: Array<{ id: number; name: string; group_id?: number }> = []
+                try {
+                    const apiDistricts = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId))
+                    districts = (apiDistricts || []).map(d => ({ id: d.id, name: d.name, group_id: Number(filterCriteria.groupId) }))
+                    console.log("download:districts:api", districts)
+                } catch (err) {
+                    console.warn("download:districts:fallback", err)
+                    const ids = Array.from(new Set(filtered.filter(x => x.group_id === Number(filterCriteria.groupId)).map(x => x.district_id).filter(Boolean))) as number[]
+                    districts = ids.map(id => ({ id, name: `District ${id}`, group_id: Number(filterCriteria.groupId) }))
+                    console.log("download:districts:derived", districts)
+                }
+                const hasData = filtered.some(x => x.group_id === Number(filterCriteria.groupId))
+                if (!hasData || districts.length === 0) {
+                    toaster.error({ description: 'No attendance data or districts for selected group', closable: true })
+                    return
+                }
+                console.log("download:build:start", { groupId: filterCriteria.groupId, spec, year: filterCriteria.year })
+                const sheet = buildGroupReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+                exportSheet(sheet, getReportFileName('group'), 'Group Report')
+                console.log("download:build:done")
+            } else if (deferredTab === 'district') {
+                const selectedDistrictId = filterCriteria.districtId
+                if (selectedDistrictId == null) {
+                    toaster.error({ description: 'Select a district', closable: true })
+                    return
+                }
+                const dObjs = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId)) || []
+                const dObj = dObjs.find(g => g.id === Number(selectedDistrictId))
+                const dName = dObj?.name || `District ${selectedDistrictId}`
+                const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+                const hasData = filtered.some(x => x.group_id === Number(filterCriteria.groupId) && x.district_id === selectedDistrictId)
+                if (!hasData) {
+                    toaster.error({ description: 'No attendance data for selected district/group', closable: true })
+                    return
+                }
+                const districts: Array<{ id: number; name: string; group_id?: number }> = [{ id: selectedDistrictId, name: dName, group_id: Number(filterCriteria.groupId) }]
+                const sheet = buildDistrictReportSheet(filtered, districts, dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+                exportSheet(sheet, getReportFileName('district'), 'District Report')
             } else {
                 toaster.error({ description: 'Unsupported report type', closable: true })
             }
@@ -465,9 +521,8 @@ export const ReportsContent = () => {
                 </Card.Header>
                 <Card.Body>
                     <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
-                        {['state', 'region', 'oldGroup', 'group', 'district', 'youth'].map((type) => {
+                        {allowedReportTypes.map((type) => {
                             const isActive = selectedTab === type
-                            const isDisabled = !allowedReportTypes.includes(type)
                             return (
                                 <Button
                                     key={type}
@@ -476,9 +531,7 @@ export const ReportsContent = () => {
                                     color={isActive ? "white" : "fg"}
                                     borderColor={!isActive ? "border" : "transparent"}
                                     _hover={{ bg: isActive ? "accent.emphasized" : "bg.subtle" }}
-                                    onClick={() => !isDisabled && handleTabChange(type)}
-                                    disabled={isDisabled}
-                                    opacity={isDisabled ? 0.5 : 1}
+                                    onClick={() => handleTabChange(type)}
                                     rounded="xl"
                                     textTransform="capitalize"
                                 >
@@ -507,6 +560,8 @@ export const ReportsContent = () => {
                     </Box>
                 </Card.Body>
             </Card.Root>
+
+            <Toaster />
         </VStack>
     )
 }

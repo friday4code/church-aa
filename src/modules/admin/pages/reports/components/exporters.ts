@@ -7,10 +7,13 @@ export type MonthSpec = { months?: string[]; single?: string; range?: { from: nu
 
 const pad = (n: number) => n.toString().padStart(2, '0')
 
-export const getReportFileName = (type: 'state' | 'region') => {
+export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group') => {
   const d = new Date()
   const stamp = `${d.getFullYear()}_${pad(d.getMonth() + 1)}_${pad(d.getDate())}__${pad(d.getHours())}_${pad(d.getMinutes())}_${pad(d.getSeconds())}`
-  return type === 'state' ? `State Report Sheet File_${stamp}.xlsx` : `Region Report Sheet File_${stamp}.xlsx`
+  if (type === 'state') return `State Report Sheet File_${stamp}.xlsx`
+  if (type === 'region') return `Region Report Sheet File_${stamp}.xlsx`
+  if (type === 'district') return `District Report Sheet File_${stamp}.xlsx`
+  return `Group Report Sheet File_${stamp}.xlsx`
 }
 
 type Align = { horizontal?: 'center' | 'left' | 'right'; vertical?: 'center' | 'top' | 'bottom'; wrapText?: boolean }
@@ -19,12 +22,13 @@ type Fill = { patternType?: 'solid'; fgColor?: { rgb?: string } }
 type Style = { font?: Font; alignment?: Align; fill?: Fill }
 
 const TITLE_STYLE: Style = { font: { sz: 28, bold: true }, alignment: { horizontal: 'center', vertical: 'center' } }
-const HEADER_STYLE: Style = { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'center' } }
-const SUBTOTAL_STYLE: Style = { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
-const SUBTOTAL_LABEL_STYLE: Style = { font: { bold: true, sz: 12 }, alignment: { horizontal: 'left', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
-const SUBTOTAL_NUM_STYLE: Style = { font: { bold: true, sz: 12 }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
+const HEADER_STYLE: Style = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center', vertical: 'center' } }
+const SUBTOTAL_STYLE: Style = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'center', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
+const SUBTOTAL_LABEL_STYLE: Style = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'left', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
+const SUBTOTAL_NUM_STYLE: Style = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'right', vertical: 'center' }, fill: { patternType: 'solid', fgColor: { rgb: 'FFFF99' } } }
+const WEEK_STYLE: Style = { font: { bold: true, sz: 14 }, alignment: { horizontal: 'left', vertical: 'center' }}
 
-const buildHeaderBlock = (title: string, subtitle: string, firstLabel: 'Regions' | 'Old Groups'): (string | number)[][] => {
+const buildHeaderBlock = (title: string, subtitle: string, firstLabel: 'Regions' | 'Old Groups' | 'Groups' | 'Districts' | 'Period of report'): (string | number)[][] => {
   return [
     [title, '', '', '', '', '', '', '', '', '', '', '', ''],
     [subtitle, '', '', '', '', '', '', '', '', '', '', '', ''],
@@ -202,7 +206,7 @@ export const buildRegionReportSheet = (
   const rows: (string | number)[][] = [...header]
   const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.region_id === regionId).map(d => d.month))
   const ogs = oldGroups.filter(g => g.region === regionName)
-//   const ogs = oldGroups.filter(g => Number(g.region_id) === Number(regionId))
+  //   const ogs = oldGroups.filter(g => Number(g.region_id) === Number(regionId))
 
   for (const m of months) {
     for (const og of ogs) {
@@ -322,7 +326,7 @@ export const buildOldGroupReportSheet = (
       ])
     }
     const monthSubtotal = sumFor(data.filter(x => x.old_group_id === oldGroupId && x.year === year && x.month === m))
-    rows.push(['SubTotal','',monthSubtotal.men,monthSubtotal.women,monthSubtotal.adultsTotal,monthSubtotal.yb,monthSubtotal.yg,monthSubtotal.youthsTotal,monthSubtotal.totalAdults,monthSubtotal.cb,monthSubtotal.cg,monthSubtotal.childrenTotal,monthSubtotal.grandTotal])
+    rows.push(['SubTotal', '', monthSubtotal.men, monthSubtotal.women, monthSubtotal.adultsTotal, monthSubtotal.yb, monthSubtotal.yg, monthSubtotal.youthsTotal, monthSubtotal.totalAdults, monthSubtotal.cb, monthSubtotal.cg, monthSubtotal.childrenTotal, monthSubtotal.grandTotal])
     rows.push(new Array(13).fill(''))
   }
 
@@ -345,7 +349,7 @@ export const buildOldGroupReportSheet = (
   }
   const totalColumns = 13
   for (let c = 0; c < totalColumns; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
-  ;[3,4,5,6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
+  ;[3, 4, 5, 6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
   for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0] === 'SubTotal') { setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE); setCellStyle(i, 1, SUBTOTAL_STYLE); for (let c = 2; c < totalColumns; c++) setCellStyle(i, c, SUBTOTAL_NUM_STYLE) }
   return ws
 }
@@ -361,7 +365,7 @@ export const buildDistrictReportSheet = (
   const baseMonths = monthsToUse(spec)
   const title = `Deeper Life Bible Church, ${contextName} (District)`
   const subtitle = buildSubtitle(spec, year)
-  const header = buildHeaderBlock(title, subtitle, 'Districts')
+  const header = buildHeaderBlock(title, subtitle, 'Period of report')
   const rows: (string | number)[][] = [...header]
 
   const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
@@ -373,7 +377,7 @@ export const buildDistrictReportSheet = (
         const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m && x.week === wk)
         const s = sumFor(items)
         rows.push([
-          `${d.name} (Week ${wk})`,
+          `Week ${wk}`,
           m,
           s.men,
           s.women,
@@ -390,7 +394,7 @@ export const buildDistrictReportSheet = (
       }
     }
     const monthSubtotal = sumFor(data.filter(x => x.group_id === groupId && x.year === year && x.month === m))
-    rows.push(['SubTotal','',monthSubtotal.men,monthSubtotal.women,monthSubtotal.adultsTotal,monthSubtotal.yb,monthSubtotal.yg,monthSubtotal.youthsTotal,monthSubtotal.totalAdults,monthSubtotal.cb,monthSubtotal.cg,monthSubtotal.childrenTotal,monthSubtotal.grandTotal])
+    rows.push(['SubTotal', '', monthSubtotal.men, monthSubtotal.women, monthSubtotal.adultsTotal, monthSubtotal.yb, monthSubtotal.yg, monthSubtotal.youthsTotal, monthSubtotal.totalAdults, monthSubtotal.cb, monthSubtotal.cg, monthSubtotal.childrenTotal, monthSubtotal.grandTotal])
     rows.push(new Array(13).fill(''))
   }
 
@@ -413,7 +417,74 @@ export const buildDistrictReportSheet = (
   }
   const totalColumns = 13
   for (let c = 0; c < totalColumns; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
-  ;[3,4,5,6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
+  ;[3, 4, 5, 6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
+  for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0] === 'SubTotal') { setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE); setCellStyle(i, 1, SUBTOTAL_STYLE); for (let c = 2; c < totalColumns; c++) setCellStyle(i, c, SUBTOTAL_NUM_STYLE) }
+  for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0].toString().includes("Week")) { setCellStyle(i, 0, WEEK_STYLE); }
+  return ws
+}
+
+export const buildGroupReportSheet = (
+  data: AttendanceRecord[],
+  districts: Array<{ id: number; name: string; group_id?: number }>,
+  groupName: string,
+  year: number,
+  spec: MonthSpec,
+  groupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${groupName} (Group)`
+  const subtitle = buildSubtitle(spec, year)
+  const header = buildHeaderBlock(title, subtitle, 'Districts')
+  const rows: (string | number)[][] = [...header]
+
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
+  const ds = districts.filter(d => Number(d.group_id) === Number(groupId))
+
+  for (const m of months) {
+    for (const d of ds) {
+      const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m)
+      const s = sumFor(items)
+      rows.push([
+        d.name,
+        m,
+        s.men,
+        s.women,
+        s.adultsTotal,
+        s.yb,
+        s.yg,
+        s.youthsTotal,
+        s.totalAdults,
+        s.cb,
+        s.cg,
+        s.childrenTotal,
+        s.grandTotal
+      ])
+    }
+    const monthSubtotal = sumFor(data.filter(x => x.group_id === groupId && x.year === year && x.month === m))
+    rows.push(['SubTotal', '', monthSubtotal.men, monthSubtotal.women, monthSubtotal.adultsTotal, monthSubtotal.yb, monthSubtotal.yg, monthSubtotal.youthsTotal, monthSubtotal.totalAdults, monthSubtotal.cb, monthSubtotal.cg, monthSubtotal.childrenTotal, monthSubtotal.grandTotal])
+    rows.push(new Array(13).fill(''))
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [
+    { wch: 25 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }
+  ]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 12 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 12 } },
+    { s: { r: 3, c: 2 }, e: { r: 3, c: 4 } },
+    { s: { r: 3, c: 5 }, e: { r: 3, c: 7 } },
+    { s: { r: 3, c: 9 }, e: { r: 3, c: 11 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  const totalColumns = 13
+  for (let c = 0; c < totalColumns; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  ;[3, 4, 5, 6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
   for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0] === 'SubTotal') { setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE); setCellStyle(i, 1, SUBTOTAL_STYLE); for (let c = 2; c < totalColumns; c++) setCellStyle(i, c, SUBTOTAL_NUM_STYLE) }
   return ws
 }

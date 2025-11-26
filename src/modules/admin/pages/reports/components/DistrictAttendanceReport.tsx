@@ -5,13 +5,15 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
 import type { User } from "@/types/users.type"
+import { useQuery } from "@tanstack/react-query"
+import { adminApi } from "@/api/admin.api"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -44,24 +46,36 @@ export const DistrictAttendanceReport = ({
     onDownload,
     isLoading = false,
 }: DistrictAttendanceReportProps) => {
-    const { user: authUser } = useAuth()
     const { user } = useMe()
     const { getRoles } = useAuth()
     const userRoles = getRoles()
-    const roleVisibility = getRoleBasedVisibility(userRoles)
+    const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
 
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
             state: "",
             region: "",
-            group: roleVisibility.showGroup ? "" : ((authUser as User | null)?.group_id ? String((authUser as User).group_id) : ""),
+            district: roleVisibility.showDistrict ? "" : ((user as User | null)?.district_id ? String((user as User).district_id) : ""),
+            group: roleVisibility.showGroup ? "" : ((user as User | null)?.group_id ? String((user as User).group_id) : ""),
             year: "",
             fromMonth: "",
             toMonth: "",
         },
     })
 
+    const groupId = (user as User | null)?.group_id
+    const { data: districtsData } = useQuery({
+        queryKey: ["districtsByGroup", groupId],
+        queryFn: () => adminApi.getDistrictsByGroupId(groupId!),
+        enabled: !!groupId,
+        staleTime: 5 * 60 * 1000,
+    })
+
+    const districtsCollection = useMemo(() => {
+        if (!districtsData) return []
+        return districtsData.map((d) => ({ label: d.name, value: String(d.id) }))
+    }, [districtsData])
     const { setValue, trigger } = form
 
     useEffect(() => {
@@ -106,6 +120,18 @@ export const DistrictAttendanceReport = ({
                         {roleVisibility.showGroup && (
                             <GridItem>
                                 <CustomComboboxField form={form} name="group" label="Group" items={groupsCollection} placeholder="Type to search group" required />
+                            </GridItem>
+                        )}
+                        {roleVisibility.showDistrict && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="district"
+                                    label="District"
+                                    items={districtsCollection}
+                                    placeholder="Type to search district"
+                                    required
+                                />
                             </GridItem>
                         )}
                         <GridItem>

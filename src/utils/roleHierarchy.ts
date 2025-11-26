@@ -24,7 +24,7 @@ export const isRoleBelow = (userRole: RoleType, targetRole: RoleType): boolean =
 
 export const getHighestRole = (roles: RoleType[]): RoleType => {
   if (roles.length === 0) return 'Viewer';
-  
+
   return roles.reduce((highest, current) => {
     return getRoleLevel(current) > getRoleLevel(highest) ? current : highest;
   });
@@ -40,7 +40,7 @@ export interface RoleVisibilityConfig {
 
 export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityConfig => {
   const highestRole = getHighestRole(userRoles);
-  
+
   if (!highestRole) {
     return {
       showState: true,
@@ -67,9 +67,9 @@ export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityCon
     return {
       showState: false,
       showRegion: true,
-      showDistrict: true,
-      showGroup: true,
       showOldGroup: true,
+      showGroup: true,
+      showDistrict: true,
     };
   }
 
@@ -78,9 +78,9 @@ export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityCon
     return {
       showState: false,
       showRegion: false,
-      showDistrict: true,
-      showGroup: true,
       showOldGroup: true,
+      showGroup: true,
+      showDistrict: true,
     };
   }
 
@@ -89,9 +89,9 @@ export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityCon
     return {
       showState: false,
       showRegion: false,
-      showDistrict: false,
-      showGroup: false,
       showOldGroup: false,
+      showGroup: false,
+      showDistrict: false,
     };
   }
 
@@ -100,9 +100,9 @@ export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityCon
     return {
       showState: false,
       showRegion: false,
-      showDistrict: true,
-      showGroup: false,
       showOldGroup: false,
+      showGroup: false,
+      showDistrict: true,
     };
   }
 
@@ -110,8 +110,8 @@ export const getRoleBasedVisibility = (userRoles: RoleType[]): RoleVisibilityCon
   return {
     showState: true,
     showRegion: true,
-    showDistrict: true,
-    showGroup: true,
     showOldGroup: true,
+    showGroup: true,
+    showDistrict: true,
   };
 };

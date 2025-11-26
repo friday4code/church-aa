@@ -5,7 +5,7 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
@@ -42,7 +42,7 @@ export const StateAttendanceReport = ({
     const { user } = useMe()
     const { getRoles } = useAuth()
     const userRoles = getRoles()
-    const roleVisibility = getRoleBasedVisibility(userRoles)
+    const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
 
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),

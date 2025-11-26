@@ -51,7 +51,12 @@ export const CustomComboboxField = ({
                         openOnClick
                         onInputValueChange={(e) => filter(e.inputValue)}
                         value={field.value ? [field.value] : []}
-                        onValueChange={(e) => field.onChange(e.value[0])}
+                        onValueChange={(e) => {
+                            const next = e.value[0]
+                            console.log("combobox:change", { name: field.name, value: next })
+                            field.onChange(next)
+                            field.onBlur()
+                        }}
                         name={field.name as string}
                         onInteractOutside={() => field.onBlur()}
                     >
