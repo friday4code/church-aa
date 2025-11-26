@@ -10,6 +10,8 @@ interface CustomComboboxFieldProps {
     items: Array<{ label: string; value: string }>
     placeholder: string
     required?: boolean
+    disabled?: boolean
+    isLoading?: boolean
     form: UseFormReturn<ReportFormValues>
 }
 
@@ -19,6 +21,8 @@ export const CustomComboboxField = ({
     items,
     placeholder,
     required = false,
+    disabled = false,
+    isLoading = false,
     form: { control, formState: { errors } }
 }: CustomComboboxFieldProps) => {
     const { contains } = useFilter({ sensitivity: "base" })
@@ -53,6 +57,7 @@ export const CustomComboboxField = ({
                                 bg="bg"
                                 color={{ base: "gray.800", _dark: "white" }}
                                 _placeholder={{ color: "gray.500" }}
+                                disabled={disabled}
                             />
                             <Combobox.IndicatorGroup>
                                 <Combobox.ClearTrigger />
@@ -62,7 +67,11 @@ export const CustomComboboxField = ({
                         <Portal>
                             <Combobox.Positioner>
                                 <Combobox.Content bg="bg" border="xs" borderColor={"border"} rounded="xl">
-                                    <Combobox.Empty>No items found</Combobox.Empty>
+                                    {isLoading ? (
+                                        <Combobox.Empty>Loading...</Combobox.Empty>
+                                    ) : (
+                                        <Combobox.Empty>No items found</Combobox.Empty>
+                                    )}
                                     {collection.items.map((item) => (
                                         <Combobox.Item item={item} key={item.value}>
                                             {item.label}

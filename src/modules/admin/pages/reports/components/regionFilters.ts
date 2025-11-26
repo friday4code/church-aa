@@ -30,3 +30,15 @@ export function getOldGroupsByRegion(regionName: string, regionsData: OldGroup[]
   if (!regionName || regionsData.length === 0) return []
   return regionsData.filter((g) => g.region === regionName)
 }
+
+/**
+ * Resolve a state ID from a combobox value.
+ * Accepts either a numeric string (id) or an exact state name.
+ * Returns 0 when not resolvable.
+ */
+export function resolveStateIdFromValue(value: string, list: Array<{ id: number; name: string }>): number {
+  const n = parseInt(value || '', 10)
+  if (Number.isFinite(n) && n > 0) return n
+  const match = (list || []).find(s => s.name === value)
+  return match?.id ?? 0
+}

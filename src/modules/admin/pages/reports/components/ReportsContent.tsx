@@ -225,11 +225,11 @@ export const ReportsContent = () => {
     }
 
     const allowedReportTypes = useMemo(() => {
-        if (hasRole('Super Admin')) return ['state', 'region', 'group', 'youth']
-        if (hasRole('State Admin')) return ['region', 'group', 'youth']
-        if (hasRole('Region Admin')) return ['region', 'group', 'youth']
-        if (hasRole('District Admin')) return ['group']
-        if (hasRole('Group Admin')) return ['group']
+        if (hasRole('Super Admin')) return ['state', 'region', 'oldGroup', 'group', 'district', 'youth']
+        if (hasRole('State Admin')) return ['region', 'oldGroup', 'group', 'district', 'youth']
+        if (hasRole('Region Admin')) return ['oldGroup', 'group', 'district', 'youth']
+        if (hasRole('Group Admin')) return ['district','youth']
+        if (hasRole('District Admin')) return ['youth']
         return []
     }, [hasRole])
 
@@ -325,14 +325,14 @@ export const ReportsContent = () => {
                 const apiOldGroups = await adminApi.getOldGroupsByRegionId(Number(filterCriteria.regionId))
                 if (apiOldGroups && apiOldGroups.length) {
                     const names = new Set(apiOldGroups.map(x => x.name))
-                    console.log("oldgropus by region set",names)
+                    console.log("oldgropus by region set", names)
                     sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name))
                 }
 
                 console.log("source oldgrups", sourceOldGroups)
                 const filteredOldGroups = getOldGroupsByRegion(rName, sourceOldGroups)
                 console.log("filtered oldgrups", filteredOldGroups)
-                
+
                 const sheet = buildRegionReportSheet(filtered, filteredOldGroups, rName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.regionId))
                 exportSheet(sheet, getReportFileName('region'), 'Region Report')
             } else {

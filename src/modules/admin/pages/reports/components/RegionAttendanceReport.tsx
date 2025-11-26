@@ -5,13 +5,23 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useAuth } from "@/hooks/useAuth"
 import { useMe } from "@/hooks/useMe"
+import { adminApi } from "@/api/admin.api"
+import { toaster } from "@/components/ui/toaster"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { resolveStateIdFromValue } from "./regionFilters"
 
+/**
+ * Resolve a state ID from a combobox value.
+ * The value may be a numeric string (ID) or an exact state name.
+ * Returns 0 when not resolvable.
+ * Example: "3" -> 3, "Rivers Central" -> state.id, "" -> 0
+ */
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
     month: z.string().optional(),
@@ -58,7 +68,29 @@ export const RegionAttendanceReport = ({
         },
     })
 
-    const { setValue, trigger } = form
+    const { setValue, trigger, watch } = form
+    const [regionItems, setRegionItems] = useState<Array<{ label: string; value: string }>>([])
+    const [regionsLoading, setRegionsLoading] = useState(false)
+    const watchedState = watch('state')
+    const { states } = useStates()
+
+    useEffect(() => {
+        const selectedStateId = resolveStateIdFromValue(watchedState as string, (states || []).map(s => ({ id: s.id, name: s.name || s.stateName } as { id: number; name: string })))
+        setRegionItems([])
+        setValue('region', '', { shouldValidate: true })
+        if (!selectedStateId) return
+        setRegionsLoading(true)
+        adminApi.getRegionsByStateId(selectedStateId)
+            .then((list) => {
+                console.log("reginos",list)
+                setRegionItems(list.map(r => ({ label: r.name, value: String(r.id) })))
+            })
+            .catch((err) => {
+                toaster.create({ title: 'Failed to load regions', description: err?.message || 'Please try again', type: 'error' })
+                setRegionItems([])
+            })
+            .finally(() => setRegionsLoading(false))
+    }, [watchedState, setValue, states])
 
     // Auto-populate hidden fields with user data
     useEffect(() => {
@@ -81,9 +113,9 @@ export const RegionAttendanceReport = ({
 
     return (
         <Card.Root
-            bg={{ base: "white", _dark: "gray.800" }}
-            border="1px"
-            borderColor={{ base: "gray.200", _dark: "gray.700" }}
+            bg="bg"
+            border="xs"
+            borderColor="border"
             rounded="xl"
         >
             <Card.Header>
@@ -121,9 +153,11 @@ export const RegionAttendanceReport = ({
                                     form={form}
                                     name="region"
                                     label="Region"
-                                    items={regionsCollection}
+                                    items={regionItems.length ? regionItems : regionsCollection}
                                     placeholder="Type to search region"
                                     required
+                                    disabled={!watchedState || regionsLoading}
+                                    isLoading={regionsLoading}
                                 />
                             </GridItem>
                         )}
