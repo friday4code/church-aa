@@ -78,7 +78,7 @@ export const OldGroupAttendanceReport = ({
         }
 
         if (!roleVisibility.showOldGroup && (user as User | null)?.old_group_id) {
-            setValue('oldGroup', (user as User).old_group_id!, { shouldValidate: true })
+            setValue('oldGroup', (user as User).old_group_id?.toString(), { shouldValidate: true })
             trigger('oldGroup')
         }
     }, [user, roleVisibility, setValue, trigger])

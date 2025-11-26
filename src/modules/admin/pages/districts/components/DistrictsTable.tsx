@@ -25,7 +25,6 @@ interface DistrictsTableProps {
 }
 
 const DistrictsTable = ({
-    isLoading,
     paginatedDistricts,
     selectedDistricts,
     sortField,

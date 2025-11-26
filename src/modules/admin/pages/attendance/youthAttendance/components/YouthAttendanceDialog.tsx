@@ -18,18 +18,16 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { youthAttendanceSchema, type YouthAttendanceFormData } from "@/modules/admin/schemas/youthMinistry/youthAttendance.schema"
 import { useStates } from "@/modules/admin/hooks/useState"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
-import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+// removed region/old group hooks in favor of API-driven comboboxes
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import DistrictIdCombobox from "@/modules/admin/components/DistrictIdCombobox"
 import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import { useEffect, useMemo } from "react"
-import { useDistricts } from "@/modules/admin/hooks/useDistrict"
-import { useGroups } from "@/modules/admin/hooks/useGroup"
+// removed districts/groups hooks in favor of API-driven comboboxes
 import type { YouthAttendance } from "@/types/youthAttendance.type"
-import { useAuth } from "@/hooks/useAuth"
+// removed useAuth (hasRole not used)
 import { useMe } from "@/hooks/useMe"
 import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
 
@@ -61,12 +59,8 @@ export const YouthAttendanceDialog = ({
     attendance,
 }: YouthAttendanceDialogProps) => {
     const { states } = useStates()
-    const { regions } = useRegions()
-    const { districts } = useDistricts()
-    const { groups } = useGroups()
-    const { oldGroups } = useOldGroups()
+    // lists no longer needed here; comboboxes fetch via adminApi
     const { user } = useMe()
-    const { hasRole } = useAuth()
     
     // Get role-based visibility configuration
     const roleVisibility = useMemo(() => {
@@ -184,123 +178,10 @@ export const YouthAttendanceDialog = ({
         itemToValue: (item) => item.value,
     })
 
-    const getStateNameById = (stateId: number) => {
-        return states?.find(s => s.id === stateId)?.name || ''
-    }
+    // state name is read directly when rendering combobox value
+    // Region/OldGroup/Group names are now resolved by API-driven comboboxes
 
-    const selectedStateName = useMemo(
-        () => states?.find(s => s.id === currentStateId)?.name || '',
-        [states, currentStateId]
-    )
-    const selectedRegionName = useMemo(
-        () => regions?.find(r => r.id === currentRegionId)?.name || '',
-        [regions, currentRegionId]
-    )
-    const selectedOldGroupName = useMemo(
-        () => oldGroups?.find(g => g.id === currentOldGroupId)?.name || '',
-        [oldGroups, currentOldGroupId]
-    )
-    const selectedGroupName = useMemo(
-        () => groups?.find(g => g.id === currentGroupId)?.name || '',
-        [groups, currentGroupId]
-    )
-
-    const filteredRegions = useMemo(() => {
-        if (!regions || regions.length === 0) return []
-        if (!currentStateId) return regions || []
-        return regions?.filter(region => {
-            if (region.state_id != null) {
-                return Number(region.state_id) === Number(currentStateId)
-            }
-            if (!selectedStateName) return false
-            return region.state?.toLowerCase() === selectedStateName.toLowerCase()
-        }) || []
-    }, [regions, currentStateId, selectedStateName])
-
-
-    const filteredOldGroups = useMemo(() => {
-        if (!oldGroups || oldGroups.length === 0) return []
-        return oldGroups.filter(oldGroup => {
-            const matchesState = currentStateId
-                ? oldGroup.state_id != null
-                    ? Number(oldGroup.state_id) === Number(currentStateId)
-                    : oldGroup.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? oldGroup.region_id != null
-                    ? Number(oldGroup.region_id) === Number(currentRegionId)
-                    : oldGroup.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion
-        })
-    }, [oldGroups, currentStateId, currentRegionId, selectedStateName, selectedRegionName])
-
-    const filteredGroups = useMemo(() => {
-        if (!groups || groups.length === 0) return []
-        return groups.filter(group => {
-            const matchesState = currentStateId
-                ? group.state_id != null
-                    ? Number(group.state_id) === Number(currentStateId)
-                    : group.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? group.region_id != null
-                    ? Number(group.region_id) === Number(currentRegionId)
-                    : group.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            const matchesOldGroup = currentOldGroupId
-                ? group.old_group_id != null
-                    ? Number(group.old_group_id) === Number(currentOldGroupId)
-                    : group.old_group?.toLowerCase() === selectedOldGroupName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion && matchesOldGroup
-        })
-    }, [groups, currentStateId, currentRegionId, currentOldGroupId, selectedStateName, selectedRegionName, selectedOldGroupName])
-
-    const filteredDistricts = useMemo(() => {
-        if (!districts || districts.length === 0) return []
-        return districts.filter(district => {
-            const matchesState = currentStateId
-                ? district.state_id != null
-                    ? Number(district.state_id) === Number(currentStateId)
-                    : district.state?.toLowerCase() === selectedStateName.toLowerCase()
-                : true
-
-            const matchesRegion = currentRegionId
-                ? district.region_id != null
-                    ? Number(district.region_id) === Number(currentRegionId)
-                    : district.region?.toLowerCase() === selectedRegionName.toLowerCase()
-                : true
-
-            const matchesGroup = currentGroupId
-                ? district.group_id != null
-                    ? Number(district.group_id) === Number(currentGroupId)
-                    : district.group?.toLowerCase() === selectedGroupName.toLowerCase()
-                : true
-
-            return matchesState && matchesRegion && matchesGroup
-        })
-    }, [districts, currentStateId, currentRegionId, currentGroupId, selectedStateName, selectedRegionName, selectedGroupName])
-
-    const getDistrictNameById = (districtId?: number | null) => {
-        if (!districtId) return ''
-        return districts?.find(d => d.id === districtId)?.name || ''
-    }
-
-    const getGroupNameById = (groupId?: number | null) => {
-        if (!groupId) return ''
-        return groups?.find(g => g.id === groupId)?.name || ''
-    }
-
-    const getOldGroupNameById = (oldGroupId?: number | null) => {
-        if (!oldGroupId) return ''
-        return oldGroups?.find(g => g.id === oldGroupId)?.name || ''
-    }
+    // Lists and name resolvers are no longer needed with API-driven comboboxes
 
     const clearBelowDistrict = () => {
         setValue('district_id', 0, { shouldValidate: true })
@@ -332,30 +213,26 @@ export const YouthAttendanceDialog = ({
         clearBelowRegion()
     }
 
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        setValue('region_id', region?.id || 0, { shouldValidate: true })
+    const handleRegionChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: true })
         trigger('region_id')
         clearBelowOldGroup()
     }
 
-    const handleOldGroupChange = (oldGroupName: string) => {
-        const oldGroup = oldGroups?.find(g => g.name === oldGroupName)
-        setValue('old_group_id', oldGroup?.id || 0, { shouldValidate: true })
+    const handleOldGroupChange = (oldGroupId?: number) => {
+        setValue('old_group_id', oldGroupId || 0, { shouldValidate: true })
         trigger('old_group_id')
         clearBelowGroup()
     }
 
-    const handleGroupChange = (groupName: string) => {
-        const group = groups?.find(g => g.name === groupName)
-        setValue('group_id', group?.id || 0, { shouldValidate: true })
+    const handleGroupChange = (groupId?: number) => {
+        setValue('group_id', groupId || 0, { shouldValidate: true })
         trigger('group_id')
         clearBelowDistrict()
     }
 
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        setValue('district_id', district?.id || 0, { shouldValidate: true })
+    const handleDistrictChange = (districtId?: number) => {
+        setValue('district_id', districtId || 0, { shouldValidate: true })
         trigger('district_id')
     }
 
@@ -372,9 +249,7 @@ export const YouthAttendanceDialog = ({
     }
 
     const getSelectedStateName = () => states?.find(s => s.id === watch('state_id'))?.name || ''
-    const getSelectedRegionName = () => filteredRegions?.find(r => r.id === watch('region_id'))?.name || ''
-    const getSelectedDistrictName = () => filteredDistricts?.find(d => d.id === watch('district_id'))?.name || ''
-    const getSelectedGroupName = () => filteredGroups?.find(g => g.id === watch('group_id'))?.name || ''
+    // Names are resolved internally by combobox components
 
     return (
         <Dialog.Root
@@ -411,11 +286,11 @@ export const YouthAttendanceDialog = ({
                                     {roleVisibility.showRegion && (
                                         <Field.Root required invalid={!!errors.region_id}>
                                             <RegionIdCombobox
-                                                value={getSelectedRegionName()}
+                                                value={currentRegionId}
                                                 onChange={handleRegionChange}
                                                 required
                                                 invalid={!!errors.region_id}
-                                                items={filteredRegions}
+                                                stateId={currentStateId}
                                                 disabled={!currentStateId}
                                             />
                                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
@@ -425,10 +300,11 @@ export const YouthAttendanceDialog = ({
                                     {roleVisibility.showOldGroup && (
                                         <Field.Root invalid={!!errors.old_group_id}>
                                             <OldGroupIdCombobox
-                                                value={getOldGroupNameById(currentOldGroupId)}
+                                                value={currentOldGroupId as number}
                                                 onChange={handleOldGroupChange}
                                                 invalid={!!errors.old_group_id}
-                                                items={filteredOldGroups}
+                                                stateId={user?.state_id as number | undefined}
+                                                regionId={currentRegionId}
                                                 disabled={!currentRegionId}
                                             />
                                             <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
@@ -438,11 +314,11 @@ export const YouthAttendanceDialog = ({
                                     {roleVisibility.showGroup && (
                                         <Field.Root required invalid={!!errors.group_id}>
                                             <GroupIdCombobox
-                                                value={getSelectedGroupName()}
+                                                value={currentGroupId}
                                                 onChange={handleGroupChange}
                                                 required
                                                 invalid={!!errors.group_id}
-                                                items={filteredGroups}
+                                                oldGroupId={currentOldGroupId as number}
                                                 disabled={!currentOldGroupId}
                                             />
                                             <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
@@ -452,11 +328,11 @@ export const YouthAttendanceDialog = ({
                                     {roleVisibility.showDistrict && (
                                         <Field.Root required invalid={!!errors.district_id}>
                                             <DistrictIdCombobox
-                                                value={getSelectedDistrictName()}
+                                                value={currentDistrictId}
                                                 onChange={handleDistrictChange}
                                                 required
                                                 invalid={!!errors.district_id}
-                                                items={filteredDistricts}
+                                                groupId={currentGroupId}
                                                 disabled={!currentGroupId}
                                             />
                                             <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>

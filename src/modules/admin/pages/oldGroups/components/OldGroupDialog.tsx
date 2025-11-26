@@ -12,11 +12,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
-import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { adminApi } from "@/api/admin.api"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 interface OldGroupDialogProps {
@@ -30,14 +29,13 @@ interface OldGroupDialogProps {
 const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: OldGroupDialogProps) => {
     const { user } = useMe()
     const { states, isLoading: isStatesLoading } = useStates()
-    const { regions, isLoading: isRegionsLoading } = useRegions()
-    const { oldGroups = [] } = useOldGroups()
     const [selectedStateName, setSelectedStateName] = useState('')
-    const [selectedRegionName, setSelectedRegionName] = useState('')
+    const [regionsByState, setRegionsByState] = useState<Array<{ id: number; name: string }>>([])
+    const [regionsLoading, setRegionsLoading] = useState(false)
+    const [apiOldGroups, setApiOldGroups] = useState<Array<{ id: number; name: string; code?: string }>>([])
     const userStateId = user?.state_id ?? 0
     const userRegionId = user?.region_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
-    const generatedCodesCache = useRef<Set<string>>(new Set())
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
         defaultValues: {
@@ -52,64 +50,57 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
     const currentCode = watch('code')
     const watchedStateId = watch('state_id')
     const watchedRegionId = watch('region_id')
+    const genUuidFragment = () => {
+        const randomUUID = (globalThis.crypto as Crypto | undefined)?.randomUUID
+        if (typeof randomUUID === 'function') {
+            return randomUUID().slice(0, 4)
+        }
+        return Math.random().toString(16).slice(2, 6)
+    }
+
+    const generateGroupCode = (groupName: string): string => {
+        const words = groupName.trim().split(/\s+/).filter(Boolean)
+        const prefix = words.map(w => w.slice(0, 2).toUpperCase()).join('')
+        let code = `${prefix}_${genUuidFragment()}`
+        const existingCodes = (apiOldGroups || []).map(g => g.code || '')
+        let attempt = 0
+        while (existingCodes.includes(code)) {
+            code = `${prefix}_${genUuidFragment()}`
+            attempt++
+            if (attempt > 10) break
+        }
+        return code
+    }
+
     const handleNameChange = (value: string) => {
         setValue('name', value)
         const generatedCode = value ? generateGroupCode(value) : ''
         setValue('code', generatedCode)
     }
-    const genUuidFragment = () => {
-        if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
-            return (crypto as any).randomUUID().slice(0, 4)
-        }
-        return Math.random().toString(16).slice(2, 6)
-    }
-    const generateGroupCode = (groupName: string): string => {
-        const words = groupName.trim().split(/\s+/).filter(Boolean)
-        const prefix = words.map(w => w.slice(0, 2).toUpperCase()).join('')
-        let code = `${prefix}_${genUuidFragment()}`
-        const existingCodes = (oldGroups || []).map(g => g.code)
-        let attempt = 0
-        while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
-            code = `${prefix}_${genUuidFragment()}`
-            attempt++
-            if (attempt > 10) break
-        }
-        generatedCodesCache.current.add(code)
-        return code
-    }
+
     const onSubmit = (data: OldGroupFormData) => {
         onSave(data)
-        reset()
     }
     const handleClose = () => {
         onClose()
         reset()
         setSelectedStateName('')
-        setSelectedRegionName('')
     }
+
     const handleStateChange = (stateName: string) => {
         setSelectedStateName(stateName)
         if (!stateName) {
             setValue('state_id', 0, { shouldValidate: true })
-            setSelectedRegionName('')
             setValue('region_id', 0, { shouldValidate: true })
             return
         }
         const selectedState = states?.find((state) => state.name === stateName)
         const nextStateId = selectedState?.id ?? 0
         setValue('state_id', nextStateId, { shouldValidate: true })
-        setSelectedRegionName('')
         setValue('region_id', 0, { shouldValidate: true })
     }
-    const handleRegionChange = (regionName: string) => {
-        setSelectedRegionName(regionName)
-        if (!regionName) {
-            setValue('region_id', 0, { shouldValidate: true })
-            return
-        }
-        const selectedRegion = regions?.find((region) => region.name === regionName)
-        const regionId = selectedRegion?.id ?? 0
-        setValue('region_id', regionId, { shouldValidate: true })
+    const handleRegionIdChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: true })
     }
     useEffect(() => {
         if (!isOpen) {
@@ -157,30 +148,26 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
         }
     }, [isSuperAdmin, isOpen, states, watchedStateId, group?.state, setValue])
     useEffect(() => {
-        if (!isSuperAdmin || !isOpen) {
+        if (!isOpen) return
+        if (!watchedStateId || watchedStateId === 0) {
+            setRegionsByState([])
             return
         }
-        if (watchedRegionId && regions?.length) {
-            const matchedRegion = regions.find((region) => region.id === watchedRegionId)
-            if (matchedRegion) {
-                setSelectedRegionName(matchedRegion.name)
-                return
+        const fetchRegions = async () => {
+            setRegionsLoading(true)
+            try {
+                const data = await adminApi.getRegionsByStateId(watchedStateId)
+                const source = Array.isArray(data) ? (data as Array<{ id: number; name: string }>) : []
+                const mapped = source.map(r => ({ id: r.id, name: r.name }))
+                setRegionsByState(mapped)
+            } catch {
+                setRegionsByState([])
+            } finally {
+                setRegionsLoading(false)
             }
         }
-
-        if (group?.region && regions?.length) {
-            const matchedRegion = regions.find(
-                (region) => region.name.toLowerCase() === group.region.toLowerCase()
-            )
-
-            if (matchedRegion) {
-                setSelectedRegionName(matchedRegion.name)
-                setValue('region_id', matchedRegion.id, { shouldValidate: true })
-            } else {
-                setSelectedRegionName(group.region)
-            }
-        }
-    }, [isSuperAdmin, isOpen, regions, watchedRegionId, group?.region, setValue])
+        fetchRegions()
+    }, [isOpen, watchedStateId])
 
     useEffect(() => {
         if (!isOpen || !group || !states?.length) {
@@ -199,20 +186,36 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
     }, [isOpen, group, states, setValue, watchedStateId])
 
     useEffect(() => {
-        if (!isOpen || !group || !regions?.length) {
+        if (!isOpen || !group || !regionsByState.length) {
             return
         }
-
         if ((!watchedRegionId || watchedRegionId === 0) && group.region) {
-            const matchedRegion = regions.find(
+            const matchedRegion = regionsByState.find(
                 (region) => region.name.toLowerCase() === group.region.toLowerCase()
             )
-
             if (matchedRegion) {
                 setValue('region_id', matchedRegion.id, { shouldValidate: true })
             }
         }
-    }, [isOpen, group, regions, setValue, watchedRegionId])
+    }, [isOpen, group, regionsByState, setValue, watchedRegionId])
+
+    useEffect(() => {
+        if (!isOpen) return
+        if (!watchedRegionId || watchedRegionId === 0) {
+            return
+        }
+        const fetchOldGroups = async () => {
+            try {
+                const data = await adminApi.getOldGroupsByRegionId(watchedRegionId)
+                const source = Array.isArray(data) ? (data as Array<{ id: number; name: string; code?: string }>) : []
+                const mapped = source.map(g => ({ id: g.id, code: g.code, name: g.name }))
+                setApiOldGroups(mapped)
+            } catch {
+                // ignore
+            }
+        }
+        fetchOldGroups()
+    }, [isOpen, watchedRegionId])
 
     useEffect(() => {
         if (!isOpen || isSuperAdmin) {
@@ -273,7 +276,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                                                 rounded="lg"
                                                 placeholder="Old group code will be auto-generated"
                                                 value={currentCode}
-                                                readOnly
+                                                // readOnly
                                                 {...register('code')}
                                             />
                                             <Field.HelperText>
@@ -311,10 +314,10 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                                             <Field.Root required invalid={!!errors.region_id}>
                                                 <RegionIdCombobox
                                                     required
-                                                    value={selectedRegionName}
-                                                    onChange={handleRegionChange}
+                                                    value={watchedRegionId}
+                                                    onChange={handleRegionIdChange}
                                                     invalid={!!errors.region_id}
-                                                    disabled={!watchedStateId || isRegionsLoading || isLoading}
+                                                    disabled={!watchedStateId || regionsLoading || isLoading}
                                                     stateId={watchedStateId}
                                                 />
                                                 <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>

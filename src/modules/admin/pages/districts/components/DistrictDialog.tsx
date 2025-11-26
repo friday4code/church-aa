@@ -15,11 +15,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { type DistrictFormData } from "../../../schemas/districts.schema"
 import { z } from "zod"
 import type { District } from "@/types/districts.type"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
-import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { adminApi } from "@/api/admin.api"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
@@ -35,8 +34,7 @@ interface DistrictDialogProps {
 const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: DistrictDialogProps) => {
     const { user } = useMe()
     const { states } = useStates()
-    const { regions } = useRegions()
-    const { districts = [] } = useDistricts()
+    const [existingCodes, setExistingCodes] = useState<string[]>([])
     const userStateId = user?.state_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
     const generatedCodesCache = useRef<Set<string>>(new Set())
@@ -65,7 +63,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     })
 
     const currentStateName = watch('state_name')
-    const currentRegionName = watch('region_name')
+    const currentRegionId = watch('region_id')
     const watchedStateId = watch('state_id')
 
     // Get state name for display
@@ -79,29 +77,6 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         return ''
     }, [currentStateName, district?.state])
 
-    // Get region name for display
-    const selectedRegionName = useMemo(() => {
-        if (currentRegionName) {
-            return currentRegionName
-        }
-        if (district?.region) {
-            return district.region
-        }
-        return ''
-    }, [currentRegionName, district?.region])
-
-    const derivedStateName = useMemo(() => {
-        if (selectedStateName) {
-            return selectedStateName
-        }
-
-        if (!watchedStateId || !states?.length) {
-            return ''
-        }
-
-        const matchedState = states.find((state) => state.id === watchedStateId)
-        return matchedState?.name ?? ''
-    }, [selectedStateName, states, watchedStateId])
 
     // Handle state selection - convert name to ID
     const handleStateChange = (stateName: string) => {
@@ -111,29 +86,20 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                 setValue('state_id', state.id, { shouldValidate: true })
                 setValue('state_name', stateName)
                 // Clear region when state changes
-                setValue('region_id', undefined as any)
+                setValue('region_id', 0, { shouldValidate: true })
                 setValue('region_name', '')
             }
         } else {
-            setValue('state_id', undefined as any)
+            setValue('state_id', 0)
             setValue('state_name', '')
-            setValue('region_id', undefined as any)
+            setValue('region_id', 0)
             setValue('region_name', '')
         }
     }
 
-    // Handle region selection - convert name to ID
-    const handleRegionChange = (regionName: string) => {
-        if (regionName) {
-            const region = regions?.find(r => r.name === regionName)
-            if (region) {
-                setValue('region_id', region.id, { shouldValidate: true })
-                setValue('region_name', regionName)
-            }
-        } else {
-            setValue('region_id', undefined as any)
-            setValue('region_name', '')
-        }
+    const handleRegionChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: true })
+        setValue('region_name', '')
     }
 
 
@@ -143,7 +109,6 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         const prefix = districtName.trim().slice(0, 4).toUpperCase()
         const rand4 = () => Math.floor(1000 + Math.random() * 9000).toString()
         let code = `${prefix}_${rand4()}`
-        const existingCodes = (districts || []).map(d => d.code)
         let attempt = 0
         while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
             code = `${prefix}_${rand4()}`
@@ -185,15 +150,12 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
             if (district) {
                 // Derive missing state/region IDs from names
                 let stateId = district.state_id || 0
-                let regionId = district.region_id || 0
+                const regionId = district.region_id || 0
                 if (!stateId && district.state && states?.length) {
                     const foundState = states.find(s => s.name === district.state)
                     stateId = foundState?.id || 0
                 }
-                if (!regionId && district.region && regions?.length) {
-                    const foundRegion = regions.find(r => r.name === district.region)
-                    regionId = foundRegion?.id || 0
-                }
+                // region name will be resolved by RegionIdCombobox
 
                 reset({
                     state_id: stateId,
@@ -202,7 +164,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                     leader: district.leader || '',
                     code: district.code || '',
                     state_name: district.state || '',
-                    region_name: district.region || '',
+                    region_name: '',
                 })
             } else {
                 // For new districts, use logged in user's state_id and region_id
@@ -217,7 +179,26 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                 })
             }
         }
-    }, [isOpen, district, reset, mode, user, isSuperAdmin, states, regions])
+    }, [isOpen, district, reset, mode, user, isSuperAdmin, states])
+
+    // Load existing district codes for selected region to improve code uniqueness
+    useEffect(() => {
+        const rid = currentRegionId
+        if (!isOpen || !rid || rid === 0) {
+            setExistingCodes([])
+            return
+        }
+        const fetchCodes = async () => {
+            try {
+                const data = await adminApi.getDistrictsByRegion(rid)
+                const codes = ((data || []) as Array<{ code?: string }>).map((d) => d.code || '').filter(Boolean)
+                setExistingCodes(codes)
+            } catch {
+                setExistingCodes([])
+            }
+        }
+        fetchCodes()
+    }, [isOpen, currentRegionId])
 
     useEffect(() => {
         if (!isOpen || isSuperAdmin) {
@@ -272,19 +253,11 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
 
                                     <Field.Root required invalid={!!errors.region_id}>
                                         <RegionIdCombobox
-                                            value={selectedRegionName}
+                                            value={currentRegionId}
                                             onChange={handleRegionChange}
                                             invalid={!!errors.region_id}
-                                            items={regions?.filter((region) => {
-                                                if (region.state_id != null && watchedStateId) {
-                                                    return Number(region.state_id) === Number(watchedStateId)
-                                                }
-                                                if (derivedStateName && region.state) {
-                                                    return region.state.toLowerCase() === derivedStateName.toLowerCase()
-                                                }
-                                                return false
-                                            }) || []}
-                                            disabled={!watchedStateId && !derivedStateName}
+                                            stateId={watchedStateId}
+                                            disabled={!watchedStateId}
                                         />
                                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                     </Field.Root>
@@ -335,8 +308,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    <input type="hidden" {...register('state_id')} />
-                                    <input type="hidden" {...register('region_id')} />
+                                    <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('state_name')} />
                                     <input type="hidden" {...register('region_name')} />
                                     
