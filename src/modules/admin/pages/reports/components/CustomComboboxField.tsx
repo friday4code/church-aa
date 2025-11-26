@@ -3,6 +3,7 @@
 import { Field, Portal, Combobox, useFilter, useListCollection } from "@chakra-ui/react"
 import { Controller, type UseFormReturn } from "react-hook-form"
 import type { ReportFormValues } from "./ReportFilters"
+import { useEffect } from "react"
 
 interface CustomComboboxFieldProps {
     name: keyof ReportFormValues
@@ -26,10 +27,14 @@ export const CustomComboboxField = ({
     form: { control, formState: { errors } }
 }: CustomComboboxFieldProps) => {
     const { contains } = useFilter({ sensitivity: "base" })
-    const { collection, filter } = useListCollection({
+    const { collection, filter, set } = useListCollection({
         initialItems: items,
         filter: contains,
     })
+
+    useEffect(() => {
+        set(items)
+    }, [items, set])
 
     return (
         <Field.Root invalid={!!errors[name]} width="full">
