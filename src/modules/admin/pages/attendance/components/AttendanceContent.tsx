@@ -12,7 +12,6 @@ import type { AttendanceFormData } from "../../../schemas/attendance.schema"
 import { calculateTotals } from "@/utils/attendance.utils"
 import { SERVICE_TYPES, type AttendanceRecord, type ServiceType } from "@/types/attendance.type"
 import { useAttendance } from "@/modules/admin/hooks/useAttendance"
-import { useAuth } from "@/hooks/useAuth"
 import { useDistricts } from "../../../hooks/useDistrict"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/api/admin.api"
@@ -66,7 +65,6 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
 
     // Filter attendances by service type
     const { data: allAttendances = [] } = useAttendance();
-    const { user: authUser, hasRole } = useAuth()
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean
@@ -82,16 +80,18 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     // Filter attendances by service type
     const serviceAttendances = useMemo(() => {
         const base = allAttendances.filter(attendance => attendance.service_type === SERVICE_TYPES[serviceType].apiValue)
-        const isSuperAdmin = hasRole('Super Admin')
-        const isStateAdmin = hasRole('State Admin')
-        const isRegionAdmin = hasRole('Region Admin')
-        const isDistrictAdmin = hasRole('District Admin')
-        if (isSuperAdmin) return base
-        if (isStateAdmin) return base.filter(a => a.state_id === (authUser?.state_id ?? 0))
-        if (isRegionAdmin) return base.filter(a => a.region_id === (authUser?.region_id ?? 0))
-        if (isDistrictAdmin) return base.filter(a => a.district_id === (authUser?.district_id ?? 0))
-        return []
-    }, [allAttendances, serviceType, hasRole, authUser])
+        // const isSuperAdmin = hasRole('Super Admin')
+        // const isStateAdmin = hasRole('State Admin')
+        // const isRegionAdmin = hasRole('Region Admin')
+        // const isDistrictAdmin = hasRole('District Admin')
+        // const isGroupAdmin = hasRole('Group Admin')
+        // if (isSuperAdmin) return base
+        // if (isStateAdmin) return base.filter(a => a.state_id === (authUser?.state_id ?? 0))
+        // if (isRegionAdmin) return base.filter(a => a.region_id === (authUser?.region_id ?? 0))
+        // if (isDistrictAdmin) return base.filter(a => a.district_id === (authUser?.district_id ?? 0))
+        // if (isGroupAdmin) return base.filter(a => a.group_id === (authUser?.group_id ?? 0))
+        return base
+    }, [allAttendances, serviceType])
 
     // Setup mutations
     const createMutation = useMutation({

@@ -14,9 +14,11 @@ import StatCard from "./StatCard"
 import StateAttendanceReport from "./StateAttendanceReport"
 import RegionAttendanceReport from "./RegionAttendanceReport"
 import GroupAttendanceReport from "./GroupAttendanceReport"
+import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
+import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, exportSheet, getReportFileName } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, exportSheet, getReportFileName } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -34,6 +36,8 @@ import { toaster } from "@/components/ui/toaster"
 const MemoStateAttendanceReport = memo(StateAttendanceReport)
 const MemoRegionAttendanceReport = memo(RegionAttendanceReport)
 const MemoGroupAttendanceReport = memo(GroupAttendanceReport)
+const MemoOldGroupAttendanceReport = memo(OldGroupAttendanceReport)
+const MemoDistrictAttendanceReport = memo(DistrictAttendanceReport)
 const MemoYouthAttendanceReport = memo(YouthAttendanceReport)
 
 // ----------------------------------------------------------------------
@@ -335,6 +339,30 @@ export const ReportsContent = () => {
 
                 const sheet = buildRegionReportSheet(filtered, filteredOldGroups, rName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.regionId))
                 exportSheet(sheet, getReportFileName('region'), 'Region Report')
+            } else if (deferredTab === 'oldGroup') {
+                if (!filterCriteria.oldGroupId) {
+                    toaster.error({ description: 'Select an old group', closable: true })
+                    return
+                }
+                const ogObj = oldGroups.find(g => Number(g.id) === Number(filterCriteria.oldGroupId))
+                const ogName = ogObj?.name || 'Old Group'
+                const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+                const sheet = buildOldGroupReportSheet(filtered, groups, ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
+                exportSheet(sheet, getReportFileName('state'), 'Old Group Report')
+            } else if (deferredTab === 'district') {
+                if (!filterCriteria.groupId) {
+                    toaster.error({ description: 'Select a group', closable: true })
+                    return
+                }
+                const gObj = groups.find(g => Number(g.id) === Number(filterCriteria.groupId))
+                const gName = gObj?.name || 'Group'
+                // derive districts from filtered attendance to avoid extra fetch
+                const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+                // fall back: derive districts from attendance records if district_id present
+                const districtIds = Array.from(new Set(filtered.filter(x => x.group_id === Number(filterCriteria.groupId)).map(x => x.district_id).filter(Boolean))) as number[]
+                const districts: Array<{ id: number; name: string; group_id?: number }> = districtIds.map(id => ({ id, name: `District ${id}`, group_id: Number(filterCriteria.groupId) }))
+                const sheet = buildDistrictReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+                exportSheet(sheet, getReportFileName('state'), 'District Report')
             } else {
                 toaster.error({ description: 'Unsupported report type', closable: true })
             }
@@ -392,6 +420,20 @@ export const ReportsContent = () => {
                     groupsCollection={scopedCollections.g}
                     oldGroupsCollection={scopedCollections.og}
                 />
+            case "oldGroup":
+                return <MemoOldGroupAttendanceReport
+                    {...commonProps}
+                    statesCollection={scopedCollections.s}
+                    regionsCollection={scopedCollections.r}
+                    oldGroupsCollection={scopedCollections.og}
+                />
+            case "district":
+                return <MemoDistrictAttendanceReport
+                    {...commonProps}
+                    statesCollection={scopedCollections.s}
+                    regionsCollection={scopedCollections.r}
+                    groupsCollection={scopedCollections.g}
+                />
             case "youth":
                 return <MemoYouthAttendanceReport
                     {...commonProps}
@@ -423,7 +465,7 @@ export const ReportsContent = () => {
                 </Card.Header>
                 <Card.Body>
                     <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
-                        {['state', 'region', 'group', 'youth'].map((type) => {
+                        {['state', 'region', 'oldGroup', 'group', 'district', 'youth'].map((type) => {
                             const isActive = selectedTab === type
                             const isDisabled = !allowedReportTypes.includes(type)
                             return (
