@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet } from '../exporters'
+import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet, buildYouthMonthlyReportSheet } from '../exporters'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import XLSX from 'xlsx-js-style'
@@ -48,6 +48,14 @@ describe('getReportFileName', () => {
     expect(name.startsWith('District Report Sheet File_')).toBe(true)
     expect(name.endsWith('.xlsx')).toBe(true)
     const stamp = name.replace('District Report Sheet File_', '').replace('.xlsx', '')
+    expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
+  })
+
+  it('generates youth filename with correct pattern', () => {
+    const name = getReportFileName('youth')
+    expect(name.startsWith('Youth Monthly Report_')).toBe(true)
+    expect(name.endsWith('.xlsx')).toBe(true)
+    const stamp = name.replace('Youth Monthly Report_', '').replace('.xlsx', '')
     expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
   })
 })
@@ -212,5 +220,36 @@ describe('buildOldGroupReportSheet', () => {
     expect(groupRow).toBeTruthy()
     const subtotalRows = data.filter(r => r[0] === 'SubTotal')
     expect(subtotalRows.length).toBeGreaterThanOrEqual(1)
+  })
+})
+describe('buildYouthMonthlyReportSheet', () => {
+  it('builds youth monthly sheet matching template structure', () => {
+    const weekly = [
+      { id: 1, attendance_type: 'weekly', state_id: 1, region_id: 5, district_id: 10, group_id: 100, old_group_id: null, year: 2025, month: 'January', week: 1, male: 0, female: 0, member_boys: 10, member_girls: 12, visitor_boys: 2, visitor_girls: 3 },
+      { id: 2, attendance_type: 'weekly', state_id: 1, region_id: 5, district_id: 10, group_id: 100, old_group_id: null, year: 2025, month: 'January', week: 2, male: 0, female: 0, member_boys: 8, member_girls: 11, visitor_boys: 1, visitor_girls: 2 },
+      { id: 3, attendance_type: 'weekly', state_id: 1, region_id: 5, district_id: 10, group_id: 101, old_group_id: null, year: 2025, month: 'January', week: 1, male: 0, female: 0, member_boys: 6, member_girls: 7, visitor_boys: 1, visitor_girls: 1 },
+    ]
+    const groups = [ { id: 100, name: 'Group A' }, { id: 101, name: 'Group B' } ]
+    const sheet = buildYouthMonthlyReportSheet(weekly as any, 'Region Five', 'January', 2025, groups)
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[]
+    expect(data[0][0]).toBe('DEEPER LIFE STUDENTS OUTREACH (DLSO) MONTHLY REPORT')
+    expect(String(data[1][0]).includes('REGION: Region Five')).toBe(true)
+    expect(String(data[1][2]).includes('MONTH: January')).toBe(true)
+    expect(String(data[1][3]).includes('YEAR: 2025')).toBe(true)
+
+    const header3 = data[2] as (string | number)[]
+    expect(header3[0]).toBe('GROUP')
+    expect(header3[1]).toBe('NO OF YHSF')
+    expect(header3[3]).toBe('STRENGTH OF LAST MONTH')
+    expect(header3[5]).toBe('WEEK 1')
+    expect(header3[15]).toBe('AVERAGE')
+
+    const merges = (sheet as unknown as Record<string, unknown>)['!merges'] as Array<{ s: { r: number; c: number }; e: { r: number; c: number } }>
+    expect(Array.isArray(merges)).toBe(true)
+    expect(merges.length).toBeGreaterThanOrEqual(8)
+
+    const cols = (sheet as unknown as Record<string, unknown>)['!cols'] as Array<{ wch: number }>
+    expect(cols[0].wch).toBe(22)
+    expect(cols[16].wch).toBe(12)
   })
 })

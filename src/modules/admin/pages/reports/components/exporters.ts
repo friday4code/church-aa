@@ -2,18 +2,22 @@ import XLSX from 'xlsx-js-style'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import type { Group } from '@/types/groups.type'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import type { YouthAttendance } from '@/types/youthAttendance.type'
 
 export type MonthSpec = { months?: string[]; single?: string; range?: { from: number; to: number } }
 
 const pad = (n: number) => n.toString().padStart(2, '0')
 
-export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup') => {
+export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup' | 'youth') => {
   const d = new Date()
   const stamp = `${d.getFullYear()}_${pad(d.getMonth() + 1)}_${pad(d.getDate())}__${pad(d.getHours())}_${pad(d.getMinutes())}_${pad(d.getSeconds())}`
   if (type === 'state') return `State Report Sheet File_${stamp}.xlsx`
   if (type === 'region') return `Region Report Sheet File_${stamp}.xlsx`
   if (type === 'district') return `District Report Sheet File_${stamp}.xlsx`
   if (type === 'oldGroup') return `Old Group Report Sheet File_${stamp}.xlsx`
+  if (type === 'youth') return `Youth Monthly Report_${stamp}.xlsx`
   return `Group Report Sheet File_${stamp}.xlsx`
 }
 
@@ -487,6 +491,180 @@ export const buildGroupReportSheet = (
   for (let c = 0; c < totalColumns; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
   ;[3, 4, 5, 6].forEach(r => { for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE) })
   for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0] === 'SubTotal') { setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE); setCellStyle(i, 1, SUBTOTAL_STYLE); for (let c = 2; c < totalColumns; c++) setCellStyle(i, c, SUBTOTAL_NUM_STYLE) }
+  return ws
+}
+
+export const buildYouthMonthlyReportPdf = (
+  weekly: YouthAttendance[],
+  regionName: string,
+  monthLabel: string,
+  year: number,
+  groups: Array<{ id: number; name: string }>,
+  coordinator?: string,
+  code?: string
+) => {
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.text('DEEPER LIFE STUDENTS OUTREACH (DLSO) MONTHLY REPORT', 40, 40)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  const headerLeft = `REGION: ${regionName}`
+  const headerMid = `CODE: ${code ?? ''}`
+  const headerMonth = `MONTH: ${monthLabel}`
+  const headerYear = `YEAR: ${year}`
+  const headerCoord = `REGION COORDINATOR: ${coordinator ?? ''}`
+  doc.text(headerLeft, 40, 60)
+  doc.text(headerMid, 220, 60)
+  doc.text(headerMonth, 360, 60)
+  doc.text(headerYear, 500, 60)
+  doc.text(headerCoord, 40, 80)
+
+  const groupName = (id: number) => groups.find(g => g.id === id)?.name || `Group ${id}`
+  const weeks = [1, 2, 3, 4, 5]
+
+  const byGroup = new Map<number, YouthAttendance[]>()
+  for (const rec of weekly) {
+    if (!byGroup.has(rec.group_id)) byGroup.set(rec.group_id, [])
+    byGroup.get(rec.group_id)!.push(rec)
+  }
+
+  const head = [
+    { title: 'GROUP', dataKey: 'group' },
+    { title: 'NO OF YHSF M', dataKey: 'yhsf_m' },
+    { title: 'NO OF YHSF F', dataKey: 'yhsf_f' },
+    { title: 'STRENGTH LAST M M', dataKey: 'last_m' },
+    { title: 'STRENGTH LAST M F', dataKey: 'last_f' },
+    { title: 'WEEK1 M', dataKey: 'w1m' },
+    { title: 'WEEK1 F', dataKey: 'w1f' },
+    { title: 'WEEK2 M', dataKey: 'w2m' },
+    { title: 'WEEK2 F', dataKey: 'w2f' },
+    { title: 'WEEK3 M', dataKey: 'w3m' },
+    { title: 'WEEK3 F', dataKey: 'w3f' },
+    { title: 'WEEK4 M', dataKey: 'w4m' },
+    { title: 'WEEK4 F', dataKey: 'w4f' },
+    { title: 'WEEK5 M', dataKey: 'w5m' },
+    { title: 'WEEK5 F', dataKey: 'w5f' },
+    { title: 'AVERAGE M', dataKey: 'avgm' },
+    { title: 'AVERAGE F', dataKey: 'avgf' }
+  ]
+
+  const rows = [] as Array<Record<string, string | number>>
+  for (const [gid, recs] of byGroup) {
+    const getWeek = (w: number) => recs.find(r => r.week === w)
+    const yhsf_m = (recs.reduce((acc, r) => acc + (r.member_boys || 0), 0))
+    const yhsf_f = (recs.reduce((acc, r) => acc + (r.member_girls || 0), 0))
+    const lastMonthLabel = monthLabel === 'January' ? 'December' : monthLabel
+    const last_m = 0
+    const last_f = 0
+    const wVals = weeks.map(w => getWeek(w))
+    const wM = wVals.map(r => r ? ((r.member_boys || 0) + (r.visitor_boys || 0)) : 0)
+    const wF = wVals.map(r => r ? ((r.member_girls || 0) + (r.visitor_girls || 0)) : 0)
+    const avgm = Math.round(wM.reduce((a, b) => a + b, 0) / weeks.length)
+    const avgf = Math.round(wF.reduce((a, b) => a + b, 0) / weeks.length)
+    rows.push({
+      group: groupName(gid),
+      yhsf_m,
+      yhsf_f,
+      last_m,
+      last_f,
+      w1m: wM[0], w1f: wF[0], w2m: wM[1], w2f: wF[1], w3m: wM[2], w3f: wF[2], w4m: wM[3], w4f: wF[3], w5m: wM[4], w5f: wF[4],
+      avgm,
+      avgf
+    })
+  }
+
+  autoTable(doc, {
+    startY: 100,
+    head: [head.map(h => h.title)],
+    body: rows.map(r => head.map(h => r[h.dataKey] ?? '')),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [240, 240, 240], textColor: 20 },
+    alternateRowStyles: { fillColor: [248, 248, 248] }
+  })
+
+  return doc
+}
+
+export const exportYouthPdf = (doc: jsPDF, fileName: string) => {
+  doc.save(fileName)
+}
+
+export const buildYouthMonthlyReportSheet = (
+  weekly: YouthAttendance[],
+  regionName: string,
+  monthLabel: string,
+  year: number,
+  groups: Array<{ id: number; name: string }>,
+  coordinator?: string,
+  code?: string
+) => {
+  const head1 = [`DEEPER LIFE STUDENTS OUTREACH (DLSO) MONTHLY REPORT`, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+  const head2 = [`REGION: ${regionName}`, `CODE: ${code ?? ''}`, `MONTH: ${monthLabel}`, `YEAR: ${year}`, `REGION COORDINATOR: ${coordinator ?? ''}`, '', '', '', '', '', '', '', '', '', '', '', '']
+  const head3 = ['GROUP', 'NO OF YHSF', '', 'STRENGTH OF LAST MONTH', '', 'WEEK 1', '', 'WEEK 2', '', 'WEEK 3', '', 'WEEK 4', '', 'WEEK 5', '', 'AVERAGE', '']
+  const head4 = ['', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F', 'M', 'F']
+
+  const byGroup = new Map<number, YouthAttendance[]>()
+  for (const rec of weekly) {
+    if (!byGroup.has(rec.group_id)) byGroup.set(rec.group_id, [])
+    byGroup.get(rec.group_id)!.push(rec)
+  }
+  const groupName = (id: number) => groups.find(g => g.id === id)?.name || `Group ${id}`
+  const prevMonth = (() => {
+    const order = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const idx = order.indexOf(monthLabel)
+    return idx <= 0 ? 'December' : order[idx - 1]
+  })()
+
+  const rows: (string | number)[][] = [head1, head2, head3, head4]
+  for (const [gid, recs] of byGroup) {
+    const week = (w: number) => recs.find(r => r.week === w)
+    const wM = [1,2,3,4,5].map(w => {
+      const r = week(w); return r ? ((r.member_boys || 0) + (r.visitor_boys || 0)) : 0
+    })
+    const wF = [1,2,3,4,5].map(w => {
+      const r = week(w); return r ? ((r.member_girls || 0) + (r.visitor_girls || 0)) : 0
+    })
+    const yhsf_m = recs.reduce((acc, r) => acc + (r.member_boys || 0), 0)
+    const yhsf_f = recs.reduce((acc, r) => acc + (r.member_girls || 0), 0)
+    const prev = recs.filter(r => r.month === prevMonth)
+    const last_m = prev.reduce((acc, r) => acc + (r.member_boys || 0), 0)
+    const last_f = prev.reduce((acc, r) => acc + (r.member_girls || 0), 0)
+    const avgm = Math.round(wM.reduce((a,b)=>a+b,0)/5)
+    const avgf = Math.round(wF.reduce((a,b)=>a+b,0)/5)
+    rows.push([
+      groupName(gid),
+      yhsf_m, yhsf_f,
+      last_m, last_f,
+      wM[0], wF[0], wM[1], wF[1], wM[2], wF[2], wM[3], wF[3], wM[4], wF[4],
+      avgm, avgf
+    ])
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [
+    { wch: 22 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }
+  ]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 16 } },
+    { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
+    { s: { r: 2, c: 3 }, e: { r: 2, c: 4 } },
+    { s: { r: 2, c: 5 }, e: { r: 2, c: 6 } },
+    { s: { r: 2, c: 7 }, e: { r: 2, c: 8 } },
+    { s: { r: 2, c: 9 }, e: { r: 2, c: 10 } },
+    { s: { r: 2, c: 11 }, e: { r: 2, c: 12 } },
+    { s: { r: 2, c: 13 }, e: { r: 2, c: 14 } },
+    { s: { r: 2, c: 15 }, e: { r: 2, c: 16 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 16; c++) setCellStyle(0, c, TITLE_STYLE)
+  for (let c = 0; c <= 16; c++) setCellStyle(2, c, HEADER_STYLE)
+  for (let c = 0; c <= 16; c++) setCellStyle(3, c, HEADER_STYLE)
   return ws
 }
 

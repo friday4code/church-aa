@@ -240,7 +240,7 @@ export const YouthAttendanceDialog = ({
         onSave(data)
 
         console.log("pyload",data)
-        reset()
+        // reset()
     }
 
     const handleClose = () => {

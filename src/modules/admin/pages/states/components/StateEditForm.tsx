@@ -70,8 +70,6 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
                             rounded="lg"
                             placeholder="State code will be auto-generated"
                             value={currentStateCode}
-                            readOnly
-                            bg="gray.50"
                             {...register('stateCode')}
                         />
                         <Field.HelperText>

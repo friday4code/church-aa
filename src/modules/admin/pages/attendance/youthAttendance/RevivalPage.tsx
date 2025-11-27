@@ -8,7 +8,7 @@ import { YouthAttendanceHeader } from "./components/YouthAttendanceHeader"
 import { YouthAttendanceDialog } from "./components/YouthAttendanceDialog"
 import { YouthAttendanceTable } from "./components/YouthAttendanceTable"
 import { YouthAttendanceFilter as FilterComponent } from "./components/YouthAttendanceFilters"
-import { toaster } from "@/components/ui/toaster"
+import { Toaster, toaster } from "@/components/ui/toaster"
 
 const RevivalPage: React.FC = () => {
     const { open, onOpen, onClose } = useDisclosure()
@@ -49,7 +49,7 @@ const RevivalPage: React.FC = () => {
                 <FilterComponent onFilter={setFilters} attendanceType="revival" />
                 <YouthAttendanceTable data={attendanceData?.data || []} isLoading={isLoading} onDelete={handleDelete} />
             </VStack>
-
+            <Toaster />
             <YouthAttendanceDialog isOpen={open} isLoading={createMutation.isPending} mode={dialogMode} attendanceType="revival" onClose={onClose} onSave={handleSave} />
         </Box>
     )

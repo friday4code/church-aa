@@ -115,7 +115,6 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
                             rounded="lg"
                             placeholder="Old group code will be auto-generated"
                             value={currentCode}
-                            readOnly
                             {...register('code')}
                         />
                         <Field.HelperText>

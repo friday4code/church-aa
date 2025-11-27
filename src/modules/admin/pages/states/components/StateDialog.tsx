@@ -40,6 +40,8 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
     })
 
     const currentStateName = watch('stateName')
+    console.log("current state name",currentStateName);
+    
     const currentStateCode = watch('stateCode')
 
     const handleStateChange = (value: string) => {
@@ -126,7 +128,7 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
                                                 rounded="lg"
                                                 placeholder="State code will be auto-generated"
                                                 value={currentStateCode}
-                                                readOnly
+                                                // readOnly
                                                 {...register('stateCode')}
                                             />
                                             <Field.HelperText>

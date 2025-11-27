@@ -3,6 +3,9 @@
 import { Heading, Text, Card, Grid, GridItem, Button, Flex } from "@chakra-ui/react"
 import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
+import { useEffect, useState } from "react"
+import { adminApi } from "@/api/admin.api"
+import { toaster } from "@/components/ui/toaster"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import CustomComboboxField from "./CustomComboboxField"
@@ -47,6 +50,36 @@ export const YouthAttendanceReport = ({
         },
     })
 
+    const [regionItems, setRegionItems] = useState<Array<{ label: string; value: string }>>([])
+    const [regionsLoading, setRegionsLoading] = useState(false)
+    const [regionDisabled, setRegionDisabled] = useState(true)
+
+    const selectedState = form.watch("state")
+
+    useEffect(() => {
+        const sid = parseInt(selectedState || "", 10)
+        if (!Number.isFinite(sid) || sid <= 0) {
+            setRegionItems([])
+            setRegionDisabled(true)
+            form.setValue("region", "")
+            return
+        }
+        setRegionsLoading(true)
+        adminApi.getRegionsByStateId(sid)
+            .then((data) => {
+                const items = (data || []).map((r) => ({ label: r.name, value: String(r.id) }))
+                setRegionItems(items)
+                setRegionDisabled(false)
+            })
+            .catch(() => {
+                setRegionItems([])
+                setRegionDisabled(true)
+                form.setValue("region", "")
+                toaster.error({ description: "Failed to load regions for selected state", closable: true })
+            })
+            .finally(() => setRegionsLoading(false))
+    }, [selectedState, form])
+
     const handleSubmit = (data: ReportFormValues) => {
         onDownload(data)
     }
@@ -90,9 +123,11 @@ export const YouthAttendanceReport = ({
                                 form={form}
                                 name="region"
                                 label="Region"
-                                items={regionsCollection}
-                                placeholder="Type to search region"
+                                items={regionItems}
+                                placeholder={regionDisabled ? "Select a state first" : "Type to search region"}
                                 required
+                                disabled={regionDisabled || isLoading}
+                                isLoading={regionsLoading}
                             />
                         </GridItem>
                         <GridItem>

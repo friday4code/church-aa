@@ -273,7 +273,9 @@ export const adminApi = {
     },
 
     createYouthAttendance: async (attendanceData: CreateYouthAttendanceData): Promise<YouthAttendanceResponse> => {
+        console.log("data=====", attendanceData)
         const { data } = await axiosClient.post<YouthAttendanceResponse>("/youth-attendance/youth-attendance", attendanceData);
+        console.log("response", data);
         return data;
     },
 

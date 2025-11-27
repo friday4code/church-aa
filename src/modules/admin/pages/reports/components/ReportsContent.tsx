@@ -18,7 +18,7 @@ import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
 import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -237,11 +237,11 @@ export const ReportsContent = () => {
 
     const allowedReportTypes = useMemo<ReportType[]>(() => {
         if (hasRole('Super Admin')) return memoizedReportTypes
-        if (hasRole('State Admin')) return ['state', 'region', 'oldGroup', 'group', 'district', 'youth']
-        if (hasRole('Region Admin')) return ['region', 'oldGroup', 'group', 'district', 'youth']
-        if (hasRole('Old Group Admin')) return ['oldGroup', 'group', 'district', 'youth']
-        if (hasRole('Group Admin')) return ['group', 'district', 'youth']
-        if (hasRole('District Admin')) return ['district', 'youth']
+        if (hasRole('State Admin')) return ['state', 'region', 'oldGroup', 'group', 'district']
+        if (hasRole('Region Admin')) return ['region', 'oldGroup', 'group', 'district']
+        if (hasRole('Old Group Admin')) return ['oldGroup', 'group', 'district']
+        if (hasRole('Group Admin')) return ['group', 'district']
+        if (hasRole('District Admin')) return ['district']
         return []
     }, [hasRole, memoizedReportTypes])
 
@@ -413,6 +413,19 @@ export const ReportsContent = () => {
                 const districts: Array<{ id: number; name: string; group_id?: number }> = [{ id: selectedDistrictId, name: dName, group_id: Number(filterCriteria.groupId) }]
                 const sheet = buildDistrictReportSheet(filtered, (districts as Array<{ id: number; name: string; group_id?: number }>).sort((a, b) => a.name.localeCompare(b.name)), dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
                 exportSheet(sheet, getReportFileName('district'), 'District Report')
+            } else if (deferredTab === 'youth') {
+                if (!hasRole('Super Admin')) {
+                    toaster.error({ description: 'Only Super Admin can generate youth reports', closable: true })
+                    return
+                }
+                const yr = data.year ? parseInt(data.year, 10) : new Date().getFullYear()
+                const mIdx = data.month ? parseInt(data.month, 10) : new Date().getMonth() + 1
+                const mLabel = collections.months[mIdx - 1]?.label ?? 'January'
+                const rid = data.region ? parseInt(data.region, 10) : (authUser as User | null)?.region_id ?? undefined
+                const filteredWeekly = youthWeeklyAttendances.filter(a => a.year === yr && a.month === mLabel && (!rid || a.region_id === rid))
+                const rName = rid ? (regions.find(r => r.id === rid)?.name || 'Region') : 'Region'
+                const sheet = buildYouthMonthlyReportSheet(filteredWeekly as any, rName, mLabel, yr, (groups as Group[]).map(g => ({ id: g.id, name: g.name })))
+                exportSheet(sheet, getReportFileName('youth'), 'Youth Monthly Report')
             } else {
                 toaster.error({ description: 'Unsupported report type', closable: true })
             }

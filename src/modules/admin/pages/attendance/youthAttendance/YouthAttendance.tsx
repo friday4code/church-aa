@@ -45,6 +45,7 @@ import { YouthAttendanceDialog } from "./components/YouthAttendanceDialog"
 import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
 import UploadStatesFromFile from "@/modules/admin/components/PortingFile"
 import type { YouthAttendance } from "@/types/youthAttendance.type"
+import { Toaster } from "@/components/ui/toaster"
 
 // UUID generator function
 const uuid = () => {
@@ -905,9 +906,9 @@ const Content = () => {
         setIsBulkDeleteOpen(false)
     }
 
-    const handleBulkEdit = () => {}
-    const handleBulkUpdate = (id: number, data: Partial<YouthAttendanceLocalFormData>) => {}
-    const handleBulkEditClose = () => {}
+    const handleBulkEdit = () => { }
+    const handleBulkUpdate = (id: number, data: Partial<YouthAttendanceLocalFormData>) => { }
+    const handleBulkEditClose = () => { }
 
     // Close action bar when no items are selected
     useEffect(() => {
@@ -1235,7 +1236,7 @@ const Content = () => {
                         } else if (dialogState.attendance) {
                             updateYA({ yaId: dialogState.attendance.id, data })
                         }
-                        setDialogState({ isOpen: false, mode: 'add' })
+                        // setDialogState({ isOpen: false, mode: 'add' })
                     }}
                 />
 
@@ -1257,7 +1258,16 @@ const Content = () => {
                 />
 
                 {/* Bulk Edit Dialog */}
-                
+                <BulkEditDialog
+                    isOpen={isBulkEditOpen}
+                    selectedAttendance={selectedAttendance}
+                    youthAttendance={filteredAndSortedAttendance}
+                    onClose={() => setIsBulkEditOpen(false)}
+                    // onConfirm={confirmBulkEdit}
+                />
+
+                <Toaster />
+
             </Box >
         </>
     )

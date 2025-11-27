@@ -104,10 +104,11 @@ const StateCombobox = ({ value, onChange, invalid = false, disabled = false }: {
             collection={collection}
             value={value ? [value] : []}
             onValueChange={handleValueChange}
+            defaultInputValue={value as string}
             onInputValueChange={(e) => setInputValue(e.inputValue)}
             onInteractOutside={handleBlur}
             invalid={invalid}
-            openOnClick
+            openOnClick={true}
         >
             <Combobox.Label>State Name</Combobox.Label>
             <Combobox.Control>
