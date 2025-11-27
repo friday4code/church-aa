@@ -26,6 +26,7 @@ export const CustomComboboxField = ({
     isLoading = false,
     form: { control, formState: { errors } }
 }: CustomComboboxFieldProps) => {
+
     const { contains } = useFilter({ sensitivity: "base" })
     const { collection, filter, set } = useListCollection({
         initialItems: items,
@@ -53,7 +54,6 @@ export const CustomComboboxField = ({
                         value={field.value ? [field.value] : []}
                         onValueChange={(e) => {
                             const next = e.value[0]
-                            console.log("combobox:change", { name: field.name, value: next })
                             field.onChange(next)
                             field.onBlur()
                         }}

@@ -11,7 +11,9 @@ import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
+import { toaster } from "@/components/ui/toaster"
 import type { User } from "@/types/users.type"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -38,7 +40,7 @@ interface OldGroupAttendanceReportProps {
 export const OldGroupAttendanceReport = ({
     statesCollection,
     regionsCollection,
-    oldGroupsCollection,
+    // oldGroupsCollection,
     yearsCollection,
     monthsCollection,
     onDownload,
@@ -48,6 +50,7 @@ export const OldGroupAttendanceReport = ({
     const { user } = useMe()
     const { getRoles } = useAuth()
     const userRoles = getRoles()
+    const { oldGroups = [] } = useOldGroups();
     const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
 
     const form = useForm<ReportFormValues>({
@@ -63,7 +66,8 @@ export const OldGroupAttendanceReport = ({
     })
 
     const { setValue, trigger } = form
-
+    const oldGroupId = (user as User | null)?.old_group_id ?? null
+    const oldGroupsCollection = oldGroupId ? [oldGroups.find((og) => String(og.id) === String(oldGroupId))].map((og) => ({ label: og?.name || "", value: String(og?.id || "") })) : []
     useEffect(() => {
         if (!user) return
 
@@ -76,15 +80,31 @@ export const OldGroupAttendanceReport = ({
             setValue('region', user.region_id.toString(), { shouldValidate: true })
             trigger('region')
         }
+        if (!oldGroupId) {
+            toaster.error({ description: 'Old Group not available. Cannot load.', closable: true })
+        } else {
+            setValue('oldGroup', String(oldGroupId), { shouldValidate: true })
+            trigger('oldGroup')
+        }
 
         if (!roleVisibility.showOldGroup && (user as User | null)?.old_group_id) {
             setValue('oldGroup', (user as User).old_group_id?.toString(), { shouldValidate: true })
             trigger('oldGroup')
         }
-    }, [user, roleVisibility, setValue, trigger])
+    }, [user, roleVisibility, setValue, trigger, oldGroupId])
 
     const handleSubmit = (data: ReportFormValues) => {
-        onDownload(data)
+        try {
+            const ogid = (user as User | null)?.old_group_id
+            if (!ogid || String(data.oldGroup) !== String(ogid)) {
+                toaster.error({ description: 'Unauthorized old group selection', closable: true })
+                return
+            }
+            onDownload(data)
+        } catch (err) {
+            const e = err as unknown as { name?: string; message?: string; stack?: string }
+            toaster.error({ description: e?.message || 'Failed to submit old group report', closable: true })
+        }
     }
 
     return (
@@ -108,7 +128,7 @@ export const OldGroupAttendanceReport = ({
                         )}
                         {roleVisibility.showOldGroup && (
                             <GridItem>
-                                <CustomComboboxField form={form} name="oldGroup" label="Old Group" items={oldGroupsCollection} placeholder="Type to search old group" required />
+                                <CustomComboboxField form={form} name="oldGroup" label="Old Group" items={oldGroupsCollection} placeholder="Type to search old group" required disabled={!oldGroupsCollection} />
                             </GridItem>
                         )}
                         <GridItem>

@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth"
 // role type import not required here; 'hasRole' covers verification
 import type { User } from "@/types/users.type"
 import { Toaster, toaster } from "@/components/ui/toaster"
+import type { Group } from "@/types/groups.type"
 
 // ----------------------------------------------------------------------
 // 1. STRICT MEMOIZATION
@@ -131,10 +132,10 @@ export const ReportsContent = () => {
 
     // Base collections
     const collections = useMemo(() => ({
-        states: states.map(s => ({ label: s.name || s.stateName, value: s.name || s.stateName })).sort(sortLabel),
-        regions: regions.map(r => ({ label: r.name || r.regionName, value: r.name || r.regionName })).sort(sortLabel),
-        groups: groups.map(g => ({ label: g.name || g.groupName, value: g.name || g.groupName })).sort(sortLabel),
-        oldGroups: oldGroups.map(g => ({ label: g.name || g.groupName, value: g.name || g.groupName })).sort(sortLabel),
+        states: states.map(s => ({ label: s.name || s.stateName, value: s.id.toString() })).sort(sortLabel),
+        regions: regions.map(r => ({ label: r.name || r.regionName, value: r.id.toString() })).sort(sortLabel),
+        groups: groups.map(g => ({ label: g.name || g.groupName, value: g.id.toString() })).sort(sortLabel),
+        oldGroups: oldGroups.map(g => ({ label: g.name || g.groupName, value: g.id.toString() })).sort(sortLabel),
         years: Array.from({ length: 10 }, (_, i) => {
             const year = new Date().getFullYear() - i
             return { label: year.toString(), value: year.toString() }
@@ -166,25 +167,25 @@ export const ReportsContent = () => {
 
             // Filter States
             if (sid) {
-                const name = maps.state.get(sid)?.name || maps.state.get(sid)?.stateName
-                if (name) s = [{ label: name, value: name }]
+                const state = maps.state.get(sid)
+                if (state) s = [{ label: state.name, value: String(state.id) }]
             }
 
             // Filter Regions
             if (rid) {
-                const name = maps.region.get(rid)?.name || maps.region.get(rid)?.regionName
-                if (name) r = [{ label: name, value: name }]
+                const region = maps.region.get(rid)
+                if (region) r = [{ label: region.name, value: String(region.id) }]
             } else if (sid) {
                 r = regions
                     .filter(item => Number(item.state_id) === Number(sid))
-                    .map(item => ({ label: item.name || item.regionName, value: item.name || item.regionName }))
+                    .map(item => ({ label: item.name || item.regionName, value: item.id.toString() }))
                     .sort(sortLabel)
             }
 
             // Filter Groups
             if (gid) {
-                const name = maps.group.get(gid)?.name || maps.group.get(gid)?.groupName
-                if (name) g = [{ label: name, value: name }]
+                const group = maps.group.get(gid);
+                if (group) g = [{ label: group.name, value: String(group.id) }]
             } else if (rid) {
                 // Determine region string for fallback
                 const rName = maps.region.get(rid)?.name?.toLowerCase()
@@ -193,12 +194,12 @@ export const ReportsContent = () => {
                         if (item.region_id != null) return Number(item.region_id) === Number(rid)
                         return String(item.region).toLowerCase() === String(rName)
                     })
-                    .map(item => ({ label: item.name || item.groupName, value: item.name || item.groupName }))
+                    .map(item => ({ label: item.name || item.groupName, value: item.id.toString() }))
                     .sort(sortLabel)
             } else if (did) {
                 g = groups
                     .filter(item => Number(item.district_id) === Number(did))
-                    .map(item => ({ label: item.name || item.groupName, value: item.name || item.groupName }))
+                    .map(item => ({ label: item.name || item.groupName, value: item.id.toString() }))
                     .sort(sortLabel)
             }
 
@@ -208,7 +209,7 @@ export const ReportsContent = () => {
                     const byState = sid ? Number(item.state_id) === Number(sid) : true
                     const byRegion = rid ? Number(item.region_id) === Number(rid) : true
                     return byState && byRegion
-                }).map(item => ({ label: item.name || item.groupName, value: item.name || item.groupName }))
+                }).map(item => ({ label: item.name || item.groupName, value: item.id.toString() }))
                     .sort(sortLabel)
             }
         }
@@ -258,7 +259,6 @@ export const ReportsContent = () => {
     // This function reference will NEVER change, so child components won't re-render 
     // when 'attendances' or 'authUser' changes, unless clicked.
     const handleDownloadReport = useStableCallback(async (data: ReportFormValues) => {
-        console.log("report form valuses", data)
         setIsReportGenerating(true)
         try {
             // Permission check
@@ -295,18 +295,15 @@ export const ReportsContent = () => {
 
             if (data.state) {
                 const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
-                console.log("state", sObj);
 
                 if (sObj) { filterCriteria.stateId = sObj.id; stateName = sObj.name || sObj.stateName || stateName }
             }
             if (data.region) {
                 const rObj = Array.from(maps.region.values()).find(r => (r.id || r.regionName) === Number(data.region))
-                console.log("state", rObj);
                 if (rObj) filterCriteria.regionId = rObj.id
             }
             if (data.group) {
                 const gObj = Array.from(maps.group.values()).find(g => (g.id || g.groupName) === Number(data.group))
-                console.log("state", gObj);
                 if (gObj) filterCriteria.groupId = gObj.id
             }
             if (data.district) {
@@ -315,7 +312,6 @@ export const ReportsContent = () => {
             }
             if (data.oldGroup) {
                 const ogObj = oldGroups.find(g => (g.id || g.groupName) === Number(data.oldGroup))
-                console.log("state", ogObj);
                 if (ogObj) filterCriteria.oldGroupId = ogObj.id
             }
             if (data.year) filterCriteria.year = parseInt(data.year, 10)
@@ -331,9 +327,6 @@ export const ReportsContent = () => {
             }
 
             filtered = await filterAttendanceRecords(filtered, filterCriteria)
-            console.log("filtered attendances", filtered);
-            console.log("filtered criteria", filterCriteria);
-
 
             if (deferredTab === 'state') {
                 if (!filterCriteria.stateId) {
@@ -342,7 +335,7 @@ export const ReportsContent = () => {
                 }
                 const stateRegions = getRegionsByStateName(stateName, regions as unknown as Region[])
                 const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
-                const sheet = buildStateReportSheet(filtered, stateRegions.map(r => ({ id: r.id, name: r.name })), stateName, filterCriteria.year ?? new Date().getFullYear(), spec)
+                const sheet = buildStateReportSheet(filtered, (stateRegions as Region[]).sort((a, b) => a.name.localeCompare(b.name)), stateName, filterCriteria.year ?? new Date().getFullYear(), spec)
                 exportSheet(sheet, getReportFileName('state'), 'State Report')
             } else if (deferredTab === 'region') {
                 if (!filterCriteria.regionId) {
@@ -356,7 +349,7 @@ export const ReportsContent = () => {
                 const apiOldGroups = await adminApi.getOldGroupsByRegionId(Number(filterCriteria.regionId))
                 if (apiOldGroups && apiOldGroups.length) {
                     const names = new Set(apiOldGroups.map(x => x.name))
-                    sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name))
+                    sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name)).sort((a, b) => a.name.localeCompare(b.name))
                 }
 
                 const filteredOldGroups = getOldGroupsByRegion(rName, sourceOldGroups)
@@ -371,8 +364,9 @@ export const ReportsContent = () => {
                 const ogObj = oldGroups.find(g => Number(g.id) === Number(filterCriteria.oldGroupId))
                 const ogName = ogObj?.name || 'Old Group'
                 const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
-                const sheet = buildOldGroupReportSheet(filtered, groups, ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
-                exportSheet(sheet, getReportFileName('state'), 'Old Group Report')
+                const groups = await adminApi.getGroupsByOldGroupId(Number(filterCriteria.oldGroupId));
+                const sheet = buildOldGroupReportSheet(filtered, (groups as Group[]).sort((a, b) => a.name.localeCompare(b.name)), ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
+                exportSheet(sheet, getReportFileName('oldGroup'), 'Old Group Report')
             } else if (deferredTab === 'group') {
                 if (!filterCriteria.groupId) {
                     toaster.error({ description: 'Select a group', closable: true })
@@ -398,7 +392,7 @@ export const ReportsContent = () => {
                     return
                 }
                 console.log("download:build:start", { groupId: filterCriteria.groupId, spec, year: filterCriteria.year })
-                const sheet = buildGroupReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+                const sheet = buildGroupReportSheet(filtered, (districts as Array<{ id: number; name: string; group_id?: number }>).sort((a, b) => a.name.localeCompare(b.name)), gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
                 exportSheet(sheet, getReportFileName('group'), 'Group Report')
                 console.log("download:build:done")
             } else if (deferredTab === 'district') {
@@ -417,7 +411,7 @@ export const ReportsContent = () => {
                     return
                 }
                 const districts: Array<{ id: number; name: string; group_id?: number }> = [{ id: selectedDistrictId, name: dName, group_id: Number(filterCriteria.groupId) }]
-                const sheet = buildDistrictReportSheet(filtered, districts, dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+                const sheet = buildDistrictReportSheet(filtered, (districts as Array<{ id: number; name: string; group_id?: number }>).sort((a, b) => a.name.localeCompare(b.name)), dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
                 exportSheet(sheet, getReportFileName('district'), 'District Report')
             } else {
                 toaster.error({ description: 'Unsupported report type', closable: true })

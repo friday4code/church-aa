@@ -12,8 +12,8 @@ import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
 import type { User } from "@/types/users.type"
-import { useQuery } from "@tanstack/react-query"
-import { adminApi } from "@/api/admin.api"
+import { toaster } from "@/components/ui/toaster"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -49,33 +49,27 @@ export const DistrictAttendanceReport = ({
     const { user } = useMe()
     const { getRoles } = useAuth()
     const userRoles = getRoles()
+    const { districts } = useDistricts();
     const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
-
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
         defaultValues: {
             state: "",
             region: "",
-            district: roleVisibility.showDistrict ? "" : ((user as User | null)?.district_id ? String((user as User).district_id) : ""),
-            group: roleVisibility.showGroup ? "" : ((user as User | null)?.group_id ? String((user as User).group_id) : ""),
+            district: roleVisibility.showDistrict ? "" : ((user as User | null)?.district_id?.toString() ? String((user as User).district_id) : ""),
+            group: roleVisibility.showGroup ? "" : ((user as User | null)?.group_id?.toString() ? String((user as User).group_id) : ""),
             year: "",
             fromMonth: "",
             toMonth: "",
         },
     })
 
-    const groupId = (user as User | null)?.group_id
-    const { data: districtsData } = useQuery({
-        queryKey: ["districtsByGroup", groupId],
-        queryFn: () => adminApi.getDistrictsByGroupId(groupId!),
-        enabled: !!groupId,
-        staleTime: 5 * 60 * 1000,
-    })
-
     const districtsCollection = useMemo(() => {
-        if (!districtsData) return []
-        return districtsData.map((d) => ({ label: d.name, value: String(d.id) }))
-    }, [districtsData])
+        const did = (user as User | null)?.district_id
+        const data = districts.find(item => Number(item.id) === Number(did));
+        return did ? [{ label: data?.name as string, value: String(did) }] : []
+    }, [user, districts])
+
     const { setValue, trigger } = form
 
     useEffect(() => {
@@ -84,10 +78,12 @@ export const DistrictAttendanceReport = ({
             setValue('state', user.state_id.toString(), { shouldValidate: true })
             trigger('state')
         }
+
         if (!roleVisibility.showRegion && user.region_id) {
             setValue('region', user.region_id.toString(), { shouldValidate: true })
             trigger('region')
         }
+
         if (!roleVisibility.showGroup && (user as User | null)?.group_id) {
             setValue('group', (user as User).group_id!.toString(), { shouldValidate: true })
             trigger('group')
@@ -95,6 +91,11 @@ export const DistrictAttendanceReport = ({
     }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
+        const did = (user as User | null)?.district_id
+        if (!did || String(data.district) !== String(did)) {
+            toaster.error({ description: 'Unauthorized district selection', closable: true })
+            return
+        }
         onDownload(data)
     }
 
@@ -112,16 +113,19 @@ export const DistrictAttendanceReport = ({
                                 <CustomComboboxField form={form} name="state" label="State" items={statesCollection} placeholder="Type to search state" required />
                             </GridItem>
                         )}
+
                         {roleVisibility.showRegion && (
                             <GridItem>
                                 <CustomComboboxField form={form} name="region" label="Region" items={regionsCollection} placeholder="Type to search region" required />
                             </GridItem>
                         )}
+
                         {roleVisibility.showGroup && (
                             <GridItem>
                                 <CustomComboboxField form={form} name="group" label="Group" items={groupsCollection} placeholder="Type to search group" required />
                             </GridItem>
                         )}
+
                         {roleVisibility.showDistrict && (
                             <GridItem>
                                 <CustomComboboxField
@@ -130,6 +134,7 @@ export const DistrictAttendanceReport = ({
                                     label="District"
                                     items={districtsCollection}
                                     placeholder="Type to search district"
+                                    disabled={!districtsCollection}
                                     required
                                 />
                             </GridItem>

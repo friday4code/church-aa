@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet } from '../exporters'
+import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet } from '../exporters'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import XLSX from 'xlsx-js-style'
@@ -32,6 +32,14 @@ describe('getReportFileName', () => {
     expect(name.startsWith('Group Report Sheet File_')).toBe(true)
     expect(name.endsWith('.xlsx')).toBe(true)
     const stamp = name.replace('Group Report Sheet File_', '').replace('.xlsx', '')
+    expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
+  })
+
+  it('generates oldGroup filename with correct pattern', () => {
+    const name = getReportFileName('oldGroup')
+    expect(name.startsWith('Old Group Report Sheet File_')).toBe(true)
+    expect(name.endsWith('.xlsx')).toBe(true)
+    const stamp = name.replace('Old Group Report Sheet File_', '').replace('.xlsx', '')
     expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
   })
 
@@ -186,6 +194,22 @@ describe('buildGroupReportSheet', () => {
     expect(data[5][0]).toBe('Districts')
     const aluRow = data.find((r: (string | number)[]) => r[0] === 'Alu District')
     expect(aluRow).toBeTruthy()
+    const subtotalRows = data.filter(r => r[0] === 'SubTotal')
+    expect(subtotalRows.length).toBeGreaterThanOrEqual(1)
+  })
+})
+describe('buildOldGroupReportSheet', () => {
+  it('builds sheet with groups and subtotal', () => {
+    const groups = [
+      { id: 201, name: 'Group A', code: 'GA', leader: null, state: 'AK', region: 'PH', district: 'D', old_group_id: 501, old_group: 'OG', createdAt: undefined, updatedAt: undefined },
+      { id: 202, name: 'Group B', code: 'GB', leader: null, state: 'AK', region: 'PH', district: 'D', old_group_id: 501, old_group: 'OG', createdAt: undefined, updatedAt: undefined },
+    ]
+    const sheet = buildOldGroupReportSheet(sampleAttendance, groups as any, 'PH Old Group', 2025, { months: ['January'] }, 501)
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][]
+    expect(data[0][0]).toBe('Deeper Life Bible Church, PH Old Group (Old Group)')
+    expect(data[5][0]).toBe('Groups')
+    const groupRow = data.find((r: (string | number)[]) => r[0] === 'Group A' || r[0] === 'Group B')
+    expect(groupRow).toBeTruthy()
     const subtotalRows = data.filter(r => r[0] === 'SubTotal')
     expect(subtotalRows.length).toBeGreaterThanOrEqual(1)
   })

@@ -13,6 +13,7 @@ import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
 import { toaster } from "@/components/ui/toaster"
 import { Tooltip } from "@/components/ui/tooltip"
+import type { User } from "@/types/users.type"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -52,6 +53,7 @@ export const GroupAttendanceReport = ({
     const { getRoles } = useAuth()
     const userRoles = getRoles()
     const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
+
 
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),
@@ -108,9 +110,12 @@ export const GroupAttendanceReport = ({
             trigger('district')
         }
 
-        if (!roleVisibility.showGroup && user.group_id) {
-            setValue('group', user.group_id.toString(), { shouldValidate: true })
+        const gid = (user as User | null)?.group_id
+        if (gid) {
+            setValue('group', gid.toString(), { shouldValidate: true })
             trigger('group')
+        } else {
+            toaster.error({ description: "Group ID missing. Cannot generate group report.", closable: true })
         }
 
         if (!roleVisibility.showOldGroup && (user as any)?.old_group_id) {
@@ -131,8 +136,9 @@ export const GroupAttendanceReport = ({
             toaster.error({ description: "Select a valid month", closable: true })
             return
         }
-        if (roleVisibility.showGroup && !data.group) {
-            toaster.error({ description: "Select a group", closable: true })
+        const gid = (user as User | null)?.group_id
+        if (!gid || String(data.group) !== String(gid)) {
+            toaster.error({ description: "Unauthorized group selection", closable: true })
             return
         }
         try {
@@ -198,18 +204,8 @@ export const GroupAttendanceReport = ({
                                 />
                             </GridItem>
                         )}
-                        {roleVisibility.showOldGroup && (
-                            <GridItem>
-                                <CustomComboboxField
-                                    form={form}
-                                    name="oldGroup"
-                                    label="Old Group"
-                                    items={oldGroupsCollection}
-                                    placeholder="Type to search old group"
-                                />
-                            </GridItem>
-                        )}
-                        {roleVisibility.showGroup && (
+
+                        {true && (
                             <GridItem>
                                 <CustomComboboxField
                                     form={form}
@@ -217,6 +213,7 @@ export const GroupAttendanceReport = ({
                                     label="Group"
                                     items={groupsCollection}
                                     placeholder="Type to search group"
+                                    disabled={!groupsCollection}
                                     required
                                 />
                             </GridItem>

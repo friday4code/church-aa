@@ -7,12 +7,13 @@ export type MonthSpec = { months?: string[]; single?: string; range?: { from: nu
 
 const pad = (n: number) => n.toString().padStart(2, '0')
 
-export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group') => {
+export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup') => {
   const d = new Date()
   const stamp = `${d.getFullYear()}_${pad(d.getMonth() + 1)}_${pad(d.getDate())}__${pad(d.getHours())}_${pad(d.getMinutes())}_${pad(d.getSeconds())}`
   if (type === 'state') return `State Report Sheet File_${stamp}.xlsx`
   if (type === 'region') return `Region Report Sheet File_${stamp}.xlsx`
   if (type === 'district') return `District Report Sheet File_${stamp}.xlsx`
+  if (type === 'oldGroup') return `Old Group Report Sheet File_${stamp}.xlsx`
   return `Group Report Sheet File_${stamp}.xlsx`
 }
 
