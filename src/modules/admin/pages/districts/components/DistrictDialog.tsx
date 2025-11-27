@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { adminApi } from "@/api/admin.api"
+import { toaster } from "@/components/ui/toaster"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 
@@ -49,7 +50,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         region_name: z.string().optional(),
     })
 
-    const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictFormData>({
+    const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<DistrictFormData>({
         resolver: zodResolver(districtDialogSchema),
         defaultValues: {
             state_id: district?.state_id || userStateId || 0,
@@ -78,28 +79,34 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     }, [currentStateName, district?.state])
 
 
+    const clearBelowState = () => {
+        setValue('region_id', 0, { shouldValidate: false })
+        setValue('region_name', '', { shouldValidate: false })
+        trigger('region_id')
+    }
+
     // Handle state selection - convert name to ID
     const handleStateChange = (stateName: string) => {
         if (stateName) {
             const state = states?.find(s => s.name === stateName)
             if (state) {
-                setValue('state_id', state.id, { shouldValidate: true })
-                setValue('state_name', stateName)
-                // Clear region when state changes
-                setValue('region_id', 0, { shouldValidate: true })
-                setValue('region_name', '')
+                setValue('state_id', state.id, { shouldValidate: false })
+                setValue('state_name', stateName, { shouldValidate: false })
+                trigger('state_id')
+                clearBelowState()
             }
         } else {
-            setValue('state_id', 0)
-            setValue('state_name', '')
-            setValue('region_id', 0)
-            setValue('region_name', '')
+            setValue('state_id', 0, { shouldValidate: false })
+            setValue('state_name', '', { shouldValidate: false })
+            clearBelowState()
+            trigger('state_id')
         }
     }
 
     const handleRegionChange = (regionId?: number) => {
-        setValue('region_id', regionId || 0, { shouldValidate: true })
-        setValue('region_name', '')
+        setValue('region_id', regionId || 0, { shouldValidate: false })
+        setValue('region_name', '', { shouldValidate: false })
+        trigger('region_id')
     }
 
 
@@ -134,9 +141,13 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         reset()
     }
 
+    const onInvalid = () => {
+        toaster.create({ title: 'Please fix validation errors', type: 'error' })
+    }
+
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        handleSubmit(onSubmit)(e)
+        handleSubmit(onSubmit, onInvalid)(e)
     }
 
     const handleClose = () => {
@@ -256,8 +267,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                             value={currentRegionId}
                                             onChange={handleRegionChange}
                                             invalid={!!errors.region_id}
-                                            stateId={watchedStateId}
-                                            disabled={!watchedStateId}
+                                            stateId={isSuperAdmin ? watchedStateId : userStateId}
+                                            disabled={isSuperAdmin ? !watchedStateId : !userStateId}
                                         />
                                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                     </Field.Root>

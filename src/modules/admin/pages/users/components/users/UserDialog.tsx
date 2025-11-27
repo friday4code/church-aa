@@ -30,6 +30,7 @@ import { useRegions } from "@/modules/admin/hooks/useRegion"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useGroups } from "@/modules/admin/hooks/useGroup"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { toaster } from "@/components/ui/toaster"
 
 import type { User as UsersType } from "@/types/users.type"
 
@@ -61,7 +62,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     const isSuperAdmin = (authUser?.roles || []).some((r) => String(r).toLowerCase() === 'super admin')
     const canSubmit = !!effectiveStateId && !!effectiveRegionId && !!effectiveDistrictId
 
-    const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<UserFormData>({
+    const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<UserFormData>({
         resolver: zodResolver(userSchema(mode)),
         defaultValues: {
             name: user?.name || '',
@@ -100,6 +101,10 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
 
         onSave(data)
         reset()
+    }
+
+    const onInvalid = () => {
+        toaster.create({ title: 'Please fix validation errors', type: 'error' })
     }
 
     const handleClose = () => {
@@ -246,36 +251,67 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
         })
     }, [districts, currentStateName, currentRegionName])
 
+    const clearBelowRegion = () => {
+        setValue('region_id', 0, { shouldValidate: false })
+        trigger('region_id')
+        setValue('old_group_id', 0, { shouldValidate: false })
+        trigger('old_group_id')
+        setValue('group_id', 0, { shouldValidate: false })
+        trigger('group_id')
+        setValue('district_id', 0, { shouldValidate: false })
+        trigger('district_id')
+    }
+
+    const clearBelowOldGroup = () => {
+        setValue('old_group_id', 0, { shouldValidate: false })
+        trigger('old_group_id')
+        setValue('group_id', 0, { shouldValidate: false })
+        trigger('group_id')
+        setValue('district_id', 0, { shouldValidate: false })
+        trigger('district_id')
+    }
+
+    const clearBelowGroup = () => {
+        setValue('group_id', 0, { shouldValidate: false })
+        trigger('group_id')
+        setValue('district_id', 0, { shouldValidate: false })
+        trigger('district_id')
+    }
+
     const onStateChange = useCallback((name: string) => {
         const id = states.find(s => s.name.toLowerCase() === name.toLowerCase())?.id || 0
-        setValue('state_id', id, { shouldValidate: true })
-        setValue('region_id', 0, { shouldValidate: true })
-        setValue('district_id', 0, { shouldValidate: true })
-    }, [states, setValue])
+        setValue('state_id', id, { shouldValidate: false })
+        trigger('state_id')
+        clearBelowRegion()
+    }, [states, setValue, trigger])
 
     const onRegionChange = useCallback((name: string) => {
         const id = regions.find(r => r.name.toLowerCase() === name.toLowerCase())?.id || 0
-        setValue('region_id', id, { shouldValidate: true })
-        setValue('district_id', 0, { shouldValidate: true })
-    }, [regions, setValue])
+        setValue('region_id', id, { shouldValidate: false })
+        trigger('region_id')
+        clearBelowOldGroup()
+    }, [regions, setValue, trigger])
 
     const onDistrictChange = useCallback((name: string) => {
         const id = districts.find(d => d.name.toLowerCase() === name.toLowerCase())?.id || 0
-        setValue('district_id', id, { shouldValidate: true })
-    }, [districts, setValue])
+        setValue('district_id', id, { shouldValidate: false })
+        trigger('district_id')
+    }, [districts, setValue, trigger])
 
     const onGroupChange = useCallback((name: string) => {
         const id = groups.find(g => g.name.toLowerCase() === name.toLowerCase())?.id || 0
-        setValue('group_id', id, { shouldValidate: true })
-        setValue('district_id', 0, { shouldValidate: true })
-    }, [groups, setValue])
+        setValue('group_id', id, { shouldValidate: false })
+        trigger('group_id')
+        setValue('district_id', 0, { shouldValidate: false })
+        trigger('district_id')
+    }, [groups, setValue, trigger])
 
     const onOldGroupChange = useCallback((name: string) => {
         const id = oldGroups.find(og => og.name.toLowerCase() === name.toLowerCase())?.id || 0
-        setValue('old_group_id', id, { shouldValidate: true })
-        setValue('group_id', 0, { shouldValidate: true })
-        setValue('district_id', 0, { shouldValidate: true })
-    }, [oldGroups, setValue])
+        setValue('old_group_id', id, { shouldValidate: false })
+        trigger('old_group_id')
+        clearBelowGroup()
+    }, [oldGroups, setValue, trigger])
 
     const onRolesChange = useCallback((val: { value: string[] }) => {
         setValue('roles', (val.value || []).map((v) => parseInt(v, 10)), { shouldValidate: true })
@@ -302,7 +338,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                         </Dialog.Header>
 
                         <Dialog.Body>
-                            <form noValidate id="user-form" onSubmit={handleSubmit(onSubmit)}>
+                            <form noValidate id="user-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
                                 <VStack gap="4" colorPalette={"accent"}>
                                     {!canSubmit && mode === 'add' && !isSuperAdmin && (
                                         <Text color="red.500" fontSize="sm">
@@ -418,40 +454,59 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
 
                                             <Field.Root required invalid={!!errors.region_id}>
                                                 <RegionIdCombobox
-                                                    value={currentRegionName}
-                                                    onChange={onRegionChange}
+                                                    value={watchedRegionId}
+                                                    onChange={(id) => {
+                                                        const name = regions.find(r => r.id === (id || 0))?.name || ''
+                                                        onRegionChange(name)
+                                                    }}
                                                     required
                                                     invalid={!!errors.region_id}
-                                                    items={filteredRegions}
-                                                    disabled={!watchedStateId}
+                                                    stateId={isSuperAdmin ? watchedStateId : authUser?.state_id as number}
+                                                    disabled={isSuperAdmin ? !watchedStateId : !authUser?.state_id}
                                                 />
                                                 <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                             </Field.Root>
 
                                             <Field.Root>
                                                 <OldGroupIdCombobox
-                                                    value={currentOldGroupName}
-                                                    onChange={onOldGroupChange}
+                                                    value={watchedOldGroupId as number}
+                                                    onChange={(id) => {
+                                                        const name = oldGroups.find(og => og.id === (id || 0))?.name || ''
+                                                        onOldGroupChange(name)
+                                                    }}
+                                                    stateId={authUser?.state_id as number}
+                                                    regionId={isSuperAdmin ? watchedRegionId : authUser?.region_id as number}
+                                                    isRegionAdmin={(authUser?.roles || []).includes('Region Admin')}
                                                 />
                                             </Field.Root>
 
                                             <Field.Root>
                                                 <GroupIdCombobox
-                                                    value={currentGroupName}
-                                                    onChange={onGroupChange}
-                                                    items={filteredGroups}
-                                                    disabled={!currentOldGroupName}
+                                                    value={watchedGroupId}
+                                                    onChange={(id) => {
+                                                        const name = groups.find(g => g.id === (id || 0))?.name || ''
+                                                        onGroupChange(name)
+                                                    }}
+                                                    oldGroupId={watchedOldGroupId as number}
+                                                    disabled={!watchedOldGroupId}
                                                 />
                                             </Field.Root>
 
                                             <Field.Root required invalid={!!errors.district_id}>
                                                 <DistrictIdCombobox
-                                                    value={currentDistrictName}
-                                                    onChange={onDistrictChange}
+                                                    value={watchedDistrictId}
+                                                    onChange={(id) => {
+                                                        const name = districts.find(d => d.id === (id || 0))?.name || ''
+                                                        onDistrictChange(name)
+                                                    }}
                                                     required
                                                     invalid={!!errors.district_id}
-                                                    items={filteredDistricts}
-                                                    disabled={!watchedGroupId && !currentGroupName}
+                                                    disabled={!watchedGroupId}
+                                                    stateId={effectiveStateId as number}
+                                                    regionId={effectiveRegionId as number}
+                                                    oldGroupId={authUser?.old_group_id ?? undefined}
+                                                    groupId={watchedGroupId || (authUser?.group_id as number | undefined)}
+                                                    isGroupAdmin={(authUser?.roles || []).includes('Group Admin')}
                                                 />
                                                 <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
                                             </Field.Root>

@@ -26,6 +26,7 @@ interface ChangePasswordDialogProps {
 import { useState } from "react"
 import { IconButton } from "@chakra-ui/react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
+import { delay } from "@/utils/helpers"
 
 export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogProps) => {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch } = useForm<ChangePasswordFormData>({
@@ -49,6 +50,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                 description: "Your password has been changed successfully",
                 duration: 3000,
             })
+            await delay(1000);
             onClose()
             reset()
         } catch {
@@ -57,6 +59,8 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                 description: "Failed to change password. Please try again.",
                 duration: 3000,
             })
+
+            await delay(1000)
         }
     }
 

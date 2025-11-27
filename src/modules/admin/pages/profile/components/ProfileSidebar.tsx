@@ -98,9 +98,6 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
                             <Heading size="xl" color="white">
                                 {user?.name || 'User'}
                             </Heading>
-                            <Text opacity={0.9} fontSize="lg">
-                                {getAccessLevelLabel()}
-                            </Text>
                             <Badge
                                 colorPalette={user?.is_active ? "green" : "red"}
                                 rounded="full"
