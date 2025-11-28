@@ -25,7 +25,7 @@ const allLinks: LinkItem[] = [
 ]
 
 const MobileSidebar: React.FC = () => {
-  const { hasRole, user,logout } = useAuth()
+  const { hasRole, logout } = useAuth()
   const location = useLocation()
 
   const isLinkActive = (href: string): boolean => {
