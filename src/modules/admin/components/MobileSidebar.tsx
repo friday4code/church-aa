@@ -1,6 +1,6 @@
 import React from "react"
-import { VStack, HStack, Box, Drawer, Separator, Center, Avatar, Text, Button } from "@chakra-ui/react"
-import { Box1, Chart1, Chart2, House, Layer, Location, Map, Map1, NoteText, Notepad, People, Profile, Logout } from "iconsax-reactjs"
+import { VStack, HStack, Box, Drawer, Separator, Center, Button } from "@chakra-ui/react"
+import { Box1, Chart1, Chart2, House, Layer, Location, Map, Map1, NoteText, Notepad, People, Logout } from "iconsax-reactjs"
 import { useAuth } from "@/hooks/useAuth"
 import { NavLink, useLocation } from "react-router"
 
