@@ -105,13 +105,40 @@ export const ReportsContent = () => {
             totalRevivalYouth += (att.male || 0) + (att.female || 0)
         }
 
+        const monthOrder = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        const monthIndex = (m: string) => {
+            const i = monthOrder.indexOf(m)
+            return i === -1 ? 0 : i + 1
+        }
+        const monthlyTotals: Record<string, number> = {}
+        for (const w of youthWeeklyAttendances) {
+            const key = `${w.year}-${w.month}`
+            const val = (w.member_boys || 0) + (w.member_girls || 0) + (w.visitor_boys || 0) + (w.visitor_girls || 0)
+            monthlyTotals[key] = (monthlyTotals[key] || 0) + val
+        }
+        const keys = Object.keys(monthlyTotals).sort((a, b) => {
+            const [ay, am] = a.split('-'); const [by, bm] = b.split('-')
+            const ai = parseInt(ay, 10); const bi = parseInt(by, 10)
+            if (ai !== bi) return ai - bi
+            return monthIndex(am) - monthIndex(bm)
+        })
+        const latestKey = keys[keys.length - 1]
+        const prevKey = keys[keys.length - 2]
+        const currentVal = latestKey ? monthlyTotals[latestKey] : 0
+        const prevVal = prevKey ? monthlyTotals[prevKey] : 0
+        let growthRate = 0
+        if (prevVal > 0) {
+            growthRate = ((currentVal - prevVal) / prevVal) * 100
+        } else if (prevVal === 0) {
+            growthRate = currentVal > 0 ? 100 : 0
+        }
         return {
             totalAttendance,
             totalYouth: totalWeeklyYouth + totalRevivalYouth,
             totalWeeklyYouth,
             totalRevivalYouth,
             averageAttendance: attendances.length > 0 ? Math.round(totalAttendance / attendances.length) : 0,
-            growthRate: 12.5,
+            growthRate: Number.isFinite(growthRate) ? Math.round(growthRate * 10) / 10 : 0,
         }
     }, [attendances, youthWeeklyAttendances, youthRevivalAttendances])
 

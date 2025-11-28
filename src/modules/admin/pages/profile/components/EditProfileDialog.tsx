@@ -26,7 +26,7 @@ interface EditProfileDialogProps {
 
 export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
     const { user, refetch } = useMe()
-    
+
     // Helper to extract first and last name from full name
     const extractNames = (fullName: string) => {
         const names = fullName.split(' ')
@@ -35,9 +35,9 @@ export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) =
             lastName: names.slice(1).join(' ') || ''
         }
     }
-    
+
     const { firstName, lastName } = user?.name ? extractNames(user.name) : { firstName: '', lastName: '' }
-    
+
     const { watch, register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AdminProfileFormData>({
         resolver: zodResolver(adminProfileSchema),
         defaultValues: {
@@ -96,10 +96,10 @@ export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) =
                     <Dialog.Content rounded="2xl" maxW="2xl">
                         <Dialog.Header>
                             <Dialog.Title>Edit Profile</Dialog.Title>
-                            <Text color="gray.600">Update your personal information</Text>
                         </Dialog.Header>
 
                         <Dialog.Body>
+                            <Text mb="6" color="gray.600">Update your personal information</Text>
                             <form id="edit-profile-form" onSubmit={handleSubmit(onSubmit)}>
                                 <VStack gap="4">
                                     <Grid templateColumns="1fr 1fr" gap="4" w="full">

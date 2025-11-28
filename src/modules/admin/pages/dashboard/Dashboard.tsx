@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import ErrorFallback from "@/components/ErrorFallback";
 import { ENV } from "@/config/env";
 import { useQueryErrorResetBoundary } from "@tanstack/react-query";
@@ -56,17 +56,20 @@ import { useRegions } from "../../hooks/useRegion";
 import { useUsers } from "../../hooks/useUser";
 import { useStates } from "../../hooks/useState";
 import { useAuth } from "@/hooks/useAuth";
+import { useMe } from "@/hooks/useMe";
+import { Tooltip as CTooltip } from "@/components/ui/tooltip";
+import { adminApi } from "@/api/admin.api";
 
 
 const Dashboard: React.FC = () => {
     const { reset } = useQueryErrorResetBoundary();
-
+    const title = useMemo(() => `Dashboard | ${ENV.APP_NAME}`, [ENV.APP_NAME]);
     return (
         <>
-            <title>Dashboard | {ENV.APP_NAME}</title>
+            <title>{title}</title>  
             <meta
                 name="description"
-                content="track your dashboard"
+                content="track your dashboard now"
             />
             <ErrorBoundary
                 onReset={reset}
@@ -83,6 +86,7 @@ const Dashboard: React.FC = () => {
 const Content = () => {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
+    const { user } = useMe();
 
     // Use custom hooks
     const { data, isLoading: usersLoading, error: usersError } = useUsers();
@@ -261,6 +265,26 @@ const Content = () => {
         return false;
     }, [hasRole]);
 
+    // Permission map
+    const requiredRolesByPath: Record<string, string[]> = {
+        "/admin/states": ["Super Admin", "State Admin"],
+        "/admin/regions": ["Super Admin", "State Admin", "Region Admin"],
+        "/admin/old-groups": ["Super Admin", "State Admin", "Region Admin", "Group Admin"],
+        "/admin/groups": ["Super Admin", "State Admin", "Region Admin", "Group Admin"],
+        "/admin/districts": ["Super Admin", "State Admin", "Region Admin", "Group Admin", "District Admin"],
+        "/admin/attendance": ["Super Admin", "State Admin", "Region Admin", "Group Admin", "District Admin"],
+        "/admin/users": ["Super Admin", "admin"],
+    }
+
+    const canAccessPath = (path: string) => {
+        const req = requiredRolesByPath[path] || []
+        if (req.length === 0) return false
+        for (const r of req) {
+            if (hasRole(r)) return true
+        }
+        return false
+    }
+
     // Stats data with real API data
     const allStatsData = [
         {
@@ -369,13 +393,27 @@ const Content = () => {
         }
     ];
 
-    // Filter stats based on user role
     const statsData = React.useMemo(() => {
-        return allStatsData.filter(stat => getVisibleStats(stat.label));
-    }, [allStatsData, getVisibleStats]);
+        return allStatsData.map(stat => ({
+            ...stat,
+            restricted: !canAccessPath(stat.path),
+            requiredPermission: (requiredRolesByPath[stat.path] || []).join(', ')
+        }))
+    }, [allStatsData]);
 
-    const handleCardClick = (path: string) => {
-        navigate(path);
+    const handleCardClick = (path: string, label: string, required: string) => {
+        if (canAccessPath(path)) {
+            navigate(path)
+        } else {
+            const payload = {
+                timestamp: new Date().toISOString(),
+                user_id: user?.id ?? null,
+                action: `navigate:${path}:${label}`,
+                required_permission: required,
+            }
+            adminApi.logSecurityAudit(payload)
+            toaster.create({ description: `Access Restricted: Requires ${required}`, type: 'error', closable: true })
+        }
     };
 
     type StatItem = {
@@ -387,23 +425,26 @@ const Content = () => {
         path: string
         loading?: boolean
         error?: string | null
+        restricted?: boolean
+        requiredPermission?: string
     }
 
-    const StatCard = React.memo(({ item, onClick }: { item: StatItem, onClick: (path: string) => void }) => {
-        return (
+    const StatCard = React.memo(({ item, onClick }: { item: StatItem, onClick: (path: string, label: string, required: string) => void }) => {
+        const card = (
             <Card.Root
                 height="full"
                 variant="outline"
                 rounded="xl"
                 bg="bg"
-                _hover={{
+                opacity={item.restricted ? 0.6 : 1}
+                _hover={item.restricted ? {} : {
                     transform: "translateY(-2px)",
                     shadow: "md",
                     cursor: "pointer",
                     borderColor: `${item.color}.200`
                 }}
                 transition="all 0.2s"
-                onClick={() => onClick(item.path)}
+                onClick={() => onClick(item.path, item.label, item.requiredPermission || '')}
             >
                 <Card.Body>
                     <HStack justify="start" align="flex-start">
@@ -430,7 +471,7 @@ const Content = () => {
                             )}
                         </Stat.Root>
 
-                        <HStack>
+                        <HStack cursor={item.restricted ? 'not-allowed' : 'pointer'}>
                             <Box p="2" borderRadius="md" bg={`${item.color}/10`} color={`${item.color}`} flexShrink={0}>
                                 {item.icon}
                             </Box>
@@ -440,6 +481,12 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
         )
+        if (item.restricted) {
+            return (
+                <CTooltip content={`Access Restricted: Requires ${item.requiredPermission}`}> {card} </CTooltip>
+            )
+        }
+        return card
     })
 
     return (

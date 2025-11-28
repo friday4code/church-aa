@@ -142,7 +142,7 @@ export const OldGroupAttendanceReport = ({
                         </GridItem>
                     </Grid>
                     <Flex justify="end">
-                        <Button type="submit" bg={{ base: "accent.100", _dark: "accent.200" }} color={{ base: "white", _dark: "gray.900" }} _hover={{ bg: { base: "accent.200", _dark: "accent.300" } }} disabled={isLoading} rounded="xl">
+                        <Button type="submit" colorPalette="accent" disabled={isLoading} rounded="xl">
                             <DocumentDownload size="20" />
                             Download Report
                         </Button>

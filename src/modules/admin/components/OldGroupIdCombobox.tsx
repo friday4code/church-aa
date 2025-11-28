@@ -127,7 +127,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
             disabled={disabled || shouldShowLoading}
             collection={collection}
             value={typeof value === 'number' && value > 0 ? [String(value)] : []}
-            defaultInputValue={selectedLabel}
+            inputValue={selectedLabel || inputValue}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}

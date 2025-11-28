@@ -243,9 +243,7 @@ export const GroupAttendanceReport = ({
                         <Tooltip content={disabledReason} disabled={isReady} >
                             <Button
                                 type="submit"
-                                bg={{ base: "accent.100", _dark: "accent.200" }}
-                                color={{ base: "white", _dark: "gray.900" }}
-                                _hover={{ bg: { base: "accent.200", _dark: "accent.300" } }}
+                                colorPalette="accent"
                                 disabled={isLoading || !isReady}
                                 aria-disabled={!isReady}
                                 rounded="xl"

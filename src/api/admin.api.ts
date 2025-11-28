@@ -296,4 +296,11 @@ export const adminApi = {
         });
         return data;
     },
+    logSecurityAudit: async (payload: { timestamp: string; user_id: number | string | null; action: string; required_permission: string | string[] }): Promise<void> => {
+        try {
+            await axiosClient.post('/security/audit', payload);
+        } catch (err) {
+            console.error('audit:failed', err);
+        }
+    },
 }
