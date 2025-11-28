@@ -330,7 +330,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="2xl">
+                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {mode === 'add' ? 'Add New User' : 'Update User'}
@@ -440,7 +440,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                         <Field.ErrorText>{errors.password?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    {isSuperAdmin && (
+                                    {isSuperAdmin && mode === 'add' && (
                                         <>
                                             <Field.Root required invalid={!!errors.state_id}>
                                                 <StateIdCombobox

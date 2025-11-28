@@ -265,7 +265,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="2xl">
+                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {mode === 'add' ? 'Add New Group' : 'Update Group'}

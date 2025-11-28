@@ -5,9 +5,9 @@ export const userSchema = (mode: string) => z.object({
     email: z.string().min(1, 'Email is required').email('Invalid email format'),
     phone: z.string().min(1, 'Phone number is required'),
     password: z.string().min(mode === 'add' ? 6 : 0, 'Password must be at least 6 characters').optional(),
-    state_id: z.number().min(1, 'State is required'),
-    region_id: z.number().min(1, 'Region is required'),
-    district_id: z.number().min(1, 'District is required'),
+    state_id: mode === 'add' ? z.number().min(1, 'State is required') : z.number().optional(),
+    region_id: mode === 'add' ? z.number().min(1, 'Region is required') : z.number().optional(),
+    district_id: mode === 'add' ? z.number().min(1, 'District is required') : z.number().optional(),
     group_id: z.number().optional().default(0),
     old_group_id: z.number().optional().default(0),
     roles: z.array(z.union([z.number(), z.string()])).optional().default([1])

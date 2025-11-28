@@ -166,7 +166,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content rounded="xl" maxW="2xl">
+                        <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
                             <Dialog.Header>
                                 <Dialog.Title>
                                     {mode === 'add' ? 'Add New Region' : 'Update Region'}

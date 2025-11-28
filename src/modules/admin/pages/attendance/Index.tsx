@@ -459,7 +459,7 @@ const Content = () => {
                         <Heading size="lg">Quick Actions</Heading>
                     </Card.Header>
                     <Card.Body pt="0">
-                        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                        <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 3 }} gap={{ base: 3, md: 4 }}>
                             {Object.entries(SERVICE_TYPES).map(([serviceType, config]) => (
                                 <Card.Root
                                     key={serviceType}
@@ -559,7 +559,7 @@ const Content = () => {
                     <Heading size="lg">Quick Actions</Heading>
                 </Card.Header>
                 <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                    <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 3 }} gap={{ base: 3, md: 4 }}>
                         {Object.entries(SERVICE_TYPES).map(([serviceType, config]) => (
                             <Card.Root
                                 key={serviceType}

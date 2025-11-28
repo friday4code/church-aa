@@ -473,7 +473,7 @@ const Content = () => {
             </Flex>
 
             {/* Youth Statistics Cards */}
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} gap="6">
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 5 }} gap={{ base: 3, md: 6 }}>
                 <StatCard
                     title="Youth Records"
                     value={stats.totalRecords}
@@ -527,7 +527,7 @@ const Content = () => {
                     <Heading size="lg">Youth Quick Actions</Heading>
                 </Card.Header>
                 <Card.Body pt="0">
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap="4">
+                    <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 3 }} gap={{ base: 3, md: 4 }}>
                         {Object.entries(YOUTH_SERVICE_TYPES).map(([serviceType, config]) => (
                             <Link key={serviceType} to={`/admin/youth_ministry/${config.route}`}>
                                 <Card.Root

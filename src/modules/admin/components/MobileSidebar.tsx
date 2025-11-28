@@ -1,9 +1,8 @@
 import React from "react"
-import { VStack, HStack, Box, Drawer, Separator, Center, Avatar, Text } from "@chakra-ui/react"
-import { NavLink } from "react-router"
-import { Box1, Chart1, Chart2, House, Layer, Location, Map, Map1, NoteText, Notepad, People, Profile } from "iconsax-reactjs"
+import { VStack, HStack, Box, Drawer, Separator, Center, Avatar, Text, Button } from "@chakra-ui/react"
+import { Box1, Chart1, Chart2, House, Layer, Location, Map, Map1, NoteText, Notepad, People, Profile, Logout } from "iconsax-reactjs"
 import { useAuth } from "@/hooks/useAuth"
-import { ColorModeButton } from "@/components/ui/color-mode"
+import { NavLink, useLocation } from "react-router"
 
 interface LinkItem {
   name: string
@@ -26,7 +25,15 @@ const allLinks: LinkItem[] = [
 ]
 
 const MobileSidebar: React.FC = () => {
-  const { hasRole, user } = useAuth()
+  const { hasRole, user,logout } = useAuth()
+  const location = useLocation()
+
+  const isLinkActive = (href: string): boolean => {
+    if (location.pathname === href) return true
+    if (!location.pathname.startsWith(href)) return false
+    const nextChar = location.pathname.charAt(href.length)
+    return nextChar === "/" || nextChar === ""
+  }
 
   const isLinkVisible = React.useCallback((href: string): boolean => {
     if (hasRole('Super Admin')) return true
@@ -78,12 +85,21 @@ const MobileSidebar: React.FC = () => {
               p="3"
               role="menuitem"
               minH="11"
+              bg={isLinkActive(link.href) ? "accent.100" : "transparent"}
+              color={isLinkActive(link.href) ? "accent.700" : "inherit"}
+              _dark={{
+                bg: isLinkActive(link.href) ? "accent.900" : "transparent",
+                color: isLinkActive(link.href) ? "accent.100" : "inherit"
+              }}
               _hover={{ bg: "accent.50/20" }}
+              transition="all 0.2s ease"
             >
-              <Center>
+              <Center color={isLinkActive(link.href) ? "accent.600" : "inherit"}>
                 {link.icon}
               </Center>
-              <Box>{link.name}</Box>
+              <Box fontWeight={isLinkActive(link.href) ? "semibold" : "normal"}>
+                {link.name}
+              </Box>
             </HStack>
           </NavLink>
         </Drawer.ActionTrigger>
@@ -95,25 +111,18 @@ const MobileSidebar: React.FC = () => {
 
       <HStack justify="space-between" px="2" py="2">
         <Drawer.ActionTrigger asChild>
-          <NavLink to="/admin/profile" aria-label="Go to profile">
-            <HStack gap="3" rounded="lg" p="2" minH="11" _hover={{ bg: "accent.50/20" }}>
-              <Avatar.Root size="sm">
-                <Avatar.Fallback name={user?.name} />
-                <Avatar.Image src={undefined} />
-              </Avatar.Root>
-              <VStack align="start" gap="0">
-                <Text fontWeight="semibold" lineClamp={1}>
-                  {user?.name ?? "My Profile"}
-                </Text>
-                <HStack gap="1" color="gray.500">
-                  <Profile size="14" />
-                  <Text fontSize="xs">View profile</Text>
-                </HStack>
-              </VStack>
-            </HStack>
-          </NavLink>
+
+          <Button
+            colorPalette={"red"}
+            variant="outline"
+            rounded="xl"
+            onClick={() => logout()}
+            w="full"
+          >
+            <Logout />
+            Sign Out
+          </Button>
         </Drawer.ActionTrigger>
-        <ColorModeButton aria-label="Toggle color mode" size="xs" rounded="md" />
       </HStack>
     </VStack>
   )

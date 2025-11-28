@@ -260,7 +260,7 @@ export const YouthAttendanceDialog = ({
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="3xl">
+                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "3xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {mode === 'add' ? 'Add' : 'Edit'} Youth {attendanceType === 'weekly' ? 'Weekly' : 'Revival'} Attendance

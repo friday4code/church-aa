@@ -179,7 +179,7 @@ export const GroupAttendanceReport = ({
             </Card.Header>
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit, handleInvalid)}>
-                    <Grid templateColumns="repeat(3, 1fr)" gap="4" mb={4}>
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={{ base: 3, md: 4 }} mb={4}>
                         {roleVisibility.showState && (
                             <GridItem>
                                 <CustomComboboxField

@@ -57,7 +57,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 >
                     <Drawer.Backdrop />
                     <Drawer.Positioner>
-                        <Drawer.Content rounded="xl" zIndex={4}>
+                        <Drawer.Content roundedEnd="xl" zIndex={4}>
                             <Drawer.Header>
                                 <HStack justify="space-between" align="center" px="2">
                                     <Drawer.Title>Menu</Drawer.Title>
@@ -108,8 +108,8 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 h="vh"
                 as="main"
                 flex="1"
-                p={{ base: 4, md: 2 }}
-                ml="-6"
+                p={{ base: 2, md: 2 }}
+                ml={{ base: "auto", md: "-6" }}
                 overflowY="auto"
                 pos="relative"
                 backdropFilter={{ base: "none", md: "blur(1px)" }}
@@ -117,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 pt={{ base: navBarHeight, md: 0 }}
             >
                 {isMobile ? (
-                    <Container pos="relative" maxW={"7xl"} py="6">
+                    <Container pos="relative" maxW={"5xl"} py="6">
                         {children}
                     </Container>
                 ) : (

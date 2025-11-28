@@ -93,7 +93,7 @@ export const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) =
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="2xl" maxW="2xl">
+                    <Dialog.Content rounded="2xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>Edit Profile</Dialog.Title>
                         </Dialog.Header>

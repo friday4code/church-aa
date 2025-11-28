@@ -137,13 +137,24 @@ const Content = () => {
             return false
         })
 
-        let filtered = byHierarchy.filter((user: any) =>
-            user?.firstName?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-            user?.lastName?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-            user?.email?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-            user?.phone?.toLowerCase()?.includes(searchQuery.toLowerCase()) ||
-            `${user?.firstName} ${user?.lastName}`?.toLowerCase()?.includes(searchQuery.toLowerCase())
-        )
+        let filtered = byHierarchy.filter((user: any) => {
+            const searchLower = searchQuery.toLowerCase()
+
+            // Check if search query matches a role name
+            const roleMatch = (user.roles || []).some((role: string) =>
+                role.toLowerCase().includes(searchLower)
+            )
+
+            // Check if search query matches user fields
+            const fieldMatch =
+                user?.firstName?.toLowerCase()?.includes(searchLower) ||
+                user?.lastName?.toLowerCase()?.includes(searchLower) ||
+                user?.email?.toLowerCase()?.includes(searchLower) ||
+                user?.phone?.toLowerCase()?.includes(searchLower) ||
+                `${user?.firstName} ${user?.lastName}`?.toLowerCase()?.includes(searchLower)
+
+            return roleMatch || fieldMatch
+        })
 
         // Sorting
         filtered.sort((a: any, b: any) => {

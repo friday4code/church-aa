@@ -7,6 +7,7 @@ import type { AttendanceMonitoring } from "@/types/attendance-monitoring.type";
 import { VStack, Card, Heading, Text, Table, Badge, SimpleGrid, HoverCard, IconButton, Portal as ChakraPortal, HStack } from "@chakra-ui/react";
 import { ArrowLeft3, Eye } from "iconsax-reactjs";
 import { useMemo, useCallback } from "react";
+import { useNavigate } from "react-router";
 import Reminder from "./components/Reminder";
 import { Toaster } from "@/components/ui/toaster";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,7 @@ export default AttendanceMonitoringPage;
 
 const Content = () => {
     const { hasRole } = useAuth()
+    const navigate = useNavigate()
     const { data, isLoading } = useQuery<AttendanceMonitoring>({
         queryKey: ["attendance-monitoring"],
         queryFn: adminApi.getAttendanceMonitoring,
@@ -162,7 +164,7 @@ const Content = () => {
             <VStack gap="6" align="stretch">
                 <HStack justify="space-between">
                     <HStack gap="3">
-                        <IconButton aria-label="Go back" variant="outline" rounded="xl" onClick={() => window.history.back()}>
+                        <IconButton aria-label="Go back" variant="outline" rounded="xl" onClick={() => navigate(-1)}>
                             <ArrowLeft3 />
                         </IconButton>
                         <Heading size="2xl" color={{ base: "gray.800", _dark: "white" }}>Attendance Monitoring</Heading>
@@ -180,8 +182,8 @@ const Content = () => {
                     </Card.Body>
                 </Card.Root>
 
-                <SimpleGrid columns={{ base: 1, lg: 2 }} gap="6">
-                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+                <VStack gap={{ base: 4, md: 6 }}>
+                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "auto" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }} >
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Pending</Heading>
                             <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Awaiting submission at visible levels</Text>
@@ -202,7 +204,7 @@ const Content = () => {
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "auto" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }}>
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Submitted</Heading>
                             <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Received submissions at visible levels</Text>
@@ -222,7 +224,7 @@ const Content = () => {
                             </Table.Root>
                         </Card.Body>
                     </Card.Root>
-                </SimpleGrid>
+                </VStack>
             </VStack>
             <Toaster />
         </>

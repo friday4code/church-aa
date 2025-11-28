@@ -403,6 +403,23 @@ const Content = () => {
 
     const handleCardClick = (path: string, label: string, required: string) => {
         if (canAccessPath(path)) {
+            // Check if this is a user stats card and handle role-based navigation
+            if (path === '/admin/users' && label.includes('Admins')) {
+                // Extract role name from label
+                let roleName = ''
+                if (label.includes('Super Admins')) roleName = 'Super Admin'
+                else if (label.includes('Admins')) roleName = 'admin'
+                else if (label.includes('State Admins')) roleName = 'State Admin'
+                else if (label.includes('Region Admins')) roleName = 'Region Admin'
+                else if (label.includes('District Admins')) roleName = 'District Admin'
+                else if (label.includes('Group Admins')) roleName = 'Group Admin'
+                else if (label.includes('Viewers')) roleName = 'Viewer'
+                
+                if (roleName) {
+                    navigate(`${path}?search=${encodeURIComponent(roleName)}`)
+                    return
+                }
+            }
             navigate(path)
         } else {
             const payload = {
@@ -498,13 +515,14 @@ const Content = () => {
             {/* Stats Cards */}
             <Grid
                 templateColumns={{
-                    base: "repeat(1, 1fr)",
+                    base: "repeat(2, 1fr)",
+                    sm: "repeat(2, 1fr)",
                     md: "repeat(2, 1fr)",
                     lg: "repeat(3, 1fr)",
                     xl: "repeat(4, 1fr)"
                 }}
-                gap="5"
-                mb="8"
+                gap={{ base: 3, md: 5 }}
+                mb={{ base: 6, md: 8 }}
             >
                 {statsData.map((stat, index) => {
                     const loadingMap: Record<string, boolean> = {

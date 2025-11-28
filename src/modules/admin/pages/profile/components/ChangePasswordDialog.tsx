@@ -112,7 +112,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="2xl" maxW="md">
+                    <Dialog.Content rounded="2xl" maxW={{ base: "xs", sm: "sm", md: "md" }}>
                         <Dialog.Header>
                             <Dialog.Title>Change Password</Dialog.Title>
                         </Dialog.Header>

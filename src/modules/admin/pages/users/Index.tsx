@@ -314,7 +314,7 @@ const Content: React.FC = () => {
                         </Text>
                     </VStack>
                 </Flex>
-                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap="6">
+                <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 4 }} gap={{ base: 3, md: 6 }}>
                     {[1, 2, 3, 4].map((item) => (
                         <Card.Root key={item} bg="white" border="1px" borderColor="gray.200" rounded="xl" p="6">
                             <Card.Body p="0">
@@ -425,7 +425,7 @@ const Content: React.FC = () => {
 
 
             {/* Statistics Cards */}
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap="6">
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 4 }} gap={{ base: 3, md: 6 }}>
                 <StatCard
                     title="Total Users"
                     value={stats.totalUsers}

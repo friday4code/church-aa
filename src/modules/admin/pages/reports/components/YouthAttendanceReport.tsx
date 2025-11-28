@@ -107,7 +107,7 @@ export const YouthAttendanceReport = ({
             </Card.Header>
             <Card.Body>
                 <form onSubmit={form.handleSubmit(handleSubmit)}>
-                    <Grid templateColumns="repeat(4, 1fr)" gap="4" mb={4}>
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={{ base: 3, md: 4 }} mb={4}>
                         <GridItem>
                             <CustomComboboxField
                                 form={form}

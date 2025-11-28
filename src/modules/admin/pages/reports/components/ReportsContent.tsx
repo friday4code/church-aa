@@ -539,7 +539,7 @@ export const ReportsContent = () => {
         <VStack gap="8" align="stretch">
             <ReportsHeader />
 
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 6 }} gap="2">
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 2, lg: 6 }} gap={{ base: 3, md: 2 }}>
                 <StatCard title="Total Attendance" value={dashboardData.totalAttendance} icon={Profile2User} color="blue" description="All services" trend={dashboardData.growthRate} />
                 <StatCard title="Youth Attendance" value={dashboardData.totalYouth} icon={UserOctagon} color="green" description="YHSF members" />
                 <StatCard title="Weekly Youth" value={dashboardData.totalWeeklyYouth} icon={Calendar} color="purple" description="Weekly programs" />
