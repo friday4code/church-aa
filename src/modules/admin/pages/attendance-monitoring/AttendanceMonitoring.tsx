@@ -182,8 +182,8 @@ const Content = () => {
                     </Card.Body>
                 </Card.Root>
 
-                <VStack gap={{ base: 4, md: 6 }}>
-                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "auto" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }} >
+                <VStack gap={{ base: 4, md: 6 }} flexDir={{ base: "column", md: "row" }}>
+                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "full" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }} >
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Pending</Heading>
                             <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Awaiting submission at visible levels</Text>
@@ -204,7 +204,7 @@ const Content = () => {
                         </Card.Body>
                     </Card.Root>
 
-                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "auto" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }}>
+                    <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl" w={{ base: "full", md: "full" }} ml={{ base: "-16px", md: "0" }} mr={{ base: "-16px", md: "0" }}>
                         <Card.Header>
                             <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Submitted</Heading>
                             <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Received submissions at visible levels</Text>

@@ -6,7 +6,7 @@ import {
     Button,
 } from "@chakra-ui/react"
 import { Copy, DocumentDownload, DocumentText, ReceiptText } from "iconsax-reactjs"
-import { exportOldGroupsToExcel, exportOldGroupsToCSV, exportOldGroupsToPDF, copyOldGroupsToClipboard } from "@/utils/oldgroups.utils"
+import { exportToExcel as exportOldGroupsToExcel, exportToCSV as exportOldGroupsToCSV, exportToPDF as exportOldGroupsToPDF, copyToClipboard as copyOldGroupsToClipboard } from "@/utils/olgroups.utils"
 import type { OldGroup } from "@/types/oldGroups.type"
 
 interface ExportButtonsProps {
