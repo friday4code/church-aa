@@ -220,7 +220,7 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content rounded="xl">
+                        <Dialog.Content rounded="xl" width={{ base: "xs", md: "auto" }} maxWidth={{ base: "xs", md: "full" }}>
                             <Dialog.Header>
                                 <Dialog.Title>Upload Groups From File</Dialog.Title>
                             </Dialog.Header>

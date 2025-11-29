@@ -1,19 +1,23 @@
 // components/YouthAttendanceHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, Text } from "@chakra-ui/react"
 import { Add, DocumentDownload, ArrowLeft3, MoreSquare, SearchNormal1 } from "iconsax-reactjs"
 import { useNavigate } from "react-router"
 import { useState, useCallback } from "react"
+import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
+
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 interface YouthAttendanceHeaderProps {
     onAddClick: () => void
     onExportClick: () => void
     attendanceType: 'weekly' | 'revival'
     showBackButton?: boolean
+    attendanceData?: YouthAttendance[]
 }
 
-export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType, showBackButton }: YouthAttendanceHeaderProps) => {
+export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType, showBackButton, attendanceData = [] }: YouthAttendanceHeaderProps) => {
     const navigate = useNavigate()
     const [search, setSearch] = useState("")
 
@@ -27,16 +31,23 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
     
     return (
         <>
-            <VStack align="stretch" gap={{ base: 4, md: 6 }}>
-                {/* First line: Go back button + Title on left, drawer on right */}
+            <VStack
+                align="stretch"
+                gap={{ base: 4, md: 6 }}
+                pos="sticky"
+                top={6}
+                zIndex={"sticky"}
+                backdropFilter={"blur(20px)"}
+            >
+                {/* First line: Go back button + title on left, drawer on right */}
                 <Flex justify="space-between" align="center">
-                    {/* Go back button and title */}
-                    <Flex justify="flex-start" align="center">
+                    {/* Go back button */}
+                    <HStack justify="flex-start">
                         {showBackButton && (
-                            <IconButton 
-                                aria-label="Go back" 
-                                variant="outline" 
-                                rounded="xl" 
+                            <IconButton
+                                aria-label="Go back"
+                                variant="outline"
+                                rounded="xl"
                                 onClick={() => navigate(-1)}
                                 size={{ base: "md", md: "lg" }}
                                 mr={4}
@@ -44,13 +55,11 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                                 <ArrowLeft3 />
                             </IconButton>
                         )}
-                        <VStack align="start" gap={1} spacing={0}>
-                            <Heading size={{ base: "lg", md: "xl" }}>Youth {attendanceType === 'weekly' ? 'Weekly' : 'Revival'} Attendance</Heading>
-                            <Text color="gray.600" fontSize={{ base: "xs", md: "sm" }}>
-                                Manage {attendanceType} attendance records for youth groups
-                            </Text>
-                        </VStack>
-                    </Flex>
+                        <HStack>
+                            <Heading size={{ base: "2xl", md: "3xl" }}>Youth {attendanceType === 'weekly' ? 'Weekly' : 'Revival'} Attendance</Heading>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{attendanceData.length}</Badge>
+                        </HStack>
+                    </HStack>
 
                     {/* Mobile Drawer - only on mobile */}
                     <Drawer.Root placement="bottom" size="full">
@@ -88,26 +97,76 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                                             {/* Add Record Button */}
                                             <Button
                                                 colorPalette="accent"
-                                                size="lg"
+                                                rounded="xl"
                                                 onClick={onAddClick}
-                                                w="full"
+                                                size="lg"
+                                                width="full"
                                             >
-                                                <Add size={16} style={{ marginRight: 8 }} />
+                                                <Add />
                                                 Add Record
                                             </Button>
 
-                                            {/* Export Button */}
+                                            {/* Export Buttons */}
                                             <VStack gap={3} align="stretch">
                                                 <Heading size="sm" color="fg.muted">Export Data</Heading>
-                                                <Button
-                                                    variant="outline"
-                                                    size="lg"
-                                                    onClick={onExportClick}
-                                                    w="full"
-                                                >
-                                                    <DocumentDownload size={16} style={{ marginRight: 8 }} />
-                                                    Export
-                                                </Button>
+                                                <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
+                                                    <Button
+                                                        rounded="xl"
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        color="accent"
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        onClick={async () => await copyYouthAttendanceToClipboard(attendanceData)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        Copy
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportYouthAttendanceToExcel(attendanceData)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        Excel
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportYouthAttendanceToCSV(attendanceData)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        CSV
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportYouthAttendanceToPDF(attendanceData)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        PDF
+                                                    </Button>
+                                                </HStack>
                                             </VStack>
                                         </VStack>
                                     </Drawer.Body>
@@ -116,15 +175,17 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                         </Portal>
                     </Drawer.Root>
 
-                    {/* Desktop buttons - only on desktop */}
                     <HStack hideBelow={"md"}>
+                        {/* desktop Add Record Button */}
                         <Button
                             colorPalette="accent"
-                            size="sm"
+                            rounded="xl"
+                            w="fit"
+                            hideBelow={"md"}
                             onClick={onAddClick}
-                            w="auto"
+                            size="lg"
                         >
-                            <Add size={16} style={{ marginRight: 8 }} />
+                            <Add />
                             Add Record
                         </Button>
                     </HStack>
@@ -148,7 +209,68 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                             size={{ base: "md", md: "lg" }}
                         />
                     </InputGroup>
+                    <Box hideBelow={"md"}>
+                        <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
+                            <Button
+                                rounded="xl"
+                                variant="solid"
+                                bg="bg"
+                                w={{ base: "full", md: "auto" }}
+                                justifyContent={{ base: "start", md: "center" }}
+                                color="accent"
+                                _hover={{ bg: "bg.muted" }}
+                                size="sm"
+                                onClick={async () => await copyYouthAttendanceToClipboard(attendanceData)}
+                            >
+                                <DocumentDownload />
+                                Copy
+                            </Button>
+                            <Button
+                                variant="solid"
+                                bg="bg"
+                                color="accent"
+                                w={{ base: "full", md: "auto" }}
+                                justifyContent={{ base: "start", md: "center" }}
+                                _hover={{ bg: "bg.muted" }}
+                                size="sm"
+                                rounded="xl"
+                                onClick={() => exportYouthAttendanceToExcel(attendanceData)}
+                            >
+                                <DocumentDownload />
+                                Excel
+                            </Button>
+                            <Button
+                                variant="solid"
+                                bg="bg"
+                                color="accent"
+                                w={{ base: "full", md: "auto" }}
+                                justifyContent={{ base: "start", md: "center" }}
+                                _hover={{ bg: "bg.muted" }}
+                                size="sm"
+                                rounded="xl"
+                                onClick={() => exportYouthAttendanceToCSV(attendanceData)}
+                            >
+                                <DocumentDownload />
+                                CSV
+                            </Button>
+                            <Button
+                                variant="solid"
+                                bg="bg"
+                                color="accent"
+                                w={{ base: "full", md: "auto" }}
+                                justifyContent={{ base: "start", md: "center" }}
+                                _hover={{ bg: "bg.muted" }}
+                                size="sm"
+                                rounded="xl"
+                                onClick={() => exportYouthAttendanceToPDF(attendanceData)}
+                            >
+                                <DocumentDownload />
+                                PDF
+                            </Button>
+                        </HStack>
+                    </Box>
                 </HStack>
+
             </VStack>
         </>
     )
