@@ -1,7 +1,7 @@
 // components/oldgroups/components/OldGroupsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadOldGroupsFromFile from "../../../components/PortingFile"
 import type { OldGroup } from "@/types/oldGroups.type"
