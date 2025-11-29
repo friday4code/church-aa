@@ -6,7 +6,7 @@ import {
     Button,
 } from "@chakra-ui/react"
 import { Copy, DocumentDownload, DocumentText, ReceiptText } from "iconsax-reactjs"
-import { exportToExcel, exportToCSV, exportToPDF, copyToClipboard } from "@/utils/export.utils"
+import { exportOldGroupsToExcel, exportOldGroupsToCSV, exportOldGroupsToPDF, copyOldGroupsToClipboard } from "@/utils/oldgroups.utils"
 import type { OldGroup } from "@/types/oldGroups.type"
 
 interface ExportButtonsProps {
@@ -25,7 +25,7 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 color="accent"
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
-                onClick={() => copyToClipboard(oldGroups)}
+                onClick={async () => await copyOldGroupsToClipboard(oldGroups)}
             >
                 <Copy />
                 Copy
@@ -39,7 +39,7 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToExcel(oldGroups)}
+                onClick={() => exportOldGroupsToExcel(oldGroups)}
             >
                 <DocumentDownload />
                 Excel
@@ -53,7 +53,7 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToCSV(oldGroups)}
+                onClick={() => exportOldGroupsToCSV(oldGroups)}
             >
                 <DocumentText />
                 CSV
@@ -67,7 +67,7 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToPDF(oldGroups)}
+                onClick={() => exportOldGroupsToPDF(oldGroups)}
             >
                 <ReceiptText />
                 PDF

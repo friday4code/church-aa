@@ -1,23 +1,23 @@
-// utils/users.utils.ts
+// utils/states.utils.ts
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { User } from '@/types/users.type';
+import type { State } from '@/types/states.type';
 
-export const copyUsersToClipboard = async (users: User[]): Promise<void> => {
-    const header = 'S/N\tFull Name\tEmail\tPhone\n';
+export const copyStatesToClipboard = async (states: State[]): Promise<void> => {
+    const header = 'S/N\tState Name\tState Code\tState Leader\tRegion\tCreated Date\n';
 
-    const text = users
+    const text = states
         .map(
-            (user) =>
-                `${user.id}\t${user.firstName} ${user.lastName}\t${user.email}\t${user.phone}`
+            (state, index) =>
+                `${index + 1}\t${state.name}\t${state.code}\t${state.leader}\t${state.region}\t${state.createdAt.toLocaleDateString()}`
         )
         .join('\n');
 
     try {
         await navigator.clipboard.writeText(header + text);
     } catch (err) {
-        console.error('Failed to copy users to clipboard:', err);
+        console.error('Failed to copy states to clipboard:', err);
         // Fallback for browsers that don't support clipboard API
         const textArea = document.createElement('textarea');
         textArea.value = header + text;
@@ -32,15 +32,17 @@ export const copyUsersToClipboard = async (users: User[]): Promise<void> => {
     }
 };
 
-export const exportUsersToExcel = (users: User[]): void => {
+export const exportStatesToExcel = (states: State[]): void => {
     try {
         // Prepare data for Excel
-        const excelData = users.map(user => ({
-            'First Name': user.name.split(" ")[0],
-            'Last Name': user.name.split(" ")[1],
-            'Full Name': `${user.name}`,
-            'Email': user.email,
-            'Phone': user.phone,
+        const excelData = states.map((state, index) => ({
+            'S/N': index + 1,
+            'State Name': state.name,
+            'State Code': state.code,
+            'State Leader': state.leader,
+            'Region': state.region,
+            'Created Date': state.createdAt.toLocaleDateString(),
+            'Updated Date': state.updatedAt.toLocaleDateString()
         }));
 
         // Create worksheet
@@ -48,44 +50,42 @@ export const exportUsersToExcel = (users: User[]): void => {
 
         // Create workbook
         const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Users Data');
+        utils.book_append_sheet(workbook, worksheet, 'States Data');
 
         // Set column widths
         const colWidths = [
-            { wch: 15 }, // First Name
-            { wch: 15 }, // Last Name
-            { wch: 25 }, // Full Name
-            { wch: 30 }, // Email
-            { wch: 20 }, // Phone
+            { wch: 8 },  // S/N
+            { wch: 20 }, // State Name
+            { wch: 15 }, // State Code
+            { wch: 20 }, // State Leader
+            { wch: 20 }, // Region
             { wch: 12 }, // Created Date
             { wch: 12 }  // Updated Date
         ];
         worksheet['!cols'] = colWidths;
 
         // Generate Excel file and save
-        // const excelBuffer = write(workbook, { bookType: 'xlsx', type: 'array' });
-        // const data = new Blob([excelBuffer], {
-        //     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        // });
-        writeFile(workbook, `users-data-${new Date().toISOString().split('T')[0]}.xlsx`);
+        writeFile(workbook, `states-data-${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
         console.error('Error exporting to Excel:', error);
-        alert('Failed to export users to Excel. Please try again.');
+        alert('Failed to export states to Excel. Please try again.');
     }
 };
 
-export const exportUsersToCSV = (users: User[]): void => {
+export const exportStatesToCSV = (states: State[]): void => {
     try {
         // CSV headers
-        const headers = ['First Name', 'Last Name', 'Full Name', 'Email', 'Phone', 'Created Date', 'Updated Date'];
+        const headers = ['S/N', 'State Name', 'State Code', 'State Leader', 'Region', 'Created Date', 'Updated Date'];
 
         // CSV data rows
-        const csvRows = users.map(user => [
-            `"${user.name.split(" ")[0].replace(/"/g, '""')}"`,
-            `"${user.name.split(" ")[1].replace(/"/g, '""')}"`,
-            `"${user.name}".replace(/"/g, '""')`,
-            `"${user.email.replace(/"/g, '""')}"`,
-            `"${user?.phone?.replace(/"/g, '""')}"`,
+        const csvRows = states.map((state, index) => [
+            (index + 1).toString(),
+            `"${state.name.replace(/"/g, '""')}"`,
+            `"${state.code.replace(/"/g, '""')}"`,
+            `"${state.leader.replace(/"/g, '""')}"`,
+            `"${state.region.replace(/"/g, '""')}"`,
+            state.createdAt.toLocaleDateString(),
+            state.updatedAt.toLocaleDateString()
         ]);
 
         // Combine headers and rows
@@ -100,7 +100,7 @@ export const exportUsersToCSV = (users: User[]): void => {
         const url = URL.createObjectURL(blob);
 
         link.setAttribute('href', url);
-        link.setAttribute('download', `users-data-${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `states-data-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
 
         document.body.appendChild(link);
@@ -109,11 +109,11 @@ export const exportUsersToCSV = (users: User[]): void => {
         URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Error exporting to CSV:', error);
-        alert('Failed to export users to CSV. Please try again.');
+        alert('Failed to export states to CSV. Please try again.');
     }
 };
 
-export const exportUsersToPDF = (users: User[]): void => {
+export const exportStatesToPDF = (states: State[]): void => {
     try {
         // Create new PDF document
         const doc = new jsPDF();
@@ -121,7 +121,7 @@ export const exportUsersToPDF = (users: User[]): void => {
         // Add title
         doc.setFontSize(16);
         doc.setTextColor(40, 40, 40);
-        doc.text('Users Data', 14, 15);
+        doc.text('States Data', 14, 15);
 
         // Add export date
         doc.setFontSize(10);
@@ -129,22 +129,24 @@ export const exportUsersToPDF = (users: User[]): void => {
         doc.text(`Exported on: ${new Date().toLocaleDateString()}`, 14, 22);
 
         // Add total count
-        doc.text(`Total Users: ${users.length}`, 14, 28);
+        doc.text(`Total States: ${states.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = users.map(user => [
-            user.id.toString(),
-            `${user.name}`,
-            user.email,
-            user.phone
+        const tableData = states.map((state, index) => [
+            (index + 1).toString(),
+            state.name,
+            state.code,
+            state.leader,
+            state.region
         ]);
 
         // Define table columns
         const tableColumns = [
             'S/N',
-            'Full Name',
-            'Email',
-            'Phone'
+            'State Name',
+            'State Code',
+            'State Leader',
+            'Region'
         ];
 
         // Add table to PDF
@@ -168,9 +170,10 @@ export const exportUsersToPDF = (users: User[]): void => {
             },
             columnStyles: {
                 0: { cellWidth: 15 }, // S/N
-                1: { cellWidth: 35 }, // Full Name
-                2: { cellWidth: 45 }, // Email
-                3: { cellWidth: 30 }  // Phone
+                1: { cellWidth: 30 }, // State Name
+                2: { cellWidth: 20 }, // State Code
+                3: { cellWidth: 30 }, // State Leader
+                4: { cellWidth: 30 }  // Region
             },
             margin: { top: 35 }
         });
@@ -190,9 +193,9 @@ export const exportUsersToPDF = (users: User[]): void => {
         }
 
         // Save PDF
-        doc.save(`users-data-${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`states-data-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
         console.error('Error exporting to PDF:', error);
-        alert('Failed to export users to PDF. Please try again.');
+        alert('Failed to export states to PDF. Please try again.');
     }
 };

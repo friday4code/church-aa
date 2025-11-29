@@ -5,7 +5,7 @@ import {
     Button,
 } from "@chakra-ui/react"
 import { Copy, DocumentDownload, DocumentText, ReceiptText } from "iconsax-reactjs"
-import { exportToExcel, exportToCSV, exportToPDF } from "@/utils/export.utils"
+import { copyUsersToClipboard, exportUsersToExcel, exportUsersToCSV, exportUsersToPDF } from "@/utils/users.utils"
 
 interface ExportButtonsProps {
     users: any[]
@@ -23,7 +23,7 @@ const ExportButtons = ({ users }: ExportButtonsProps) => {
                 color="accent"
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
-                onClick={() => navigator.clipboard.writeText(JSON.stringify(users))}
+                onClick={async () => await copyUsersToClipboard(users)}
             >
                 <Copy />
                 Copy
@@ -37,7 +37,7 @@ const ExportButtons = ({ users }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToExcel(users)}
+                onClick={() => exportUsersToExcel(users)}
             >
                 <DocumentDownload />
                 Excel
@@ -51,7 +51,7 @@ const ExportButtons = ({ users }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToCSV(users)}
+                onClick={() => exportUsersToCSV(users)}
             >
                 <DocumentText />
                 CSV
@@ -65,7 +65,7 @@ const ExportButtons = ({ users }: ExportButtonsProps) => {
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
-                onClick={() => exportToPDF(users)}
+                onClick={() => exportUsersToPDF(users)}
             >
                 <ReceiptText />
                 PDF

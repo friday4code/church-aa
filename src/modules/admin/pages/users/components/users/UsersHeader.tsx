@@ -13,6 +13,7 @@ import {
     CloseButton,
     Drawer,
     Portal,
+    Box,
 } from "@chakra-ui/react"
 import { Add, ArrowLeft3, SearchNormal1, MoreSquare } from "iconsax-reactjs"
 import { useNavigate } from "react-router"
@@ -32,12 +33,12 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
     const { hasRole } = useAuth();
     const isSuperAdmin = hasRole('Super Admin');
     const [search, setSearch] = useState("");
-    
+
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         onSearch(e.target.value);
     }, [onSearch]);
-    
+
     const clearSearch = useCallback(() => {
         setSearch("");
         onSearch("");
@@ -170,6 +171,9 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
                             size={{ base: "md", md: "lg" }}
                         />
                     </InputGroup>
+                    <Box hideBelow="md">
+                        <ExportButtons users={users} />
+                    </Box>
                 </HStack>
 
             </VStack>
