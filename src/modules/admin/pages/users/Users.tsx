@@ -24,7 +24,6 @@ import { Badge, HStack, Text as CText } from "@chakra-ui/react"
 
 // Lazy load components
 const UsersHeader = lazy(() => import("./components/users/UsersHeader"))
-const ExportButtons = lazy(() => import("./components/users/ExportButtons"))
 const UsersTable = lazy(() => import("./components/users/UsersTable"))
 const UsersActionBar = lazy(() => import("./components/users/UsersActionBar"))
 const UserDialog = lazy(() => import("./components/users/UserDialog"))
@@ -373,15 +372,6 @@ const Content = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                <ExportButtons users={users} />
-                            </Suspense>
-
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 {!hasRole('Super Admin') && (

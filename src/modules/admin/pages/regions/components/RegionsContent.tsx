@@ -20,7 +20,6 @@ import { useAuth } from "@/hooks/useAuth"
 
 // Import lazy loaded components
 const RegionsHeader = lazy(() => import("./RegionsHeader"))
-const ExportButtons = lazy(() => import("./ExportButtons"))
 const RegionsTable = lazy(() => import("./RegionsTable"))
 const RegionsActionBar = lazy(() => import("./RegionsActionBar"))
 const RegionDialog = lazy(() => import("./RegionDialog"))
@@ -252,15 +251,6 @@ const RegionsContent = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                {isSuperAdmin && <ExportButtons regions={regions} />}
-                            </Suspense>
-
                             {/* Table */}
                             <Suspense fallback={<RegionsTableLoading />}>
                                 <RegionsTable

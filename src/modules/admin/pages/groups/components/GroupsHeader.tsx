@@ -5,6 +5,7 @@ import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, Cl
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import type { Group } from "@/types/groups.type"
 import UploadGroupsFromFile from "./PortingFile"
+import ExportButtons from "./ExportButtons"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router"
 
@@ -72,21 +73,32 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
                 />
             </InputGroup>
 
-            {/* Third line: Upload file + Add Group button (horizontal) */}
+            {/* Third line: Export buttons (left) + Upload file + Add Group button (right) */}
             {isSuperAdmin && (
-                <HStack gap={{ base: 3, md: 4 }} align="center">
-                    <UploadGroupsFromFile data={groups} />
-                    <Button
-                        colorPalette="accent"
-                        rounded="xl"
-                        onClick={onAddGroup}
-                        size={{ base: "md", md: "lg" }}
-                        flex={1}
+                <VStack gap={{ base: 3, md: 4 }} align="stretch">
+                    {/* Export buttons grouped on the left */}
+                    <ExportButtons groups={groups} />
+                    
+                    {/* Upload file and Add Group button on separate lines on mobile, same line on desktop */}
+                    <Flex 
+                        direction={{ base: "column", md: "row" }} 
+                        gap={{ base: 3, md: 4 }} 
+                        justify={{ base: "stretch", md: "flex-end" }}
                     >
-                        <Add />
-                        Add Group
-                    </Button>
-                </HStack>
+                        <UploadGroupsFromFile data={groups} />
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            onClick={onAddGroup}
+                            size={{ base: "md", md: "lg" }}
+                            width={{ base: "full", md: "auto" }}
+                            minW={{ base: "auto", md: "120px" }}
+                        >
+                            <Add />
+                            Add Group
+                        </Button>
+                    </Flex>
+                </VStack>
             )}
         </VStack>
     )

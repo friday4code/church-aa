@@ -10,10 +10,14 @@ import {
     Input,
     VStack,
     IconButton,
+    CloseButton
 } from "@chakra-ui/react"
 import { Add, ArrowLeft3, SearchNormal1 } from "iconsax-reactjs"
 import { useNavigate } from "react-router"
 import { useSearchParams } from "react-router"
+import { useState, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import ExportButtons from "./ExportButtons"
 
 interface UsersHeaderProps {
     users: any[]
@@ -23,6 +27,20 @@ interface UsersHeaderProps {
 
 const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
     const navigate = useNavigate();
+    const { hasRole } = useAuth();
+    const isSuperAdmin = hasRole('Super Admin');
+    const [search, setSearch] = useState("");
+    
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+        onSearch(e.target.value);
+    }, [onSearch]);
+    
+    const clearSearch = useCallback(() => {
+        setSearch("");
+        onSearch("");
+    }, [onSearch]);
+
     return (
         <VStack
             align="stretch"
@@ -54,29 +72,40 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
                 maxW="full" 
                 colorPalette={"accent"} 
                 startElement={<SearchNormal1 />}
+                endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
             >
                 <Input
                     bg="bg"
                     rounded="xl"
                     placeholder="Search users..."
-                    onChange={(e) => onSearch(e.target.value)}
+                    value={search}
+                    onChange={handleChange}
                     size={{ base: "md", md: "lg" }}
                 />
             </InputGroup>
 
-            {/* Third line: Add User button */}
-            <Flex justify={{ base: "flex-start", md: "flex-end" }}>
-                <Button
-                    colorPalette="accent"
-                    rounded="xl"
-                    onClick={onAddUser}
-                    size={{ base: "md", md: "lg" }}
-                    w={{ base: "full", md: "auto" }}
-                >
-                    <Add />
-                    Add User
-                </Button>
-            </Flex>
+            {/* Third line: Export buttons (left) + Add User button (right) */}
+            {isSuperAdmin && (
+                <VStack gap={{ base: 3, md: 4 }} align="stretch">
+                    {/* Export buttons grouped on the left */}
+                    <ExportButtons users={users} />
+                    
+                    {/* Add User button on its own line on mobile, right-aligned on desktop */}
+                    <Flex justify={{ base: "stretch", md: "flex-end" }}>
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            onClick={onAddUser}
+                            size={{ base: "md", md: "lg" }}
+                            width={{ base: "full", md: "auto" }}
+                            minW={{ base: "auto", md: "120px" }}
+                        >
+                            <Add />
+                            Add User
+                        </Button>
+                    </Flex>
+                </VStack>
+            )}
         </VStack>
     )
 }

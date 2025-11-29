@@ -22,7 +22,6 @@ import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components with proper loading states
 const StatesHeader = lazy(() => import("./components/StatesHeader"))
-const ExportButtons = lazy(() => import("./components/ExportButtons"))
 const StatesTable = lazy(() => import("./components/StatesTable"))
 const StatesActionBar = lazy(() => import("./components/StatesActionBar"))
 const StateDialog = lazy(() => import("./components/StateDialog"))
@@ -290,15 +289,6 @@ const Content = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                {isSuperAdmin && <ExportButtons states={states} />}
-                            </Suspense>
-
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <StatesTable

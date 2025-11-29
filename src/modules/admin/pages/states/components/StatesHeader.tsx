@@ -3,6 +3,7 @@
 import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import UploadStatesFromFile from "../../../components/PortingFile"
+import ExportButtons from "./ExportButtons"
 import type { State } from "@/types/states.type"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router"
@@ -72,21 +73,32 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
                 />
             </InputGroup>
 
-            {/* Third line: Upload file + Add State button (horizontal) */}
+            {/* Third line: Export buttons (left) + Upload file + Add State button (right) */}
             {isSuperAdmin && (
-                <HStack gap={{ base: 3, md: 4 }} align="center">
-                    <UploadStatesFromFile data={states} />
-                    <Button
-                        colorPalette="accent"
-                        rounded="xl"
-                        onClick={onAddState}
-                        size={{ base: "md", md: "lg" }}
-                        flex={1}
+                <VStack gap={{ base: 3, md: 4 }} align="stretch">
+                    {/* Export buttons grouped on the left */}
+                    <ExportButtons states={states} />
+                    
+                    {/* Upload file and Add State button on separate lines on mobile, same line on desktop */}
+                    <Flex 
+                        direction={{ base: "column", md: "row" }} 
+                        gap={{ base: 3, md: 4 }} 
+                        justify={{ base: "stretch", md: "flex-end" }}
                     >
-                        <Add />
-                        Add State
-                    </Button>
-                </HStack>
+                        <UploadStatesFromFile data={states} />
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            onClick={onAddState}
+                            size={{ base: "md", md: "lg" }}
+                            width={{ base: "full", md: "auto" }}
+                            minW={{ base: "auto", md: "120px" }}
+                        >
+                            <Add />
+                            Add State
+                        </Button>
+                    </Flex>
+                </VStack>
             )}
         </VStack>
     )

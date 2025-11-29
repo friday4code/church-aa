@@ -4,6 +4,7 @@
 import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
 import UploadRegionsFromFile from "./UploadRegions"
+import ExportButtons from "./ExportButtons"
 import type { Region } from "@/types/regions.type"
 import { useNavigate } from "react-router"
 
@@ -73,21 +74,32 @@ const RegionsHeader = ({ regions, onAddRegion, onSearch }: RegionsHeaderProps) =
                 />
             </InputGroup>
 
-            {/* Third line: Upload file + Add Region button (horizontal) */}
+            {/* Third line: Export buttons (left) + Upload file + Add Region button (right) */}
             {isSuperAdmin && (
-                <HStack gap={{ base: 3, md: 4 }} align="center">
-                    <UploadRegionsFromFile data={regions} />
-                    <Button
-                        colorPalette="accent"
-                        rounded="xl"
-                        onClick={onAddRegion}
-                        size={{ base: "md", md: "lg" }}
-                        flex={1}
+                <VStack gap={{ base: 3, md: 4 }} align="stretch">
+                    {/* Export buttons grouped on the left */}
+                    <ExportButtons regions={regions} />
+                    
+                    {/* Upload file and Add Region button on separate lines on mobile, same line on desktop */}
+                    <Flex 
+                        direction={{ base: "column", md: "row" }} 
+                        gap={{ base: 3, md: 4 }} 
+                        justify={{ base: "stretch", md: "flex-end" }}
                     >
-                        <Add />
-                        Add Region
-                    </Button>
-                </HStack>
+                        <UploadRegionsFromFile data={regions} />
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            onClick={onAddRegion}
+                            size={{ base: "md", md: "lg" }}
+                            width={{ base: "full", md: "auto" }}
+                            minW={{ base: "auto", md: "120px" }}
+                        >
+                            <Add />
+                            Add Region
+                        </Button>
+                    </Flex>
+                </VStack>
             )}
         </VStack>
     )

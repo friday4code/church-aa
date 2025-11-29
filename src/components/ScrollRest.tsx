@@ -12,7 +12,7 @@ const ScrollRest: React.FC = () => {
 
     useEffect(() => {
         if (scrollArea) {
-            scrollArea.scrollToEdge({ edge: "top", behavior: "smooth" });
+            scrollArea.scrollToEdge({ edge: "top", behavior: "instant" });
         }
 
     }, [pathname, scrollArea]);

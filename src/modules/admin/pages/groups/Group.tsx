@@ -22,7 +22,6 @@ import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components with proper loading states
 const GroupsHeader = lazy(() => import("./components/GroupsHeader"))
-const ExportButtons = lazy(() => import("./components/ExportButtons"))
 const GroupsTable = lazy(() => import("./components/GroupsTable"))
 const GroupsActionBar = lazy(() => import("./components/GroupsActionBar"))
 const GroupDialog = lazy(() => import("./components/GroupDialog"))
@@ -306,15 +305,6 @@ const Content = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                {isSuperAdmin && <ExportButtons groups={groups} />}
-                            </Suspense>
-
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <GroupsTable
