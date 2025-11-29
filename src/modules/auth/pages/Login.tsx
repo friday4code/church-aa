@@ -49,12 +49,12 @@ const Login = () => {
 
     const getRedirectPath = (userRoles: string[] = []) => {
         // Check if user has any admin roles
-        const hasAdminRole = userRoles.includes('admin') || 
-                            userRoles.includes('Super Admin') ||
-                            userRoles.includes('State Admin') ||
-                            userRoles.includes('Region Admin') ||
-                            userRoles.includes('District Admin') ||
-                            userRoles.includes('Group Admin');
+        const hasAdminRole = userRoles.includes('admin') ||
+            userRoles.includes('Super Admin') ||
+            userRoles.includes('State Admin') ||
+            userRoles.includes('Region Admin') ||
+            userRoles.includes('District Admin') ||
+            userRoles.includes('Group Admin');
 
         if (hasAdminRole) {
             return "/admin/dashboard";
@@ -118,6 +118,18 @@ const Login = () => {
                         position="relative"
                     >
                         <Container maxW="md" h="vh" py={{ base: 8, md: 12 }} zIndex={2}>
+                            {/* Logo - centered on mobile, positioned on desktop */}
+                            <Box
+                                display={{ base: "block", md: "none" }}
+                                textAlign="center"
+                                mb={6}
+                            >
+                                <Image
+                                    src="/logo.png"
+                                    h="16"
+                                    mx="auto"
+                                />
+                            </Box>
 
                             {/* Form Section */}
                             <Box
@@ -229,28 +241,28 @@ const Login = () => {
                             </Box>
                         </Container>
 
-                        <Image src="/logo.png"
+                        <Image
+                            src="/logo.png"
                             h="20"
                             mx="auto"
                             pos="absolute"
                             right="6"
                             bottom='6'
-                            mt="8" />
-                        {/* theme toggler */}
-                        {/* <Box pos="absolute" bottom={6} right={6}>
-                <ColorModeButton colorPalette={"accent"} variant={"solid"} rounded="full"/>
-            </Box> */}
+                            mt="8"
+                            display={{ base: "none", md: "block" }}
+                        />
                         <Toaster />
-                    </Box >
+                    </Box>
                 </ScrollArea.Content>
-            </ScrollArea.Viewport>
+                <Toaster />
+            </ScrollArea.Viewport >
             <ScrollArea.Scrollbar>
                 <ScrollArea.Thumb />
             </ScrollArea.Scrollbar>
             <ScrollArea.Corner />
-        </ScrollArea.Root>
-
+        </ScrollArea.Root >
     );
 };
+
 
 export default Login;
