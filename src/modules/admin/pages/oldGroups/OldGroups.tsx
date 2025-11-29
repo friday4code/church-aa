@@ -118,8 +118,6 @@ const Content = () => {
             setDialogState({ isOpen: false, mode: 'edit' })
         },
     })
-
-    console.log("olg grpud", oldGroups);
     
 
     const searchQuery = searchParams.get('search') || ''
@@ -258,6 +256,8 @@ const Content = () => {
         if (dialogState.mode === 'add') {
             createOldGroup(data);
         } else if (dialogState.group) {
+            console.log(data);
+            
             updateOldGroup({ id: dialogState.group.id, data })
         }
     }

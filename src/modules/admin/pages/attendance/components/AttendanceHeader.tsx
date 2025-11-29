@@ -6,6 +6,9 @@ import type { Attendance } from "../../../stores/attendance.store"
 import { useState, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { exportAttendanceToExcel, exportAttendanceToCSV, exportAttendanceToPDF, copyAttendanceToClipboard } from "@/utils/attendance.utils"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+
+
 
 interface AttendanceHeaderProps {
     serviceName: string
@@ -23,6 +26,8 @@ const AttendanceHeader = ({
     onNavigateBack
 }: AttendanceHeaderProps) => {
     const navigate = useNavigate()
+    const { districts = [] } = useDistricts()
+
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -131,7 +136,7 @@ const AttendanceHeader = ({
                                                         color="accent"
                                                         _hover={{ bg: "bg.muted" }}
                                                         size="sm"
-                                                        onClick={async () => await copyAttendanceToClipboard(serviceAttendances)}
+                                                        onClick={async () => await copyAttendanceToClipboard(serviceAttendances, districts)}
                                                     >
                                                         <DocumentDownload />
                                                         Copy
@@ -145,7 +150,7 @@ const AttendanceHeader = ({
                                                         _hover={{ bg: "bg.muted" }}
                                                         size="sm"
                                                         rounded="xl"
-                                                        onClick={() => exportAttendanceToExcel(serviceAttendances)}
+                                                        onClick={() => exportAttendanceToExcel(serviceAttendances, districts)}
                                                     >
                                                         <DocumentDownload />
                                                         Excel
@@ -159,7 +164,7 @@ const AttendanceHeader = ({
                                                         _hover={{ bg: "bg.muted" }}
                                                         size="sm"
                                                         rounded="xl"
-                                                        onClick={() => exportAttendanceToCSV(serviceAttendances)}
+                                                        onClick={() => exportAttendanceToCSV(serviceAttendances, districts)}
                                                     >
                                                         <DocumentDownload />
                                                         CSV
@@ -173,7 +178,7 @@ const AttendanceHeader = ({
                                                         _hover={{ bg: "bg.muted" }}
                                                         size="sm"
                                                         rounded="xl"
-                                                        onClick={() => exportAttendanceToPDF(serviceAttendances)}
+                                                        onClick={() => exportAttendanceToPDF(serviceAttendances, districts)}
                                                     >
                                                         <DocumentDownload />
                                                         PDF
@@ -234,7 +239,7 @@ const AttendanceHeader = ({
                                 color="accent"
                                 _hover={{ bg: "bg.muted" }}
                                 size="sm"
-                                onClick={async () => await copyAttendanceToClipboard(serviceAttendances)}
+                                onClick={async () => await copyAttendanceToClipboard(serviceAttendances,districts)}
                             >
                                 <DocumentDownload />
                                 Copy
@@ -248,7 +253,7 @@ const AttendanceHeader = ({
                                 _hover={{ bg: "bg.muted" }}
                                 size="sm"
                                 rounded="xl"
-                                onClick={() => exportAttendanceToExcel(serviceAttendances)}
+                                onClick={() => exportAttendanceToExcel(serviceAttendances,districts)}
                             >
                                 <DocumentDownload />
                                 Excel
@@ -262,7 +267,7 @@ const AttendanceHeader = ({
                                 _hover={{ bg: "bg.muted" }}
                                 size="sm"
                                 rounded="xl"
-                                onClick={() => exportAttendanceToCSV(serviceAttendances)}
+                                onClick={() => exportAttendanceToCSV(serviceAttendances,districts)}
                             >
                                 <DocumentDownload />
                                 CSV
@@ -276,7 +281,7 @@ const AttendanceHeader = ({
                                 _hover={{ bg: "bg.muted" }}
                                 size="sm"
                                 rounded="xl"
-                                onClick={() => exportAttendanceToPDF(serviceAttendances)}
+                                onClick={() => exportAttendanceToPDF(serviceAttendances,districts)}
                             >
                                 <DocumentDownload />
                                 PDF

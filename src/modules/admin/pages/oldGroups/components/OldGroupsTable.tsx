@@ -58,6 +58,7 @@ const OldGroupsTable = ({
                 </Table.Cell>
             )}
             <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell fontWeight="medium">{group.region}</Table.Cell>
             <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
             <Table.Cell>{group.code}</Table.Cell>
             <Table.Cell>{group.leader}</Table.Cell>
@@ -121,16 +122,23 @@ const OldGroupsTable = ({
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
+                                onClick={() => onSort('region')}
+                            >
+                                Region Name {sortField === 'region' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
                                 onClick={() => onSort('name')}
                             >
-                                Group Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                Old Group Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
                                 onClick={() => onSort('code')}
                             >
-                                Group Code {sortField === 'code' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                Old Group Code {sortField === 'code' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}

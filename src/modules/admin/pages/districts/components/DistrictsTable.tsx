@@ -56,10 +56,9 @@ const DistrictsTable = ({
                 </Table.Cell>
             )}
             <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell fontWeight="medium">{district.group}</Table.Cell>
             <Table.Cell fontWeight="medium">{district.name}</Table.Cell>
             <Table.Cell>{district.leader}</Table.Cell>
-            <Table.Cell>{district.region}</Table.Cell>
-            <Table.Cell>{district.state}</Table.Cell>
             {isSuperAdmin && (
                 <Table.Cell textAlign="center">
                     <Menu.Root>
@@ -123,6 +122,13 @@ const DistrictsTable = ({
                                 cursor="pointer"
                                 onClick={() => onSort('name')}
                             >
+                                Group Name {sortField === 'group' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('name')}
+                            >
                                 District Name {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
@@ -132,20 +138,7 @@ const DistrictsTable = ({
                             >
                                 District Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
-                            <Table.ColumnHeader
-                                fontWeight={"bold"}
-                                cursor="pointer"
-                                onClick={() => onSort('region')}
-                            >
-                                Region {sortField === 'region' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader>
-                            <Table.ColumnHeader
-                                fontWeight={"bold"}
-                                cursor="pointer"
-                                onClick={() => onSort('state')}
-                            >
-                                State {sortField === 'state' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader>
+
                             {isSuperAdmin && (
                                 <Table.ColumnHeader
                                     fontWeight={"bold"}

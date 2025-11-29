@@ -79,6 +79,8 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
     }
 
     const onSubmit = (data: OldGroupFormData) => {
+        console.log(data);
+        
         onSave(data)
     }
     const handleClose = () => {

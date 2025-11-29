@@ -56,14 +56,14 @@ const AttendanceTable = ({
 }: AttendanceTableProps) => {
     const { districts = [] } = useDistricts()
     const getDistrictName = (districtId: number): string => {
-        const district = districts.find(d => d.id === districtId)
+        const district = districts?.find(d => d.id === districtId)
         return district?.name || `District ${districtId}`
     }
 
     return (
         <>
             {/* Export Buttons */}
-            <Box hideBelow={"md"}>
+            {/* <Box hideBelow={"md"}>
                 <HStack justify="space-between" w="full">
                     <HStack>
                         <Button
@@ -112,7 +112,7 @@ const AttendanceTable = ({
                         </Button>
                     </HStack>
                 </HStack>
-            </Box>
+            </Box> */}
 
             {/* Table */}
             <Table.ScrollArea _scrollbar={{ h: 1 }} _scrollbarThumb={{ bg: "bg.inverted/20", rounded: "full" }} borderWidth="1px" maxW={{ md: "62em", "2xl": "full" }} w={{ md: "62em", "2xl": "full" }} rounded="xl" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
@@ -134,13 +134,13 @@ const AttendanceTable = ({
                             >
                                 S/N
                             </Table.ColumnHeader>
-                            {/* <Table.ColumnHeader
+                            <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
                                 onClick={() => onSort('district_id')}
                             >
                                 District {sortField === 'district_id' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader> */}
+                            </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
@@ -225,9 +225,9 @@ const AttendanceTable = ({
                                     </Checkbox.Root>
                                 </Table.Cell>
                                 <Table.Cell>{index + 1}</Table.Cell>
-                                {/* <Table.Cell fontWeight="medium">
+                                <Table.Cell fontWeight="medium">
                                     {getDistrictName(attendance.district_id)}
-                                </Table.Cell> */}
+                                </Table.Cell>
                                 <Table.Cell>{attendance.month}</Table.Cell>
                                 <Table.Cell>Week {attendance.week}</Table.Cell>
                                 <Table.Cell>{attendance.year}</Table.Cell>

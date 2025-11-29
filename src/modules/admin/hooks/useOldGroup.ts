@@ -31,7 +31,7 @@ export const useOldGroups = ({ onCreateSuccess, onUpdateSuccess, onDeleteSuccess
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: Partial<OldGroupFormData> }) =>
-            adminApi.updateGroup(id, data),
+            adminApi.updateOldGroup(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oldGroups'] })
             onUpdateSuccess?.()
@@ -39,7 +39,7 @@ export const useOldGroups = ({ onCreateSuccess, onUpdateSuccess, onDeleteSuccess
     })
 
     const deleteMutation = useMutation({
-        mutationFn: adminApi.deleteGroup,
+        mutationFn: adminApi.deleteOldGroup,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['oldGroups'] })
             onDeleteSuccess?.()

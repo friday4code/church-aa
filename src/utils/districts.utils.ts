@@ -5,12 +5,12 @@ import 'jspdf-autotable';
 import type { District } from '@/types/districts.type';
 
 export const copyDistrictsToClipboard = async (districts: District[]): Promise<void> => {
-    const header = 'S/N\tDistrict Name\tDistrict Leader\tRegion\tState\tCode\n';
+    const header = 'Group Name\tDistrict Name\tDistrict Leader';
 
     const text = districts
         .map(
             (district, index) =>
-                `${index + 1}\t${district.name}\t${district.leader}\t${district.region}\t${district.state}\t${district.code}`
+                `${district.group}\t${district.name}\t${district.leader}`
         )
         .join('\n');
 
@@ -36,12 +36,9 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
     try {
         // Prepare data for Excel
         const excelData = districts.map((district, index) => ({
-            'S/N': index + 1,
+            'Group Name': district.group,
             'District Name': district.name,
             'District Leader': district.leader,
-            'Region': district.region,
-            'State': district.state,
-            'Code': district.code
         }));
 
         // Create worksheet
@@ -53,12 +50,9 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
 
         // Set column widths
         const colWidths = [
-            { wch: 8 },  // S/N
+            { wch: 25 },  // Group Name
             { wch: 25 }, // District Name
             { wch: 25 }, // District Leader
-            { wch: 20 }, // Region
-            { wch: 15 }, // State
-            { wch: 10 }  // Code
         ];
         worksheet['!cols'] = colWidths;
 
@@ -72,16 +66,13 @@ export const exportDistrictsToExcel = (districts: District[]): void => {
 export const exportDistrictsToCSV = (districts: District[]): void => {
     try {
         // CSV headers
-        const headers = ['S/N', 'District Name', 'District Leader', 'Region', 'State', 'Code'];
+        const headers = ['Group Name', 'District Name', 'District Leader'];
 
         // CSV data rows
-        const csvRows = districts.map((district, index) => [
-            (index + 1).toString(),
-            `"${district.name.replace(/"/g, '""')}"`,
-            `"${district.leader.replace(/"/g, '""')}"`,
-            `"${district.region.replace(/"/g, '""')}"`,
-            `"${district.state.replace(/"/g, '""')}"`,
-            `"${district.code.replace(/"/g, '""')}"`
+        const csvRows = districts.map((district) => [
+            `"${district?.group?.replace(/"/g, '""')}"`,
+            `"${district?.name?.replace(/"/g, '""')}"`,
+            `"${district?.leader?.replace(/"/g, '""')}"`,
         ]);
 
         // Combine headers and rows
@@ -128,23 +119,17 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
         doc.text(`Total Districts: ${districts.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = districts.map((district, index) => [
-            (index + 1).toString(),
+        const tableData = districts.map((district) => [
+            district.group,
             district.name,
             district.leader,
-            district.region,
-            district.state,
-            district.code
         ]);
 
         // Define table columns
         const tableColumns = [
-            'S/N',
+            'Group Name',
             'District Name',
-            'District Leader',
-            'Region',
-            'State',
-            'Code'
+            'District Leader'
         ];
 
         // Add table to PDF
@@ -167,12 +152,9 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
                 fillColor: [245, 245, 245]
             },
             columnStyles: {
-                0: { cellWidth: 15 }, // S/N
-                1: { cellWidth: 30 }, // District Name
-                2: { cellWidth: 30 }, // District Leader
-                3: { cellWidth: 25 }, // Region
-                4: { cellWidth: 20 }, // State
-                5: { cellWidth: 15 }  // Code
+                0: { cellWidth: 25 }, // Group Name
+                1: { cellWidth: 25 }, // District Name
+                2: { cellWidth: 25 }, // District Leader
             },
             margin: { top: 35 }
         });

@@ -44,6 +44,9 @@ const Content = () => {
         queryFn: adminApi.getAttendanceMonitoring,
         staleTime: 5 * 60 * 1000,
     });
+
+    console.log(data)
+
     const pending = useMemo(() => {
         return {
             states: (data?.states ?? []).filter((i) => i.status === 'red'),

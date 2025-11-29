@@ -65,11 +65,10 @@ export const getYearOptions = (): number[] => {
 };
 
 export const copyAttendanceToClipboard = async (attendances: Attendance[], districts?: any[]): Promise<void> => {
-    const getDistrictName = (districtId: number): string => {
-        if (!districts) return `District ${districtId}`;
-        const district = districts.find(d => d.id === districtId);
-        return district?.name || `District ${districtId}`;
-    };
+     const getDistrictName = (districtId: number): string => {
+        const district = districts?.find(d => d.id === districtId)
+        return district?.name || `District ${districtId}`
+    }
 
     const headers = ['District', 'Month', 'Week', 'Year', 'Men', 'Women', 'Youth Boys', 'Youth Girls', 'Children Boys', 'Children Girls', 'Total'];
     const data = attendances.map(attendance => [
@@ -99,11 +98,11 @@ export const copyAttendanceToClipboard = async (attendances: Attendance[], distr
 };
 
 export const exportAttendanceToExcel = (attendances: Attendance[], districts?: any[]): void => {
-    const getDistrictName = (districtId: number): string => {
-        if (!districts) return `District ${districtId}`;
-        const district = districts.find(d => d.id === districtId);
-        return district?.name || `District ${districtId}`;
-    };
+    console.log(districts)
+     const getDistrictName = (districtId: number): string => {
+        const district = districts?.find(d => d.id === districtId)
+        return district?.name || `District ${districtId}`
+    }
 
     const data = attendances.map(attendance => ({
         'District': getDistrictName(attendance.district_id),

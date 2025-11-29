@@ -5,12 +5,12 @@ import 'jspdf-autotable';
 import type { State } from '@/types/states.type';
 
 export const copyStatesToClipboard = async (states: State[]): Promise<void> => {
-    const header = 'S/N\tState Name\tState Code\tState Leader\tRegion\tCreated Date\n';
+    const header = 'State Name\tState Code\n';
 
     const text = states
         .map(
-            (state, index) =>
-                `${index + 1}\t${state.name}\t${state.code}\t${state.leader}\t${state.region}\t${state.createdAt.toLocaleDateString()}`
+            (state) =>
+                `${state.name}\t${state.code}`
         )
         .join('\n');
 
@@ -35,14 +35,10 @@ export const copyStatesToClipboard = async (states: State[]): Promise<void> => {
 export const exportStatesToExcel = (states: State[]): void => {
     try {
         // Prepare data for Excel
-        const excelData = states.map((state, index) => ({
-            'S/N': index + 1,
+        const excelData = states.map((state) => ({
             'State Name': state.name,
             'State Code': state.code,
             'State Leader': state.leader,
-            'Region': state.region,
-            'Created Date': state.createdAt.toLocaleDateString(),
-            'Updated Date': state.updatedAt.toLocaleDateString()
         }));
 
         // Create worksheet
@@ -54,18 +50,14 @@ export const exportStatesToExcel = (states: State[]): void => {
 
         // Set column widths
         const colWidths = [
-            { wch: 8 },  // S/N
             { wch: 20 }, // State Name
             { wch: 15 }, // State Code
             { wch: 20 }, // State Leader
-            { wch: 20 }, // Region
-            { wch: 12 }, // Created Date
-            { wch: 12 }  // Updated Date
         ];
         worksheet['!cols'] = colWidths;
 
         // Generate Excel file and save
-        writeFile(workbook, `states-data-${new Date().toISOString().split('T')[0]}.xlsx`);
+        writeFile(workbook, `Church Attendance App (States)-${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (error) {
         console.error('Error exporting to Excel:', error);
         alert('Failed to export states to Excel. Please try again.');
@@ -75,17 +67,13 @@ export const exportStatesToExcel = (states: State[]): void => {
 export const exportStatesToCSV = (states: State[]): void => {
     try {
         // CSV headers
-        const headers = ['S/N', 'State Name', 'State Code', 'State Leader', 'Region', 'Created Date', 'Updated Date'];
+        const headers = ['State Name', 'State Code', 'State Leader', 'Region', 'Created Date', 'Updated Date'];
 
         // CSV data rows
-        const csvRows = states.map((state, index) => [
-            (index + 1).toString(),
+        const csvRows = states.map((state) => [
             `"${state.name.replace(/"/g, '""')}"`,
             `"${state.code.replace(/"/g, '""')}"`,
             `"${state.leader.replace(/"/g, '""')}"`,
-            `"${state.region.replace(/"/g, '""')}"`,
-            state.createdAt.toLocaleDateString(),
-            state.updatedAt.toLocaleDateString()
         ]);
 
         // Combine headers and rows
@@ -100,7 +88,7 @@ export const exportStatesToCSV = (states: State[]): void => {
         const url = URL.createObjectURL(blob);
 
         link.setAttribute('href', url);
-        link.setAttribute('download', `states-data-${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `Church Attendance App (States)-${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
 
         document.body.appendChild(link);
@@ -137,16 +125,13 @@ export const exportStatesToPDF = (states: State[]): void => {
             state.name,
             state.code,
             state.leader,
-            state.region
         ]);
 
         // Define table columns
         const tableColumns = [
-            'S/N',
             'State Name',
             'State Code',
             'State Leader',
-            'Region'
         ];
 
         // Add table to PDF
@@ -169,11 +154,9 @@ export const exportStatesToPDF = (states: State[]): void => {
                 fillColor: [245, 245, 245]
             },
             columnStyles: {
-                0: { cellWidth: 15 }, // S/N
                 1: { cellWidth: 30 }, // State Name
                 2: { cellWidth: 20 }, // State Code
                 3: { cellWidth: 30 }, // State Leader
-                4: { cellWidth: 30 }  // Region
             },
             margin: { top: 35 }
         });
@@ -193,7 +176,7 @@ export const exportStatesToPDF = (states: State[]): void => {
         }
 
         // Save PDF
-        doc.save(`states-data-${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`Church Attendance App (States)-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
         console.error('Error exporting to PDF:', error);
         alert('Failed to export states to PDF. Please try again.');
