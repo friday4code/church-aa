@@ -14,25 +14,18 @@ interface ExportButtonsProps {
 }
 
 const ExportButtons = ({ regions }: ExportButtonsProps) => {
-    const handleCopy = async () => {
-        try {
-            await copyRegionsToClipboard(regions);
-            // You can add a toast notification here if needed
-        } catch (error) {
-            console.error('Failed to copy regions to clipboard:', error);
-        }
-    }
-
     return (
-        <HStack w="full">
+        <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
             <Button
                 rounded="xl"
                 variant="solid"
                 bg="bg"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 color="accent"
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
-                onClick={handleCopy}
+                onClick={() => copyRegionsToClipboard(regions)}
             >
                 <Copy />
                 Copy
@@ -41,6 +34,8 @@ const ExportButtons = ({ regions }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
@@ -53,6 +48,8 @@ const ExportButtons = ({ regions }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
@@ -65,6 +62,8 @@ const ExportButtons = ({ regions }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"

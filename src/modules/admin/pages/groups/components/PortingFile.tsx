@@ -202,10 +202,12 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
     return (
         <>
             {/* Trigger Button */}
-            <Button
+            <Button 
                 bg="bg"
-                variant="outline"
+                variant={{ base: "ghost", md: "outline" }}
                 color="bg.inverted"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 onClick={onOpen}
                 rounded="xl"
             >

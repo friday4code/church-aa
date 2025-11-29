@@ -108,7 +108,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                 h="vh"
                 as="main"
                 flex="1"
-                p={{ base: 2, md: 2 }}
+                p={{ base: 0, md: 2 }}
                 ml={{ base: "auto", md: "-6" }}
                 overflowY="auto"
                 pos="relative"

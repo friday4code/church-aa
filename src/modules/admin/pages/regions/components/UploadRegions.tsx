@@ -219,7 +219,15 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
 
     return (
         <>
-            <Button variant="outline" onClick={onOpen} rounded="xl">
+            <Button 
+                bg="bg"
+                variant={{ base: "ghost", md: "outline" }}
+                color="bg.inverted"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
+                onClick={onOpen} 
+                rounded="xl"
+            >
                 <DocumentUpload />
                 Upload From CSV/EXCEL File
             </Button>

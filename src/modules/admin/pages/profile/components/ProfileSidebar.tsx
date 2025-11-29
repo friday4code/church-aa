@@ -109,17 +109,17 @@ export const ProfileSidebar = ({ onAvatarClick, isUploading }: ProfileSidebarPro
                             </Badge>
                         </VStack>
 
-                        <HStack gap="4" justify="center" wrap="wrap">
-                            <VStack gap="0">
+                        <HStack gap="4" justify="center" wrap="wrap" w="full">
+                            <VStack gap="0" minW="0">
                                 <Text fontSize="sm" opacity={0.8}>User ID</Text>
-                                <Text fontWeight="semibold">
+                                <Text fontWeight="semibold" wordBreak="break-word">
                                     {user?.id || 'N/A'}
                                 </Text>
                             </VStack>
 
-                            <VStack gap="0">
+                            <VStack gap="0" minW="0">
                                 <Text fontSize="sm" opacity={0.8}>Status</Text>
-                                <Text fontWeight="semibold">
+                                <Text fontWeight="semibold" wordBreak="break-word">
                                     {user?.is_active ? 'Active' : 'Inactive'}
                                 </Text>
                             </VStack>

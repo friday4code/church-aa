@@ -68,7 +68,7 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
     };
 
     return (
-        <VStack gap="6" align="stretch">
+        <VStack gap="6" align="stretch" minW="0">
             {/* Personal Information */}
             <Card.Root rounded="2xl">
                 <Card.Header>
@@ -76,33 +76,33 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
                     <Text color="gray.600">Your personal details and contact information</Text>
                 </Card.Header>
                 <Card.Body>
-                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="6">
-                        <VStack gap="4" align="start">
-                            <VStack gap="1" align="start">
+                    <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap="6" minW="0">
+                        <VStack gap="4" align="start" minW="0">
+                            <VStack gap="1" align="start" w="full">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Full Name</Text>
-                                <Text fontSize="lg" fontWeight="semibold">
+                                <Text fontSize="lg" fontWeight="semibold" wordBreak="break-word">
                                     {user?.name || 'N/A'}
                                 </Text>
                             </VStack>
 
-                            <VStack gap="1" align="start">
+                            <VStack gap="1" align="start" w="full">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Email Address</Text>
-                                <HStack gap="2">
-                                    <Sms size="16" />
-                                    <Text fontSize="lg">{user?.email}</Text>
+                                <HStack gap="2" w="full">
+                                    <Sms size="16" flexShrink={0} />
+                                    <Text fontSize="lg" wordBreak="break-word">{user?.email}</Text>
                                 </HStack>
                             </VStack>
 
-                            <VStack gap="1" align="start">
+                            <VStack gap="1" align="start" w="full">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Phone Number</Text>
-                                <HStack gap="2">
-                                    <CallCalling size="16" />
-                                    <Text fontSize="lg">{user?.phone || 'Not provided'}</Text>
+                                <HStack gap="2" w="full">
+                                    <CallCalling size="16" flexShrink={0} />
+                                    <Text fontSize="lg" wordBreak="break-word">{user?.phone || 'Not provided'}</Text>
                                 </HStack>
                             </VStack>
                         </VStack>
 
-                        <VStack gap="4" align="start">
+                        <VStack gap="4" align="start" minW="0">
                             <VStack gap="1" align="start">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Access Level</Text>
                                 <HStack gap="2">

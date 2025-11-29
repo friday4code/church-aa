@@ -119,14 +119,14 @@ const Content = () => {
 
     return (
         <>
-            <VStack gap="6" align="stretch" pos="relative">
+            <VStack gap="6" align="stretch" pos="relative" minW="0">
                 {/* Header */}
                 <ProfileHeader
                     onEditProfile={() => setIsEditDialogOpen(true)}
                     onChangePassword={() => setIsPasswordDialogOpen(true)}
                 />
 
-                <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap="6">
+                <Grid templateColumns={{ base: "1fr", lg: "1fr 2fr" }} gap="6" minW="0">
                     {/* Sidebar - Profile Overview */}
                     <ProfileSidebar
                         onAvatarClick={handleAvatarClick}

@@ -1,7 +1,7 @@
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack } from "@chakra-ui/react"
-import { Add, SearchNormal1, ArrowLeft3 } from "iconsax-reactjs"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadStatesFromFile from "../../../components/PortingFile"
 import ExportButtons from "./ExportButtons"
 import type { State } from "@/types/states.type"
@@ -21,6 +21,7 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
     const [search, setSearch] = useState("")
+
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
         onSearch(e.target.value)
@@ -31,76 +32,146 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
     }, [onSearch])
 
     return (
-        <VStack
-            align="stretch"
-            gap={{ base: 4, md: 6 }}
-            pos="sticky"
-            top={6}
-            zIndex={"sticky"}
-        >
-            {/* First line: Go back button + All States title and count */}
-            <Flex justify="flex-start" align="center">
-                <IconButton 
-                    aria-label="Go back" 
-                    variant="outline" 
-                    rounded="xl" 
-                    onClick={() => navigate(-1)}
-                    size={{ base: "md", md: "lg" }}
-                    mr={4}
-                >
-                    <ArrowLeft3 />
-                </IconButton>
-                <HStack>
-                    <Heading size={{ base: "2xl", md: "3xl" }}>All States</Heading>
-                    <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{states?.length}</Badge>
-                </HStack>
-            </Flex>
-
-            {/* Second line: Search input (full width) */}
-            <InputGroup 
-                maxW="full" 
-                colorPalette={"accent"} 
-                startElement={<SearchNormal1 />} 
-                endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+        <>
+            <VStack
+                align="stretch"
+                gap={{ base: 4, md: 6 }}
+                pos="sticky"
+                top={6}
+                zIndex={"sticky"}
             >
-                <Input
-                    bg="bg"
-                    rounded="xl"
-                    placeholder="Search states..."
-                    value={search}
-                    onChange={handleChange}
-                    size={{ base: "md", md: "lg" }}
-                />
-            </InputGroup>
+                {/* First line: Go back button + title on left */}
+                <Flex justify="space-between" align="center">
+                    {/* Go back button */}
+                    <HStack justify="flex-start">
+                        <IconButton
+                            aria-label="Go back"
+                            variant="outline"
+                            rounded="xl"
+                            onClick={() => navigate(-1)}
+                            size={{ base: "md", md: "lg" }}
+                            mr={4}
+                        >
+                            <ArrowLeft3 />
+                        </IconButton>
+                        <HStack>
+                            <Heading size={{ base: "2xl", md: "3xl" }}>All States</Heading>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{states?.length}</Badge>
+                        </HStack>
+                    </HStack>
 
-            {/* Third line: Export buttons (left) + Upload file + Add State button (right) */}
-            {isSuperAdmin && (
-                <VStack gap={{ base: 3, md: 4 }} align="stretch">
-                    {/* Export buttons grouped on the left */}
-                    <ExportButtons states={states} />
-                    
-                    {/* Upload file and Add State button on separate lines on mobile, same line on desktop */}
-                    <Flex 
-                        direction={{ base: "column", md: "row" }} 
-                        gap={{ base: 3, md: 4 }} 
-                        justify={{ base: "stretch", md: "flex-end" }}
-                    >
+                    {/* Mobile Drawer - only on mobile */}
+                    {isSuperAdmin && (
+                        <Drawer.Root placement="bottom" size="full">
+                            <Drawer.Trigger asChild>
+                                <IconButton
+                                    aria-label="More options"
+                                    variant="ghost"
+                                    rounded="xl"
+                                    size="md"
+                                    hideFrom={"md"}
+                                >
+                                    <MoreSquare variant="Outline" />
+                                </IconButton>
+                            </Drawer.Trigger>
+                            <Portal>
+                                <Drawer.Backdrop />
+                                <Drawer.Positioner>
+                                    <Drawer.Content h='fit' bg="bg" borderTopRadius="xl">
+                                        <Drawer.Header p={4} borderBottom="1px solid" borderColor="border">
+                                            <Flex justify="space-between" align="center">
+                                                <Heading size="lg">Actions</Heading>
+                                                <Drawer.CloseTrigger asChild>
+                                                    <IconButton
+                                                        aria-label="Close drawer"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                    >
+                                                        <CloseButton />
+                                                    </IconButton>
+                                                </Drawer.CloseTrigger>
+                                            </Flex>
+                                        </Drawer.Header>
+                                        <Drawer.Body p={4}>
+                                            <VStack gap={4} align="stretch">
+                                                {/* Add State Button */}
+                                                <Button
+                                                    colorPalette="accent"
+                                                    rounded="xl"
+                                                    onClick={() => {
+                                                        onAddState()
+                                                    }}
+                                                    size="lg"
+                                                    width="full"
+                                                >
+                                                    <Add />
+                                                    Add State
+                                                </Button>
+
+                                                {/* Upload File Button */}
+                                                <UploadStatesFromFile data={states} />
+
+                                                {/* Export Buttons */}
+                                                <VStack gap={3} align="stretch">
+                                                    <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                    <ExportButtons states={states} />
+                                                </VStack>
+                                            </VStack>
+                                        </Drawer.Body>
+                                    </Drawer.Content>
+                                </Drawer.Positioner>
+                            </Portal>
+                        </Drawer.Root>
+                    )}
+
+                    {isSuperAdmin && <HStack hideBelow={"md"}>
                         <UploadStatesFromFile data={states} />
+
+                        {/* desktop Add State Button */}
                         <Button
                             colorPalette="accent"
                             rounded="xl"
-                            onClick={onAddState}
-                            size={{ base: "md", md: "lg" }}
-                            width={{ base: "full", md: "auto" }}
-                            minW={{ base: "auto", md: "120px" }}
+                            w="fit"
+                            hideBelow={"md"}
+                            onClick={() => {
+                                onAddState()
+                            }}
+                            size="lg"
                         >
                             <Add />
                             Add State
                         </Button>
-                    </Flex>
-                </VStack>
-            )}
-        </VStack>
+                    </HStack>}
+
+                </Flex>
+
+                {/* Second line: Search input (full width) */}
+                <HStack w="full" justify={"space-between"}>
+
+                    <InputGroup
+                        maxW="full"
+                        colorPalette={"accent"}
+                        startElement={<SearchNormal1 />}
+                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                    >
+                        <Input
+                            bg="bg"
+                            rounded="xl"
+                            placeholder="Search states..."
+                            value={search}
+                            onChange={handleChange}
+                            size={{ base: "md", md: "lg" }}
+                        />
+                    </InputGroup>
+                    <Box hideBelow={"md"}>
+                        <ExportButtons states={states} />
+                    </Box>
+                </HStack>
+
+            </VStack>
+
+
+        </>
     )
 }
 

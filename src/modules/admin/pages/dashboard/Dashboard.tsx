@@ -483,7 +483,7 @@ const Content = () => {
                                 <>
                                     <Stat.ValueText fontSize="2xl" fontWeight="bold">{item.value}</Stat.ValueText>
                                     <Stat.Label fontSize="sm" mt="1">{item.label}</Stat.Label>
-                                    <Text fontSize="xs" mt="1">{item.description}</Text>
+                                    <Text hideBelow={"md"} fontSize="xs" mt="1">{item.description}</Text>
                                 </>
                             )}
                         </Stat.Root>
