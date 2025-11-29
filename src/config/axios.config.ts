@@ -50,6 +50,12 @@ const getErrorMessage = (error: any): string => {
   return error.message || "Invalid request sent to the server.";
 };
 
+// Helper to check if currently on login page
+const isOnLoginPage = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.location.pathname === '/login' || window.location.pathname === '/login/';
+};
+
 const getErrorTitle = (error: AxiosError): string => {
   if (!error.response) return "Network Error";
 
@@ -219,11 +225,14 @@ axiosClient.interceptors.response.use(
         // Token refresh failed → force logout
         useAuthStore.getState().logout();
 
-        toaster.error({
-          title: "Session Expired",
-          description: "Your session has expired. Please login again.",
-          closable: true
-        });
+        // Only show session expired toast if not on login page
+        if (!isOnLoginPage()) {
+          toaster.error({
+            title: "Session Expired",
+            description: "Your session has expired. Please login again.",
+            closable: true
+          });
+        }
 
         return Promise.reject(refreshError);
       }
