@@ -7,8 +7,7 @@ interface UseMeReturn {
   user: User | null;
   loading: boolean;
   error: Error | null;
-  refetch: () => Promise<any>;
-}
+  refetch: () => Promise<any>;}
 
 export const useMe = (): UseMeReturn => {
   const queryClient = useQueryClient();
