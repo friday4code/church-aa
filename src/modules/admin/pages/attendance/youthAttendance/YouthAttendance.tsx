@@ -959,72 +959,98 @@ const Content = () => {
                     <Card.Body p={0}>
                         <VStack gap="4">
                             {/* Export Buttons */}
-                            <HStack justify="space-between" w="full">
-                                <HStack>
-                                    <Button
-                                        rounded="xl"
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
-                                    >
-                                        <Copy />
-                                        Copy
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
-                                    >
-                                        <DocumentDownload />
-                                        Excel
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
-                                    >
-                                        <DocumentText />
-                                        CSV
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToPDF(normalizedAttendance)}
-                                    >
-                                        <ReceiptText />
-                                        PDF
-                                    </Button>
-                                </HStack>
-
-                                {/* Search */}
-                                <InputGroup bg="whiteAlpha.600" maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
-                                    <Input
-                                        rounded="xl"
-                                        placeholder="Search attendance..."
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                    />
-                                </InputGroup>
-                            </HStack>
-
-                            {/* Table */}
-                            <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
-                                <Table.Root size="sm">
-                                    <Table.Header>
+                            <Box hideBelow={"md"}>
+                                <HStack justify="space-between" w="full">
+                                    <HStack>
+                                        <Button
+                                            rounded="xl"
+                                            variant="solid"
+                                            bg="whiteAlpha.500"
+                                            color="accent"
+                                            _hover={{ bg: "white" }}
+                                            size="sm"
+                                            onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
+                                        >
+                                            <Copy />
+                                            Copy
+                                        </Button>
+                                        <Button
+                                            variant="solid"
+                                            bg="whiteAlpha.500"
+                                            color="accent"
+                                            _hover={{ bg: "white" }}
+                                            size="sm"
+                                            rounded="xl"
+                                            onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
+                                        >
+                                            <DocumentDownload />
+                                            Excel
+                                        </Button>
+                                        <Button
+                                            variant="solid"
+                                            bg="whiteAlpha.500"
+                                            color="accent"
+                                            _hover={{ bg: "white" }}
+                                            size="sm"
+                                            rounded="xl"
+                                            onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
+                                    <Table.Row fontSize={"md"}>
+                                        <Table.ColumnHeader w="50px">
+                                            <Checkbox.Root
+                                                colorPalette={"accent"}
+                                                checked={isAllSelectedOnPage}
+                                                onCheckedChange={handleSelectAllOnPage}
+                                            >
+                                                <Checkbox.HiddenInput />
+                                                <Checkbox.Control rounded="md" cursor={"pointer"} />
+                                            </Checkbox.Root>
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            cursor="pointer"
+                                            onClick={() => handleSort('id')}
+                                        >
+                                            S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            cursor="pointer"
+                                            onClick={() => handleSort('groupName')}
+                                        >
+                                            Group {sortField === 'groupName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            cursor="pointer"
+                                            onClick={() => handleSort('month')}
+                                        >
+                                            Month {sortField === 'month' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            cursor="pointer"
+                                            onClick={() => handleSort('yhsfMale')}
+                                        >
+                                            YHSF Male {sortField === 'yhsfMale' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            cursor="pointer"
+                                            onClick={() => handleSort('yhsfFemale')}
+                                        >
+                                            YHSF Female {sortField === 'yhsfFemale' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                        </Table.ColumnHeader>
+                                        <Table.ColumnHeader
+                                            fontWeight={"bold"}
+                                            textAlign="center">
+                                            Action
+                                        </Table.ColumnHeader>
+                                    </Table.Row>
+                                </Table.Header>
+                                <Table.Body>
+                                    {paginatedAttendance.map((attendance) => (
+                                        <Table.Row key={attendance.id} bg="whiteAlpha.500">
+                                            <Table.Cell>
                                         <Table.Row fontSize={"md"}>
                                             <Table.ColumnHeader w="50px">
                                                 <Checkbox.Root

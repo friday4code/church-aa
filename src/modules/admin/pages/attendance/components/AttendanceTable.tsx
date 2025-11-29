@@ -10,6 +10,7 @@ import {
     Pagination,
     HStack,
     Button,
+    Box,
 } from "@chakra-ui/react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import { type AttendanceRecord, type ServiceType } from "@/types/attendance.type"
@@ -62,54 +63,56 @@ const AttendanceTable = ({
     return (
         <>
             {/* Export Buttons */}
-            <HStack justify="space-between" w="full">
-                <HStack>
-                    <Button
-                        rounded="xl"
-                        variant="solid"
-                        bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                        color={{ base: "accent", _dark: "accent.100" }}
-                        _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                        size="sm"
-                        onClick={async () => await copyAttendanceToClipboard(paginatedAttendances, districts)}
-                    >
-                        Copy
-                    </Button>
-                    <Button
-                        variant="solid"
-                        bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                        color={{ base: "accent", _dark: "accent.100" }}
-                        _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                        size="sm"
-                        rounded="xl"
-                        onClick={() => exportAttendanceToExcel(paginatedAttendances, districts)}
-                    >
-                        Excel
-                    </Button>
-                    <Button
-                        variant="solid"
-                        bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                        color={{ base: "accent", _dark: "accent.100" }}
-                        _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                        size="sm"
-                        rounded="xl"
-                        onClick={() => exportAttendanceToCSV(paginatedAttendances, districts)}
-                    >
-                        CSV
-                    </Button>
-                    <Button
-                        variant="solid"
-                        bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                        color={{ base: "accent", _dark: "accent.100" }}
-                        _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                        size="sm"
-                        rounded="xl"
-                        onClick={() => exportAttendanceToPDF(paginatedAttendances, districts)}
-                    >
-                        PDF
-                    </Button>
+            <Box hideBelow={"md"}>
+                <HStack justify="space-between" w="full">
+                    <HStack>
+                        <Button
+                            rounded="xl"
+                            variant="solid"
+                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
+                            color={{ base: "accent", _dark: "accent.100" }}
+                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
+                            size="sm"
+                            onClick={async () => await copyAttendanceToClipboard(paginatedAttendances, districts)}
+                        >
+                            Copy
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
+                            color={{ base: "accent", _dark: "accent.100" }}
+                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportAttendanceToExcel(paginatedAttendances, districts)}
+                        >
+                            Excel
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
+                            color={{ base: "accent", _dark: "accent.100" }}
+                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportAttendanceToCSV(paginatedAttendances, districts)}
+                        >
+                            CSV
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
+                            color={{ base: "accent", _dark: "accent.100" }}
+                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportAttendanceToPDF(paginatedAttendances, districts)}
+                        >
+                            PDF
+                        </Button>
+                    </HStack>
                 </HStack>
-            </HStack>
+            </Box>
 
             {/* Table */}
             <Table.ScrollArea _scrollbar={{ h: 1 }} _scrollbarThumb={{ bg: "bg.inverted/20", rounded: "full" }} borderWidth="1px" maxW={{ md: "62em", "2xl": "full" }} w={{ md: "62em", "2xl": "full" }} rounded="xl" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
