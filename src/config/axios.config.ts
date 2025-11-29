@@ -225,6 +225,15 @@ axiosClient.interceptors.response.use(
         // Token refresh failed → force logout
         useAuthStore.getState().logout();
 
+        // Clear all cached data to prevent stale state
+        if (typeof window !== 'undefined') {
+          // Clear localStorage auth data
+          localStorage.removeItem('auth-storage');
+          
+          // Clear session storage if any
+          sessionStorage.clear();
+        }
+
         // Only show session expired toast if not on login page
         if (!isOnLoginPage()) {
           toaster.error({

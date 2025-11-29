@@ -93,6 +93,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
     // 🚫 Redirect unauthenticated users
     if (!isAuthenticated()) {
+        // Check if we were redirected from an expired session
+        const state = location.state as any;
+        const fromExpiredSession = state?.fromExpiredSession;
+        
+        if (fromExpiredSession) {
+            // If coming from expired session, clear the state and redirect to login
+            return <Navigate to="/login" state={{ from: location.pathname, sessionExpired: true }} replace />;
+        }
+        
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
