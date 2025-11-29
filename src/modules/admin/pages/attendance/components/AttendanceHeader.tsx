@@ -123,39 +123,43 @@ const AttendanceHeader = ({
                         </Portal>
                     </Drawer.Root>
 
-                    {/* desktop Add Attendance Button */}
-                    <Button
-                        colorPalette="accent"
-                        rounded="xl"
-                        w="fit"
-                        hideBelow={"md"}
-                        onClick={() => {
-                            onAddAttendance()
-                        }}
-                        size="lg"
-                    >
-                        <Add />
-                        Add Attendance
-                    </Button>
+                    <HStack hideBelow={"md"}>
+                        {/* desktop Add Attendance Button */}
+                        <Button
+                            colorPalette="accent"
+                            rounded="xl"
+                            w="fit"
+                            hideBelow={"md"}
+                            onClick={() => {
+                                onAddAttendance()
+                            }}
+                            size="lg"
+                        >
+                            <Add />
+                            Add Attendance
+                        </Button>
+                    </HStack>
 
                 </Flex>
 
                 {/* Second line: Search input (full width) */}
-                <InputGroup
-                    maxW="full"
-                    colorPalette={"accent"}
-                    startElement={<SearchNormal1 />}
-                    endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
-                >
-                    <Input
-                        bg="bg"
-                        rounded="xl"
-                        placeholder="Search attendance..."
-                        value={search}
-                        onChange={handleChange}
-                        size={{ base: "md", md: "lg" }}
-                    />
-                </InputGroup>
+                <HStack w="full" justify={"space-between"}>
+                    <InputGroup
+                        maxW="full"
+                        colorPalette={"accent"}
+                        startElement={<SearchNormal1 />}
+                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                    >
+                        <Input
+                            bg="bg"
+                            rounded="xl"
+                            placeholder="Search attendance..."
+                            value={search}
+                            onChange={handleChange}
+                            size={{ base: "md", md: "lg" }}
+                        />
+                    </InputGroup>
+                </HStack>
 
             </VStack>
         </>

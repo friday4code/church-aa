@@ -1,9 +1,10 @@
 // components/YouthAttendanceHeader.tsx
 "use client"
 
-import { HStack, Button, Heading, VStack, Text, IconButton, Flex, Drawer, Portal, CloseButton } from "@chakra-ui/react"
-import { Add, DocumentDownload, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Add, DocumentDownload, ArrowLeft3, MoreSquare, SearchNormal1 } from "iconsax-reactjs"
 import { useNavigate } from "react-router"
+import { useState, useCallback } from "react"
 
 interface YouthAttendanceHeaderProps {
     onAddClick: () => void
@@ -14,6 +15,15 @@ interface YouthAttendanceHeaderProps {
 
 export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType, showBackButton }: YouthAttendanceHeaderProps) => {
     const navigate = useNavigate()
+    const [search, setSearch] = useState("")
+
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value)
+    }, [])
+    
+    const clearSearch = useCallback(() => {
+        setSearch("")
+    }, [])
     
     return (
         <>
@@ -109,15 +119,6 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                     {/* Desktop buttons - only on desktop */}
                     <HStack hideBelow={"md"}>
                         <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onExportClick}
-                            w="auto"
-                        >
-                            <DocumentDownload size={16} style={{ marginRight: 8 }} />
-                            Export
-                        </Button>
-                        <Button
                             colorPalette="accent"
                             size="sm"
                             onClick={onAddClick}
@@ -129,6 +130,36 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                     </HStack>
 
                 </Flex>
+
+                {/* Second line: Search input (full width) */}
+                <HStack w="full" justify={"space-between"}>
+                    <InputGroup
+                        maxW="full"
+                        colorPalette={"accent"}
+                        startElement={<SearchNormal1 />}
+                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                    >
+                        <Input
+                            bg="bg"
+                            rounded="xl"
+                            placeholder="Search youth attendance..."
+                            value={search}
+                            onChange={handleChange}
+                            size={{ base: "md", md: "lg" }}
+                        />
+                    </InputGroup>
+                    <Box hideBelow={"md"}>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onExportClick}
+                            w="auto"
+                        >
+                            <DocumentDownload size={16} style={{ marginRight: 8 }} />
+                            Export
+                        </Button>
+                    </Box>
+                </HStack>
             </VStack>
         </>
     )

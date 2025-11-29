@@ -21,6 +21,7 @@ import { useSearchParams } from "react-router"
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import ExportButtons from "./ExportButtons"
+import UploadUsersFromFile from "../../../components/PortingFile"
 
 interface UsersHeaderProps {
     users: any[]
@@ -121,6 +122,9 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
                                                     Add User
                                                 </Button>
 
+                                                {/* Upload File Button */}
+                                                <UploadUsersFromFile data={users} />
+
                                                 {/* Export Buttons */}
                                                 <VStack gap={3} align="stretch">
                                                     <Heading size="sm" color="fg.muted">Export Data</Heading>
@@ -135,6 +139,8 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
                     )}
 
                     {isSuperAdmin && <HStack hideBelow={"md"}>
+                        <UploadUsersFromFile data={users} />
+
                         {/* desktop Add User Button */}
                         <Button
                             colorPalette="accent"
