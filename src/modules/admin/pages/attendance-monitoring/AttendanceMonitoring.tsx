@@ -172,12 +172,12 @@ const Content = () => {
                 </HStack>
                 <Text color={{ base: "gray.600", _dark: "gray.300" }}>Overview of pending and submitted attendance by hierarchy</Text>
 
-                <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+                <Card.Root p="0" bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
                     <Card.Header>
                         <Heading size="lg" color={{ base: "gray.900", _dark: "white" }}>Send Reminders</Heading>
                         <Text color={{ base: "gray.600", _dark: "gray.400" }} mt={1}>Notify appropriate levels based on your role</Text>
                     </Card.Header>
-                    <Card.Body>
+                    <Card.Body p="0">
                         <Reminder />
                     </Card.Body>
                 </Card.Root>

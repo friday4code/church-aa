@@ -1,9 +1,10 @@
 // components/districts/components/DistrictsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadDistrictsFromFile from "../../../components/PortingFile"
+import DistrictsExport from "./DistrictsExport"
 import type { District } from "@/types/districts.type"
 import { useNavigate } from "react-router"
 
@@ -109,6 +110,12 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
 
                                                 {/* Upload File Button */}
                                                 <UploadDistrictsFromFile data={districts} />
+
+                                                {/* Export Buttons */}
+                                                <VStack gap={3} align="stretch">
+                                                    <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                    <DistrictsExport districts={districts} />
+                                                </VStack>
                                             </VStack>
                                         </Drawer.Body>
                                     </Drawer.Content>
@@ -139,21 +146,26 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
                 </Flex>
 
                 {/* Second line: Search input (full width) */}
-                <InputGroup
-                    maxW="full"
-                    colorPalette={"accent"}
-                    startElement={<SearchNormal1 />}
-                    endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
-                >
-                    <Input
-                        bg="bg"
-                        rounded="xl"
-                        placeholder="Search districts..."
-                        value={search}
-                        onChange={handleChange}
-                        size={{ base: "md", md: "lg" }}
-                    />
-                </InputGroup>
+                <HStack w="full" justify={"space-between"}>
+                    <InputGroup
+                        maxW="full"
+                        colorPalette={"accent"}
+                        startElement={<SearchNormal1 />}
+                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                    >
+                        <Input
+                            bg="bg"
+                            rounded="xl"
+                            placeholder="Search districts..."
+                            value={search}
+                            onChange={handleChange}
+                            size={{ base: "md", md: "lg" }}
+                        />
+                    </InputGroup>
+                    <Box hideBelow={"md"}>
+                        <DistrictsExport districts={districts} />
+                    </Box>
+                </HStack>
 
             </VStack>
         </>

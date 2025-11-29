@@ -1,9 +1,10 @@
 // components/oldgroups/components/OldGroupsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadOldGroupsFromFile from "../../../components/PortingFile"
+import ExportButtons from "./ExportButtons"
 import type { OldGroup } from "@/types/oldGroups.type"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router"
@@ -109,6 +110,12 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch }: OldGroupsHeaderPro
 
                                                 {/* Upload File Button */}
                                                 <UploadOldGroupsFromFile data={oldGroups} />
+
+                                                {/* Export Buttons */}
+                                                <VStack gap={3} align="stretch">
+                                                    <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                    <ExportButtons oldGroups={oldGroups} />
+                                                </VStack>
                                             </VStack>
                                         </Drawer.Body>
                                     </Drawer.Content>
@@ -139,21 +146,26 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch }: OldGroupsHeaderPro
                 </Flex>
 
                 {/* Second line: Search input (full width) */}
-                <InputGroup
-                    maxW="full"
-                    colorPalette={"accent"}
-                    startElement={<SearchNormal1 />}
-                    endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
-                >
-                    <Input
-                        bg="bg"
-                        rounded="xl"
-                        placeholder="Search old groups..."
-                        value={search}
-                        onChange={handleChange}
-                        size={{ base: "md", md: "lg" }}
-                    />
-                </InputGroup>
+                <HStack w="full" justify={"space-between"}>
+                    <InputGroup
+                        maxW="full"
+                        colorPalette={"accent"}
+                        startElement={<SearchNormal1 />}
+                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                    >
+                        <Input
+                            bg="bg"
+                            rounded="xl"
+                            placeholder="Search old groups..."
+                            value={search}
+                            onChange={handleChange}
+                            size={{ base: "md", md: "lg" }}
+                        />
+                    </InputGroup>
+                    <Box hideBelow={"md"}>
+                        <ExportButtons oldGroups={oldGroups} />
+                    </Box>
+                </HStack>
 
             </VStack>
         </>

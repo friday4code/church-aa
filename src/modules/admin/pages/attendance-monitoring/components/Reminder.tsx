@@ -32,7 +32,7 @@ const Reminder = () => {
     }
 
     const Item = ({ title, helper, onSend, isLoading, disabled }: { title: string; helper: string; onSend: () => void; isLoading: boolean; disabled: boolean }) => (
-        <Card.Root bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
+        <Card.Root p="0" bg="bg" border="1px" borderColor={{ base: "gray.200", _dark: "gray.700" }} rounded="xl">
             <Card.Header>
                 <VStack align="start" gap="1">
                     <Heading size="md" color={{ base: "gray.900", _dark: "white" }}>{title}</Heading>
@@ -50,7 +50,7 @@ const Reminder = () => {
     )
 
     return (
-        <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 3, md: 4 }}>
+        <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 1, md: 4 }}>
             {isAllowed('state') && (
                 <Item title="State" helper="Notify state admins" onSend={() => guardedSend('state', () => state.createReminder("state"))} isLoading={state.isCreating} disabled={!isAllowed('state')} />
             )}

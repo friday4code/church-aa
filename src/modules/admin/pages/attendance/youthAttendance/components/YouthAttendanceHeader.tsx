@@ -76,15 +76,18 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
                                     <Drawer.Body p={4}>
                                         <VStack gap={4} align="stretch">
                                             {/* Export Button */}
-                                            <Button
-                                                variant="outline"
-                                                size="lg"
-                                                onClick={onExportClick}
-                                                w="full"
-                                            >
-                                                <DocumentDownload size={16} style={{ marginRight: 8 }} />
-                                                Export
-                                            </Button>
+                                            <VStack gap={3} align="stretch">
+                                                <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                <Button
+                                                    variant="outline"
+                                                    size="lg"
+                                                    onClick={onExportClick}
+                                                    w="full"
+                                                >
+                                                    <DocumentDownload size={16} style={{ marginRight: 8 }} />
+                                                    Export
+                                                </Button>
+                                            </VStack>
                                             
                                             {/* Add Record Button */}
                                             <Button
