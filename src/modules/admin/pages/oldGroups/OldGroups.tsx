@@ -303,7 +303,7 @@ const Content = () => {
                                     <Spinner size="sm" color="accent.500" />
                                 </Center>
                             }>
-                                {isSuperAdmin && <ExportButtons oldGroups={oldGroups} />}
+                                {isSuperAdmin && <Box hideBelow={"md"}><ExportButtons oldGroups={oldGroups} /></Box>}
                             </Suspense>
 
                             {/* Table */}
