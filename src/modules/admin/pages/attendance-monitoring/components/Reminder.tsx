@@ -41,7 +41,7 @@ const Reminder = () => {
             </Card.Header>
             <Card.Body>
                 <HStack>
-                    <Button size="sm" onClick={onSend} colorPalette="accent" disabled={isLoading || disabled}>
+                    <Button w="full" size="sm" onClick={onSend} colorPalette="accent" disabled={isLoading || disabled}>
                         {isLoading ? <Spinner size="sm" /> : "Send Reminder"}
                     </Button>
                 </HStack>

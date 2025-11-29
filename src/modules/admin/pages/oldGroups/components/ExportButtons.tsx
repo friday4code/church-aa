@@ -15,11 +15,13 @@ interface ExportButtonsProps {
 
 const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
     return (
-        <HStack w="full">
+        <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
             <Button
                 rounded="xl"
                 variant="solid"
                 bg="bg"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 color="accent"
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
@@ -32,6 +34,8 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
@@ -44,6 +48,8 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
@@ -56,6 +62,8 @@ const ExportButtons = ({ oldGroups }: ExportButtonsProps) => {
                 variant="solid"
                 bg="bg"
                 color="accent"
+                w={{ base: "full", md: "auto" }}
+                justifyContent={{ base: "start", md: "center" }}
                 _hover={{ bg: "bg.muted" }}
                 size="sm"
                 rounded="xl"
