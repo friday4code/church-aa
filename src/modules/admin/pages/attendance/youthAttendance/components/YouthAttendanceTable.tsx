@@ -11,6 +11,8 @@ import {
 } from "@chakra-ui/react"
 import { Edit, Trash } from "iconsax-reactjs"
 import type { YouthAttendance } from "@/types/youthAttendance.type"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 
 interface YouthAttendanceTableProps {
     data: YouthAttendance[]
@@ -20,6 +22,19 @@ interface YouthAttendanceTableProps {
 }
 
 export const YouthAttendanceTable = ({ data, isLoading, onEdit, onDelete }: YouthAttendanceTableProps) => {
+    const { groups } = useGroups()
+    const { districts } = useDistricts()
+
+    const getGroupName = (groupId: number) => {
+        const group = groups?.find(g => g.id === groupId)
+        return group?.name || `Group ${groupId}`
+    }
+
+    const getDistrictName = (districtId: number) => {
+        const district = districts?.find(d => d.id === districtId)
+        return district?.name || `District ${districtId}`
+    }
+
     if (isLoading) {
         return (
             <VStack gap="2">
@@ -43,7 +58,7 @@ export const YouthAttendanceTable = ({ data, isLoading, onEdit, onDelete }: Yout
             <Table.Header>
                 <Table.Row>
                     <Table.ColumnHeader>Group</Table.ColumnHeader>
-                    <Table.ColumnHeader>Location</Table.ColumnHeader>
+                    <Table.ColumnHeader>District</Table.ColumnHeader>
                     <Table.ColumnHeader>Date</Table.ColumnHeader>
                     <Table.ColumnHeader textAlign="right">Male</Table.ColumnHeader>
                     <Table.ColumnHeader textAlign="right">Female</Table.ColumnHeader>
@@ -55,8 +70,8 @@ export const YouthAttendanceTable = ({ data, isLoading, onEdit, onDelete }: Yout
             <Table.Body>
                 {data.map((record) => (
                     <Table.Row key={record.id}>
-                        <Table.Cell fontWeight="medium">{record.group_id}</Table.Cell>
-                        <Table.Cell fontSize="sm">{record.district_id}</Table.Cell>
+                        <Table.Cell fontWeight="medium">{getGroupName(record.group_id)}</Table.Cell>
+                        <Table.Cell fontSize="sm">{getDistrictName(record.district_id)}</Table.Cell>
                         <Table.Cell fontSize="sm">{record.month} {record.year}{record.week ? ` (Week ${record.week})` : ''}</Table.Cell>
                         <Table.Cell textAlign="right">{record.male}</Table.Cell>
                         <Table.Cell textAlign="right">{record.female}</Table.Cell>
