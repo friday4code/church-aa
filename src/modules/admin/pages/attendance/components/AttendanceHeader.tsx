@@ -1,10 +1,11 @@
 "use client"
 
 import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton, VStack, IconButton, Drawer, Portal } from "@chakra-ui/react"
-import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
+import { Add, SearchNormal1, ArrowLeft3, MoreSquare, DocumentDownload } from "iconsax-reactjs"
 import type { Attendance } from "../../../stores/attendance.store"
 import { useState, useCallback } from "react"
 import { useNavigate } from "react-router"
+import { exportAttendanceToExcel, exportAttendanceToCSV, exportAttendanceToPDF, copyAttendanceToClipboard } from "@/utils/attendance.utils"
 
 interface AttendanceHeaderProps {
     serviceName: string
@@ -116,6 +117,69 @@ const AttendanceHeader = ({
                                                 <Add />
                                                 Add Attendance
                                             </Button>
+
+                                            {/* Export Buttons */}
+                                            <VStack gap={3} align="stretch">
+                                                <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
+                                                    <Button
+                                                        rounded="xl"
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        color="accent"
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        onClick={async () => await copyAttendanceToClipboard(serviceAttendances)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        Copy
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportAttendanceToExcel(serviceAttendances)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        Excel
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportAttendanceToCSV(serviceAttendances)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        CSV
+                                                    </Button>
+                                                    <Button
+                                                        variant="solid"
+                                                        bg="bg"
+                                                        color="accent"
+                                                        w={{ base: "full", md: "auto" }}
+                                                        justifyContent={{ base: "start", md: "center" }}
+                                                        _hover={{ bg: "bg.muted" }}
+                                                        size="sm"
+                                                        rounded="xl"
+                                                        onClick={() => exportAttendanceToPDF(serviceAttendances)}
+                                                    >
+                                                        <DocumentDownload />
+                                                        PDF
+                                                    </Button>
+                                                </HStack>
+                                            </VStack>
                                         </VStack>
                                     </Drawer.Body>
                                 </Drawer.Content>

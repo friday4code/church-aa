@@ -297,14 +297,6 @@ const Content = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                {isSuperAdmin && <Box hideBelow={"md"}><ExportButtons oldGroups={oldGroups} /></Box>}
-                            </Suspense>
 
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>

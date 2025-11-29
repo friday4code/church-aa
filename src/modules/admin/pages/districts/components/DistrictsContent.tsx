@@ -282,15 +282,6 @@ export const DistrictsContent = () => {
                 <Card.Root bg="transparent" border={"none"}>
                     <Card.Body p={0}>
                         <VStack gap="4">
-                            {/* Export Buttons */}
-                            <Suspense fallback={
-                                <Center h="40px">
-                                    <Spinner size="sm" color="accent.500" />
-                                </Center>
-                            }>
-                                {isSuperAdmin && <DistrictsExport districts={districts} />}
-                            </Suspense>
-
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <DistrictsTable
