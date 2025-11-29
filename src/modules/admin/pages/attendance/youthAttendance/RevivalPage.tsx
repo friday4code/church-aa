@@ -43,7 +43,7 @@ const RevivalPage: React.FC = () => {
     }
 
     return (
-        <Box p="6">
+        <Box>
             <VStack align="stretch" gap="6">
                 <YouthAttendanceHeader onAddClick={handleAddClick} onExportClick={handleExportClick} attendanceType="revival" showBackButton />
                 <FilterComponent onFilter={setFilters} attendanceType="revival" />
