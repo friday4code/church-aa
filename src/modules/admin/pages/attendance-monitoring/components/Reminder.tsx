@@ -50,7 +50,7 @@ const Reminder = () => {
     )
 
     return (
-        <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 1, md: 4 }}>
+        <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 0, md: 4 }}>
             {isAllowed('state') && (
                 <Item title="State" helper="Notify state admins" onSend={() => guardedSend('state', () => state.createReminder("state"))} isLoading={state.isCreating} disabled={!isAllowed('state')} />
             )}

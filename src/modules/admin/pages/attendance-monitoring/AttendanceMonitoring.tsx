@@ -74,19 +74,19 @@ const Content = () => {
             </HoverCard.Trigger>
             <ChakraPortal>
                 <HoverCard.Positioner>
-                    <HoverCard.Content rounded="md" p="3" bg="bg" borderWidth="1px" minW="sm">
+                    <HoverCard.Content rounded="md" p="3" bg="bg" borderWidth="1px" minW={{ base: "xs", md: "sm" }} maxW="xs">
                         <Heading size="sm" mb="2">{title}</Heading>
-                        <VStack align="start" gap="2">
+                        <VStack align="start" gap="2" maxH="40" overflowY="auto">
                             {items.map((it) => (
                                 <HStack key={it.id} justify="space-between" w="full">
-                                    <Text>{it.name}</Text>
-                                    <Badge colorPalette={it.status === 'red' ? 'red' : (it.status === 'yellow' ? 'yellow' : 'green')}>
+                                    <Text fontSize="sm" wordBreak="break-word" flex="1">{it.name}</Text>
+                                    <Badge colorPalette={it.status === 'red' ? 'red' : (it.status === 'yellow' ? 'yellow' : 'green')} flexShrink={0}>
                                         week {it.last_filled_week}
                                     </Badge>
                                 </HStack>
                             ))}
                             {items.length === 0 && (
-                                <Text color="gray.500">No items</Text>
+                                <Text color="gray.500" fontSize="sm">No items</Text>
                             )}
                         </VStack>
                     </HoverCard.Content>
