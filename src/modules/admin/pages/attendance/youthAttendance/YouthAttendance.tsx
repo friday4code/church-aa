@@ -16,7 +16,6 @@ import {
     Portal, Dialog,
     CloseButton,
     Field,
-    Card,
     Flex, Pagination,
     ButtonGroup,
     Checkbox,
@@ -28,10 +27,11 @@ import {
     Spinner,
     useListCollection,
     NumberInput,
+    Drawer,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Add, ArrowLeft3, ArrowRight3, Copy, DocumentDownload, DocumentText, Edit, More, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
+import { Add, ArrowLeft3, ArrowRight3, Copy, DocumentDownload, DocumentText, Edit, More, MoreSquare, ReceiptText, SearchNormal1, Trash } from "iconsax-reactjs"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
@@ -43,7 +43,6 @@ import { useYouthAttendance, useCreateYouthAttendance, useUpdateYouthAttendance,
 import { useGroups } from "@/modules/admin/hooks/useGroup"
 import { YouthAttendanceDialog } from "./components/YouthAttendanceDialog"
 import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
-import UploadStatesFromFile from "@/modules/admin/components/PortingFile"
 import type { YouthAttendance } from "@/types/youthAttendance.type"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -395,7 +394,7 @@ const BulkEditDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose, 
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="4xl" w="full">
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", md: "md", lg: "3xl" }} w="full">
                         <Dialog.Header>
                             <Dialog.Title>Update Youth Attendance</Dialog.Title>
                         </Dialog.Header>
@@ -479,7 +478,7 @@ const BulkDeleteDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl">
+                    <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>Delete Multiple Attendance Records</Dialog.Title>
                         </Dialog.Header>
@@ -923,253 +922,346 @@ const Content = () => {
         <>
             <VStack gap="6" align="stretch">
                 {/* Header */}
-                <HStack>
-                    <IconButton size="sm" rounded="xl" colorPalette={"accent"} onClick={() => navigate(-1)}>
-                        <ArrowLeft3 />
-                    </IconButton>
+                <HStack justify={"space-between"}>
+                    <HStack>
+                        <IconButton size="sm" rounded="xl" colorPalette={"accent"} onClick={() => navigate(-1)}>
+                            <ArrowLeft3 />
+                        </IconButton>
+                        <HStack>
+                            <Heading size={{ base: "2xl", md: "3xl" }}>Youth Attendance Data</Heading>
+                            <Badge colorPalette={"accent"}>{normalizedAttendance.length}</Badge>
+                        </HStack>
+                    </HStack>
+
+                    <Button
+                        hideBelow={"md"}
+                        colorPalette={"accent"}
+                        rounded="xl"
+                        onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
+                    >
+                        <Add />
+                        Add Attendance
+                    </Button>
+
+                    {/* Mobile Drawer - only on mobile */}
+                    <Drawer.Root placement="bottom" size="full">
+                        <Drawer.Trigger asChild>
+                            <IconButton
+                                aria-label="More options"
+                                variant="ghost"
+                                rounded="xl"
+                                size="md"
+                                hideFrom={"md"}
+                            >
+                                <MoreSquare variant="Outline" />
+                            </IconButton>
+                        </Drawer.Trigger>
+                        <Portal>
+                            <Drawer.Backdrop />
+                            <Drawer.Positioner>
+                                <Drawer.Content h='fit' bg="bg" borderTopRadius="xl">
+                                    <Drawer.Header p={4} borderBottom="1px solid" borderColor="border">
+                                        <Flex justify="space-between" align="center">
+                                            <Heading size="lg">Actions</Heading>
+                                            <Drawer.CloseTrigger asChild>
+                                                <IconButton
+                                                    aria-label="Close drawer"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                >
+                                                    <CloseButton />
+                                                </IconButton>
+                                            </Drawer.CloseTrigger>
+                                        </Flex>
+                                    </Drawer.Header>
+                                    <Drawer.Body p={4}>
+                                        <VStack gap={4} align="stretch">
+                                            <Button
+                                                colorPalette={"accent"}
+                                                rounded="xl"
+                                                size="lg"
+                                                w="full"
+                                                onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
+                                            >
+                                                <Add />
+                                                Add Attendance
+                                            </Button>
+
+                                            {/* Export Button */}
+                                            <VStack gap={3} align="stretch">
+                                                <Heading size="sm" color="fg.muted">Export Data</Heading>
+                                                <Button
+                                                    rounded="xl"
+                                                    variant="solid"
+                                                    bg="bg"
+                                                    w={{ base: "full", md: "auto" }}
+                                                    justifyContent={{ base: "start", md: "center" }}
+                                                    color="accent"
+                                                    _hover={{ bg: "bg.muted" }}
+                                                    size="sm"
+                                                    onClick={async () => await copyYouthAttendanceToClipboard(attendanceData)}
+                                                >
+                                                    <DocumentDownload />
+                                                    Copy
+                                                </Button>
+                                                <Button
+                                                    variant="solid"
+                                                    bg="bg"
+                                                    color="accent"
+                                                    w={{ base: "full", md: "auto" }}
+                                                    justifyContent={{ base: "start", md: "center" }}
+                                                    _hover={{ bg: "bg.muted" }}
+                                                    size="sm"
+                                                    rounded="xl"
+                                                    onClick={() => exportYouthAttendanceToExcel(attendanceData)}
+                                                >
+                                                    <DocumentDownload />
+                                                    Excel
+                                                </Button>
+                                                <Button
+                                                    variant="solid"
+                                                    bg="bg"
+                                                    color="accent"
+                                                    w={{ base: "full", md: "auto" }}
+                                                    justifyContent={{ base: "start", md: "center" }}
+                                                    _hover={{ bg: "bg.muted" }}
+                                                    size="sm"
+                                                    rounded="xl"
+                                                    onClick={() => exportYouthAttendanceToCSV(attendanceData)}
+                                                >
+                                                    <DocumentDownload />
+                                                    CSV
+                                                </Button>
+                                                <Button
+                                                    variant="solid"
+                                                    bg="bg"
+                                                    color="accent"
+                                                    w={{ base: "full", md: "auto" }}
+                                                    justifyContent={{ base: "start", md: "center" }}
+                                                    _hover={{ bg: "bg.muted" }}
+                                                    size="sm"
+                                                    rounded="xl"
+                                                    onClick={() => exportYouthAttendanceToPDF(attendanceData)}
+                                                >
+                                                    <DocumentDownload />
+                                                    PDF
+                                                </Button>
+                                            </VStack>
+                                        </VStack>
+                                    </Drawer.Body>
+                                </Drawer.Content>
+                            </Drawer.Positioner>
+                        </Portal>
+                    </Drawer.Root>
+
                 </HStack>
 
-                <Flex
-                    justify="space-between"
-                    align="center"
-                    pos="sticky"
-                    top={6}
-                    zIndex={"sticky"}
-                    backdropFilter={"blur(20px)"}
-                >
-                    <HStack>
-                        <Heading size="3xl">Youth Attendance Data</Heading>
-                        <Badge colorPalette={"accent"}>{normalizedAttendance.length}</Badge>
-                    </HStack>
-
-                    <HStack gap="4">
-                        <UploadStatesFromFile data={[]} />
-                        <Button
-                            colorPalette="accent"
+                {/* Export Buttons */}
+                <HStack justify="space-between" w="full">
+                    {/* Search */}
+                    <InputGroup colorPalette={"accent"} startElement={<SearchNormal1 />}>
+                        <Input
+                            bg="bg"
                             rounded="xl"
-                            onClick={() => setDialogState({ isOpen: true, mode: 'add' })}
+                            placeholder="Search attendance..."
+                            onChange={(e) => handleSearch(e.target.value)}
+                        />
+                    </InputGroup>
+
+                    <HStack hideBelow={"md"}>
+                        <Button
+                            rounded="xl"
+                            variant="solid"
+                            bg="bg"
+                            color="accent"
+                            size="sm"
+                            onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
                         >
-                            <Add />
-                            Add Attendance
+                            <Copy />
+                            Copy
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg="bg"
+                            color="accent"
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
+                        >
+                            <DocumentDownload />
+                            Excel
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg="bg"
+                            color="accent"
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
+                        >
+                            <DocumentText />
+                            CSV
+                        </Button>
+                        <Button
+                            variant="solid"
+                            bg="bg"
+                            color="accent"
+                            size="sm"
+                            rounded="xl"
+                            onClick={() => exportYouthAttendanceToPDF(normalizedAttendance)}
+                        >
+                            <ReceiptText />
+                            PDF
                         </Button>
                     </HStack>
-                </Flex>
+                </HStack>
 
-                <Card.Root bg="transparent" border={"none"}>
-                    <Card.Body p={0}>
-                        <VStack gap="4">
-                            {/* Export Buttons */}
-                            <HStack justify="space-between" w="full">
-                                <HStack>
-                                    <Button
-                                        rounded="xl"
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
+                {/* Table */}
+                <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
+                    <Table.Root size="sm">
+                        <Table.Header>
+                            <Table.Row fontSize={"md"}>
+                                <Table.ColumnHeader w="50px">
+                                    <Checkbox.Root
+                                        colorPalette={"accent"}
+                                        checked={isAllSelectedOnPage}
+                                        onCheckedChange={handleSelectAllOnPage}
                                     >
-                                        <Copy />
-                                        Copy
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
-                                    >
-                                        <DocumentDownload />
-                                        Excel
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
-                                    >
-                                        <DocumentText />
-                                        CSV
-                                    </Button>
-                                    <Button
-                                        variant="solid"
-                                        bg="whiteAlpha.500"
-                                        color="accent"
-                                        _hover={{ bg: "white" }}
-                                        size="sm"
-                                        rounded="xl"
-                                        onClick={() => exportYouthAttendanceToPDF(normalizedAttendance)}
-                                    >
-                                        <ReceiptText />
-                                        PDF
-                                    </Button>
-                                </HStack>
-
-                                {/* Search */}
-                                <InputGroup bg="whiteAlpha.600" maxW="300px" colorPalette={"accent"} startElement={<SearchNormal1 />}>
-                                    <Input
-                                        rounded="xl"
-                                        placeholder="Search attendance..."
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                    />
-                                </InputGroup>
-                            </HStack>
-
-                            {/* Table */}
-                            <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
-                                <Table.Root size="sm">
-                                    <Table.Header>
-                                        <Table.Row fontSize={"md"}>
-                                            <Table.ColumnHeader w="50px">
-                                                <Checkbox.Root
-                                                    colorPalette={"accent"}
-                                                    checked={isAllSelectedOnPage}
-                                                    onCheckedChange={handleSelectAllOnPage}
-                                                >
-                                                    <Checkbox.HiddenInput />
-                                                    <Checkbox.Control rounded="md" cursor={"pointer"} />
-                                                </Checkbox.Root>
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                cursor="pointer"
-                                                onClick={() => handleSort('id')}
-                                            >
-                                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                cursor="pointer"
-                                                onClick={() => handleSort('groupName')}
-                                            >
-                                                Group {sortField === 'groupName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                cursor="pointer"
-                                                onClick={() => handleSort('month')}
-                                            >
-                                                Month {sortField === 'month' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                cursor="pointer"
-                                                onClick={() => handleSort('yhsfMale')}
-                                            >
-                                                YHSF Male {sortField === 'yhsfMale' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                cursor="pointer"
-                                                onClick={() => handleSort('yhsfFemale')}
-                                            >
-                                                YHSF Female {sortField === 'yhsfFemale' && (sortOrder === 'asc' ? '↑' : '↓')}
-                                            </Table.ColumnHeader>
-                                            <Table.ColumnHeader
-                                                fontWeight={"bold"}
-                                                textAlign="center">
-                                                Action
-                                            </Table.ColumnHeader>
-                                        </Table.Row>
-                                    </Table.Header>
-                                    <Table.Body>
-                                        {paginatedAttendance.map((attendance) => (
-                                            <Table.Row key={attendance.id} bg="whiteAlpha.500">
-                                                <Table.Cell>
-                                                    <Checkbox.Root
-                                                        colorPalette={"accent"}
-                                                        checked={selectedAttendance.includes(attendance.id)}
-                                                        onCheckedChange={() => handleSelectAttendance(attendance.id)}
-                                                    >
-                                                        <Checkbox.HiddenInput />
-                                                        <Checkbox.Control cursor="pointer" rounded="md" />
-                                                    </Checkbox.Root>
-                                                </Table.Cell>
-                                                <Table.Cell>{attendance.id}</Table.Cell>
-                                                <Table.Cell fontWeight="medium">{attendance.groupName}</Table.Cell>
-                                                <Table.Cell fontWeight="medium">{attendance.month}</Table.Cell>
-                                                <Table.Cell>{attendance.yhsfMale}</Table.Cell>
-                                                <Table.Cell>{attendance.yhsfFemale}</Table.Cell>
-                                                <Table.Cell textAlign="center">
-                                                    <Menu.Root>
-                                                        <Menu.Trigger asChild>
-                                                            <IconButton rounded="xl" variant="ghost" size="sm">
-                                                                <More />
-                                                            </IconButton>
-                                                        </Menu.Trigger>
-                                                        <Portal>
-                                                            <Menu.Positioner>
-                                                                <Menu.Content rounded="lg">
-                                                                    <Menu.Item
-                                                                        value="edit"
-                                                                        onClick={() => setDialogState({
-                                                                            isOpen: true,
-                                                                            attendance,
-                                                                            mode: 'edit'
-                                                                        })}
-                                                                    >
-                                                                        <Edit /> Edit
-                                                                    </Menu.Item>
-                                                                    <Menu.Item
-                                                                        color="red"
-                                                                        value="delete"
-                                                                        colorPalette="red"
-                                                                        onClick={() => handleDeleteAttendance(attendance)}
-                                                                    >
-                                                                        <Trash /> Delete
-                                                                    </Menu.Item>
-                                                                </Menu.Content>
-                                                            </Menu.Positioner>
-                                                        </Portal>
-                                                    </Menu.Root>
-                                                </Table.Cell>
-                                            </Table.Row>
-                                        ))}
-                                    </Table.Body>
-                                </Table.Root>
-                            </Table.ScrollArea>
-
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <Pagination.Root
-                                    colorPalette={"accent"}
-                                    count={totalPages}
-                                    pageSize={1}
-                                    page={currentPage}
-                                    onPageChange={(d) => setCurrentPage(d.page)}
+                                        <Checkbox.HiddenInput />
+                                        <Checkbox.Control rounded="md" cursor={"pointer"} />
+                                    </Checkbox.Root>
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => handleSort('id')}
                                 >
-                                    <ButtonGroup variant="outline" size="sm">
-                                        <Pagination.PrevTrigger asChild>
-                                            <IconButton rounded="xl">
-                                                <ArrowLeft3 />
-                                            </IconButton>
-                                        </Pagination.PrevTrigger>
-
-                                        <Pagination.Items
-                                            render={(page) => (
-                                                <IconButton rounded="xl" variant={{ base: "outline", _selected: "solid" }}>
-                                                    {page.value}
+                                    S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => handleSort('groupName')}
+                                >
+                                    Group {sortField === 'groupName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => handleSort('month')}
+                                >
+                                    Month {sortField === 'month' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => handleSort('yhsfMale')}
+                                >
+                                    YHSF Male {sortField === 'yhsfMale' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => handleSort('yhsfFemale')}
+                                >
+                                    YHSF Female {sortField === 'yhsfFemale' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    textAlign="center">
+                                    Action
+                                </Table.ColumnHeader>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                            {paginatedAttendance.map((attendance) => (
+                                <Table.Row key={attendance.id} bg="bg">
+                                    <Table.Cell>
+                                        <Checkbox.Root
+                                            colorPalette={"accent"}
+                                            checked={selectedAttendance.includes(attendance.id)}
+                                            onCheckedChange={() => handleSelectAttendance(attendance.id)}
+                                        >
+                                            <Checkbox.HiddenInput />
+                                            <Checkbox.Control cursor="pointer" rounded="md" />
+                                        </Checkbox.Root>
+                                    </Table.Cell>
+                                    <Table.Cell>{attendance.id}</Table.Cell>
+                                    <Table.Cell fontWeight="medium">{attendance.groupName}</Table.Cell>
+                                    <Table.Cell fontWeight="medium">{attendance.month}</Table.Cell>
+                                    <Table.Cell>{attendance.yhsfMale}</Table.Cell>
+                                    <Table.Cell>{attendance.yhsfFemale}</Table.Cell>
+                                    <Table.Cell textAlign="center">
+                                        <Menu.Root>
+                                            <Menu.Trigger asChild>
+                                                <IconButton rounded="xl" variant="ghost" size="sm">
+                                                    <More />
                                                 </IconButton>
-                                            )}
-                                        />
+                                            </Menu.Trigger>
+                                            <Portal>
+                                                <Menu.Positioner>
+                                                    <Menu.Content rounded="lg">
+                                                        <Menu.Item
+                                                            value="edit"
+                                                            onClick={() => setDialogState({
+                                                                isOpen: true,
+                                                                attendance,
+                                                                mode: 'edit'
+                                                            })}
+                                                        >
+                                                            <Edit /> Edit
+                                                        </Menu.Item>
+                                                        <Menu.Item
+                                                            color="red"
+                                                            value="delete"
+                                                            colorPalette="red"
+                                                            onClick={() => handleDeleteAttendance(attendance)}
+                                                        >
+                                                            <Trash /> Delete
+                                                        </Menu.Item>
+                                                    </Menu.Content>
+                                                </Menu.Positioner>
+                                            </Portal>
+                                        </Menu.Root>
+                                    </Table.Cell>
+                                </Table.Row>
+                            ))}
+                        </Table.Body>
+                    </Table.Root>
+                </Table.ScrollArea>
 
-                                        <Pagination.NextTrigger asChild>
-                                            <IconButton rounded="xl">
-                                                <ArrowRight3 />
-                                            </IconButton>
-                                        </Pagination.NextTrigger>
-                                    </ButtonGroup>
-                                </Pagination.Root>
-                            )}
-                        </VStack>
-                    </Card.Body>
-                </Card.Root>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <Pagination.Root
+                        colorPalette={"accent"}
+                        count={totalPages}
+                        pageSize={1}
+                        page={currentPage}
+                        onPageChange={(d) => setCurrentPage(d.page)}
+                    >
+                        <ButtonGroup variant="outline" size="sm">
+                            <Pagination.PrevTrigger asChild>
+                                <IconButton rounded="xl">
+                                    <ArrowLeft3 />
+                                </IconButton>
+                            </Pagination.PrevTrigger>
+
+                            <Pagination.Items
+                                render={(page) => (
+                                    <IconButton rounded="xl" variant={{ base: "outline", _selected: "solid" }}>
+                                        {page.value}
+                                    </IconButton>
+                                )}
+                            />
+
+                            <Pagination.NextTrigger asChild>
+                                <IconButton rounded="xl">
+                                    <ArrowRight3 />
+                                </IconButton>
+                            </Pagination.NextTrigger>
+                        </ButtonGroup>
+                    </Pagination.Root>
+                )}
             </VStack>
 
             {/* Action Bar for selected items */}
@@ -1221,7 +1313,7 @@ const Content = () => {
                         </ActionBar.CloseTrigger>
                     </ActionBar.Content>
                 </ActionBar.Positioner>
-            </ActionBar.Root>
+            </ActionBar.Root >
 
             <Box>
                 {/* Add/Edit Dialog */}
@@ -1263,7 +1355,7 @@ const Content = () => {
                     selectedAttendance={selectedAttendance}
                     youthAttendance={filteredAndSortedAttendance}
                     onClose={() => setIsBulkEditOpen(false)}
-                    // onConfirm={confirmBulkEdit}
+                // onConfirm={confirmBulkEdit}
                 />
 
                 <Toaster />
@@ -1287,7 +1379,7 @@ const DeleteConfirmationDialog = ({ isOpen, attendance, onClose, onConfirm }: De
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl">
+                    <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>Delete Attendance Record</Dialog.Title>
                         </Dialog.Header>

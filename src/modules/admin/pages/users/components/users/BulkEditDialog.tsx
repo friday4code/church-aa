@@ -74,7 +74,7 @@ const BulkEditDialog = ({ isLoading, isOpen, selectedUsers, users, onClose, onUp
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "4xl" }} w="full">
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", sm: "sm", md: "md", lg: "4xl" }} w="full">
                         <Dialog.Header>
                             <Dialog.Title>Bulk Edit Users</Dialog.Title>
                         </Dialog.Header>

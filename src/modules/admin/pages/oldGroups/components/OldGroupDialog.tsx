@@ -245,7 +245,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
+                        <Dialog.Content rounded="xl" maxW={{ base: "sm", sm: "sm", md: "md", lg: "2xl" }}>
                             <Dialog.Header>
                                 <Dialog.Title>
                                     {mode === 'add' ? 'Add New Old Group' : 'Update Old Group'}

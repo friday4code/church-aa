@@ -207,7 +207,7 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner >
-                        <Dialog.Content rounded="xl">
+                        <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                             <Dialog.Header>
                                 <Dialog.Title>Upload States From File</Dialog.Title>
                             </Dialog.Header>

@@ -241,7 +241,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", md: "md", lg: "3xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {mode === 'add' ? 'Add New District' : 'Update District'}

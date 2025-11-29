@@ -315,7 +315,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }} >
+                    <Dialog.Content rounded="xl"maxW={{ base: "sm", md: "md", lg: "3xl" }} >
                         <Dialog.Header>
                             <Dialog.Title color={{ base: "gray.800", _dark: "white" }}>
                                 {mode === 'add' ? `Add ${serviceName} Attendance` : 'Update Attendance Record'}

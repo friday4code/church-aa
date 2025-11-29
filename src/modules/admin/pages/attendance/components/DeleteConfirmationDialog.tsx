@@ -22,7 +22,7 @@ const DeleteConfirmationDialog = ({ isOpen, attendance, onClose, onConfirm, serv
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl">
+                    <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>Delete {serviceName} Attendance Record</Dialog.Title>
                         </Dialog.Header>

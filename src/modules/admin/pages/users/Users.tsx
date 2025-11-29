@@ -309,7 +309,7 @@ const Content = () => {
             })
         } else if (dialogState.user) {
             // For update, only include password if provided
-            const updateData = { ...apiData }
+            const updateData = { ...apiData, state_id: null, region_id: null, district_id: null, group_id: null, old_group_id: null }
             if (!updateData.password) {
                 delete updateData.password
             }

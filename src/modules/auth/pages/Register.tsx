@@ -462,7 +462,7 @@ const Register = () => {
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content p="4">
+                        <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} p="4">
                             <Dialog.Header>
                                 <CheckCircle color="green" />
                                 <Dialog.Title>Verify Your Email Address</Dialog.Title>

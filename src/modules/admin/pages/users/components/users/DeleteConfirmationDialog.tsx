@@ -22,7 +22,7 @@ const DeleteConfirmationDialog = ({ isLoading, isOpen, user, onClose, onConfirm 
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md" }}>
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", sm: "sm", md: "md" }}>
                         <Dialog.Header>
                             <Dialog.Title>Delete User</Dialog.Title>
                         </Dialog.Header>

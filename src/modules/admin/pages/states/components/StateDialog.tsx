@@ -100,7 +100,7 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
                 <Portal>
                     <Dialog.Backdrop />
                     <Dialog.Positioner>
-                        <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
+                        <Dialog.Content rounded="xl" maxW={{ base: "sm", sm: "sm", md: "md", lg: "2xl" }}>
                             <Dialog.Header>
                                 <Dialog.Title>
                                     {mode === 'add' ? 'Add New State' : 'Update State'}

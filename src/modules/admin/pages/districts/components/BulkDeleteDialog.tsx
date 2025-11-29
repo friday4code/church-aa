@@ -35,7 +35,7 @@ const BulkDeleteDialog = ({ isOpen, selectedDistricts, districts, onClose, onCon
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl">
+                    <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                         <Dialog.Header>
                             <Dialog.Title>Delete Multiple Districts</Dialog.Title>
                         </Dialog.Header>

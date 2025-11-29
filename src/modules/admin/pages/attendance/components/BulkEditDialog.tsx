@@ -81,7 +81,7 @@ const BulkEditDialog = ({ isOpen, selectedAttendances, attendances, onClose, onU
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW="4xl" w="full">
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", md: "md", lg: "3xl" }} w="full">
                         <Dialog.Header>
                             <Dialog.Title>Update {serviceName} Attendance</Dialog.Title>
                         </Dialog.Header>

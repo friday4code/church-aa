@@ -81,18 +81,18 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                     const s = typeof r === 'string' ? r : String(r)
                     const n = (() => {
                         const t = s.trim().toLowerCase()
-                        if (t === 'super admin') return 2
-                        if (t === 'state admin') return 3
-                        if (t === 'region admin') return 4
-                        if (t === 'district admin') return 5
-                        if (t === 'group admin') return 6
-                        if (t === 'viewer') return 7
-                        if (t === 'admin') return 1
-                        return 1
+                        if (t === 'super admin') return "Super Admin"
+                        if (t === 'state admin') return "State Admin"
+                        if (t === 'region admin') return "Region Admin"
+                        if (t === 'district admin') return "District Admin"
+                        if (t === 'group admin') return "Group Admin"
+                        if (t === 'viewer') return "Viewer"
+                        if (t === 'admin') return "Admin"
+                        return "Admin"
                     })()
                     return n
                 })
-                : [1]
+                : ["Admin"]
         }
     })
 
@@ -100,7 +100,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
         console.log("payload", data);
 
         onSave(data)
-        reset()
+        // reset()
     }
 
     const onInvalid = () => {
@@ -121,11 +121,11 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                 email: user.email || '',
                 phone: user.phone || '',
                 password: '',
-                state_id: user.state_id || authUser?.state_id || 0,
-                region_id: user.region_id || authUser?.region_id || 0,
-                district_id: user.district_id || authUser?.district_id || 0,
+                state_id: user.state_id || authUser?.state_id || undefined,
+                region_id: user.region_id || authUser?.region_id || undefined,
+                district_id: user.district_id || authUser?.district_id || undefined,
                 group_id:
-                    (user && 'group_id' in user ? (user.group_id ?? 0) : ((authUser as { group_id?: number | null } | null)?.group_id ?? 0)) || 0,
+                    (user && 'group_id' in user ? (user.group_id ?? 0) : ((authUser as { group_id?: number | null } | null)?.group_id ?? 0)) || undefined,
                 old_group_id:
                     (user && 'old_group_id' in user ? (user.old_group_id ?? 0) : ((authUser as { old_group_id?: number | null } | null)?.old_group_id ?? 0)) || 0,
                 roles: Array.isArray(user.roles)
@@ -133,18 +133,18 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                         const s = typeof r === 'string' ? r : String(r)
                         const n = (() => {
                             const t = s.trim().toLowerCase()
-                            if (t === 'super admin') return 2
-                            if (t === 'state admin') return 3
-                            if (t === 'region admin') return 4
-                            if (t === 'district admin') return 5
-                            if (t === 'group admin') return 6
-                            if (t === 'viewer') return 7
-                            if (t === 'admin') return 1
-                            return 1
+                            if (t === 'super admin') return "Super Admin"
+                            if (t === 'state admin') return "State Admin"
+                            if (t === 'region admin') return "Region Admin"
+                            if (t === 'district admin') return "District Admin"
+                            if (t === 'group admin') return "Group Admin"
+                            if (t === 'viewer') return "Viewer"
+                            if (t === 'admin') return "Admin"
+                            return "Admin"
                         })()
                         return n
                     })
-                    : [1]
+                    : ["Admin"]
             })
         } else if (isOpen && !user) {
             // For add mode, set defaults from auth user
@@ -158,20 +158,20 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                 district_id: authUser?.district_id || 0,
                 group_id: ((authUser as { group_id?: number | null } | null)?.group_id ?? 0) || 0,
                 old_group_id: ((authUser as { old_group_id?: number | null } | null)?.old_group_id ?? 0) || 0,
-                roles: [1]
+                roles: ["Admin"]
             })
         }
     }, [isOpen, user, authUser, reset])
 
     const rolesCollection = createListCollection({
         items: [
-            { label: 'Super Admin', value: '2' },
-            { label: 'State Admin', value: '3' },
-            { label: 'Region Admin', value: '4' },
-            { label: 'Group Admin', value: '6' },
-            { label: 'District Admin', value: '5' },
-            { label: 'Viewer', value: '7' },
-            { label: ' Admin', value: '1' },
+            { label: 'Super Admin', value: 'Super Admin' },
+            { label: 'State Admin', value: 'State Admin' },
+            { label: 'Region Admin', value: 'Region Admin' },
+            { label: 'Group Admin', value: 'Group Admin' },
+            { label: 'District Admin', value: 'District Admin' },
+            { label: 'Viewer', value: 'Viewer' },
+            { label: ' Admin', value: "Admin" },
         ]
     })
 
@@ -313,8 +313,8 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
         clearBelowGroup()
     }, [oldGroups, setValue, trigger])
 
-    const onRolesChange = useCallback((val: { value: string[] }) => {
-        setValue('roles', (val.value || []).map((v) => parseInt(v, 10)), { shouldValidate: true })
+    const onRolesChange = useCallback((val: { value: string[] | number[] }) => {
+        setValue('roles', (val.value || []).map((v) => String(v)), { shouldValidate: true })
     }, [setValue])
 
     return (
@@ -330,7 +330,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl" maxW={{ base: "xs", sm: "sm", md: "md", lg: "2xl" }}>
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", md: "md", lg: "3xl" }}>
                         <Dialog.Header>
                             <Dialog.Title>
                                 {mode === 'add' ? 'Add New User' : 'Update User'}
