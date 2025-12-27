@@ -2,7 +2,8 @@ name: Church Attendance App
 
 on:
   push:
-    branches: [main]
+    # branches: [main]
+    branches: [staging]
 
 jobs:
   deploy:
@@ -36,4 +37,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: /
+          # server-dir: /
+          server-dir: /staging/
