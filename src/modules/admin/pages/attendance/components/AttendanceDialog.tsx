@@ -11,6 +11,8 @@ import {
     Select,
     NumberInput,
     Heading,
+    InputGroup,
+    Show,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -27,7 +29,7 @@ import GroupIdCombobox from "../../../components/GroupIdCombobox"
 import OldGroupIdCombobox from "../../../components/OldGroupIdCombobox"
 import { useMe } from "@/hooks/useMe"
 import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
-import { useLocation } from "react-router"
+import { useLocation, useParams } from "react-router"
 import { toaster } from "@/components/ui/toaster"
 
 // Collections for Select components
@@ -99,8 +101,12 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
         return roles.includes("Group Admin")
     }, [user?.roles])
 
-
-
+    const { type } = useParams();
+    const isMainServiceType = type === 'sunday-worship' || type === "thursday-revival" || type === "monday-bible";
+    const extraFields = useMemo(() => isMainServiceType ? {
+        new_comers: attendance?.new_comers || 0,
+        tithe_offering: attendance?.tithe_offering || 0,
+    } : {}, [attendance, isMainServiceType])
 
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<AttendanceFormData>({
         resolver: zodResolver(AttendanceSchema),
@@ -120,6 +126,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             children_boys: attendance?.children_boys || 0,
             children_girls: attendance?.children_girls || 0,
             year: attendance?.year || new Date().getFullYear(),
+            ...extraFields,
         }
     })
 
@@ -199,6 +206,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                 children_boys: attendance.children_boys,
                 children_girls: attendance.children_girls,
                 year: attendance.year,
+                ...extraFields,
             })
         } else if (isOpen && !attendance) {
             reset({
@@ -217,9 +225,10 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                 children_boys: 0,
                 children_girls: 0,
                 year: new Date().getFullYear(),
+                ...extraFields,
             })
         }
-    }, [isOpen, attendance, reset, serviceName, user?.state_id, user?.region_id, user?.district_id, user?.group_id, user?.old_group_id, roleVisibility])
+    }, [isOpen, attendance, reset, serviceName, user?.state_id, user?.region_id, user?.district_id, user?.group_id, user?.old_group_id, roleVisibility, extraFields])
 
     // hooks for name lookup and display
     const { states } = useStates()
@@ -315,7 +324,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
-                    <Dialog.Content rounded="xl"maxW={{ base: "sm", md: "md", lg: "3xl" }} >
+                    <Dialog.Content rounded="xl" maxW={{ base: "sm", md: "md", lg: "3xl" }} >
                         <Dialog.Header>
                             <Dialog.Title color={{ base: "gray.800", _dark: "white" }}>
                                 {mode === 'add' ? `Add ${serviceName} Attendance` : 'Update Attendance Record'}
@@ -586,6 +595,41 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                                             <Field.ErrorText>{errors.children_girls?.message}</Field.ErrorText>
                                         </Field.Root>
                                     </HStack>
+
+                                    <Show when={isMainServiceType}>
+                                        <HStack gap="4" w="full">
+                                            <Field.Root required invalid={!!errors.new_comers}>
+                                                <Field.Label>New Comers</Field.Label>
+                                                <NumberInput.Root
+                                                    min={0}
+                                                    onValueChange={(e) => setValue('new_comers', e.valueAsNumber)}
+                                                >
+                                                    <NumberInput.Control />
+                                                    <NumberInput.Input rounded="lg" {...register('new_comers', { valueAsNumber: true })} />
+                                                </NumberInput.Root>
+                                                <Field.ErrorText>{errors.new_comers?.message}</Field.ErrorText>
+                                            </Field.Root>
+
+                                            <Field.Root required invalid={!!errors.tithe_offering}>
+                                                <Field.Label>Tithe Offering</Field.Label>
+                                                <NumberInput.Root
+                                                    min={0}
+                                                    formatOptions={{
+                                                        style: 'decimal',
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    }}
+                                                    onValueChange={(e) => setValue('tithe_offering', e.valueAsNumber)}
+                                                >
+                                                    <InputGroup startElement={"₦"}>
+                                                        <NumberInput.Input placeholder="50000" rounded="lg" {...register('tithe_offering', { valueAsNumber: true })} />
+                                                    </InputGroup>
+                                                </NumberInput.Root>
+                                                <Field.ErrorText>{errors.tithe_offering?.message}</Field.ErrorText>
+                                            </Field.Root>
+                                        </HStack>
+                                    </Show>
+
                                 </VStack>
                             </form>
                         </Dialog.Body>
@@ -613,7 +657,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
                     </Dialog.Content>
                 </Dialog.Positioner>
             </Portal>
-        </Dialog.Root>
+        </Dialog.Root >
     )
 }
 

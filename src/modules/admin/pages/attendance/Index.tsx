@@ -16,12 +16,15 @@ import {
     Link,
     Spinner,
     Alert,
+    type ColorPalette,
 } from "@chakra-ui/react"
-import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts"
-import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon } from "iconsax-reactjs"
+import { Cell, Label, Pie, PieChart, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Line, LineChart } from "recharts"
+import { Chart, useChart } from "@chakra-ui/charts"
+import { Calendar, Profile2User, TrendUp, ArrowRight, ChartSquare, UserOctagon, Icon } from "iconsax-reactjs"
 import { ENV } from "@/config/env"
 import { calculateTotals, mapServiceTypeToInternal } from "@/utils/attendance.utils"
 import { useAttendance } from "../../hooks/useAttendance"
+import type { Attendance } from "@/types/attendance.type"
 
 // Define service types locally since we're not using the store
 export type ServiceType = 'sunday-worship' | 'house-caring' | 'search-scriptures' | 'thursday-revival' | 'monday-bible'
@@ -67,7 +70,13 @@ const Content = () => {
         totalAttendance: number;
         averageAttendance: number;
         lastUpdated: Date | null;
-    }>>({} as any)
+    }>>({} as Record<ServiceType, {
+        name: string;
+        records: number;
+        totalAttendance: number;
+        averageAttendance: number;
+        lastUpdated: Date | null;
+    }>)
 
     const [monthlyData, setMonthlyData] = useState<Array<{
         month: string;
@@ -77,6 +86,16 @@ const Content = () => {
         thursdayRevival: number;
         mondayBible: number;
         total: number;
+    }>>([])
+
+    const [monthlyNewComers, setMonthlyNewComers] = useState<Array<{
+        month: string;
+        newComers: number;
+    }>>([])
+
+    const [monthlyTitheOffering, setMonthlyTitheOffering] = useState<Array<{
+        month: string;
+        titheOffering: number;
     }>>([])
 
     const [serviceDistribution, setServiceDistribution] = useState<Array<{
@@ -107,7 +126,7 @@ const Content = () => {
 
         // Calculate overall statistics
         const totalRecords = attendanceData.length
-        const allTotals = calculateTotals(attendanceData)
+        const allTotals = calculateTotals(attendanceData as Attendance[])
         const totalAttendance = allTotals.total
         const averageAttendance = totalRecords > 0 ? Math.round(totalAttendance / totalRecords) : 0
 
@@ -130,11 +149,23 @@ const Content = () => {
         })
 
         // Calculate statistics per service type
-        const serviceStatsData: Record<ServiceType, any> = {} as any
+        const serviceStatsData: Record<ServiceType, {
+            name: string;
+            records: number;
+            totalAttendance: number;
+            averageAttendance: number;
+            lastUpdated: Date | null;
+        }> = {} as Record<ServiceType, {
+            name: string;
+            records: number;
+            totalAttendance: number;
+            averageAttendance: number;
+            lastUpdated: Date | null;
+        }>
 
         Object.entries(SERVICE_TYPES).forEach(([serviceType, config]) => {
             const serviceAttendances = getAttendancesByServiceType(serviceType as ServiceType)
-            const serviceTotals = calculateTotals(serviceAttendances)
+            const serviceTotals = calculateTotals(serviceAttendances as Attendance[])
 
             serviceStatsData[serviceType as ServiceType] = {
                 name: config.name,
@@ -160,8 +191,41 @@ const Content = () => {
         setServiceDistribution(distributionData)
 
         // Prepare monthly attendance data for bar chart
-        const monthlyAttendance = calculateMonthlyAttendance(attendanceData)
-        setMonthlyData(monthlyAttendance)
+        const monthlyAttendance = calculateMonthlyAttendance(attendanceData as Attendance[])
+        setMonthlyData(monthlyAttendance.map(item => ({ ...item, month: item.month.toString() })))
+
+        // Prepare monthly newcomers and tithe/offering line chart data
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December']
+
+        const toMonthName = (m: string | number) => {
+            const n = typeof m === 'number' ? m : Number(m)
+            if (!Number.isNaN(n) && n >= 1 && n <= 12) return monthNames[n - 1]
+            if (typeof m === 'string' && monthNames.includes(m)) return m
+            return String(m)
+        }
+
+        const currentYear = new Date().getFullYear()
+        const newcomersMap: Record<string, number> = {}
+        const titheMap: Record<string, number> = {}
+
+        attendanceData.forEach(att => {
+            if (att.year === currentYear) {
+                const mName = toMonthName(att.month)
+                newcomersMap[mName] = (newcomersMap[mName] || 0) + (att.new_comers ?? 0)
+                titheMap[mName] = (titheMap[mName] || 0) + (att.tithe_offering ?? 0)
+            }
+        })
+
+        setMonthlyNewComers(monthNames.map(name => ({
+            month: name,
+            newComers: newcomersMap[name] ?? 0
+        })))
+
+        setMonthlyTitheOffering(monthNames.map(name => ({
+            month: name,
+            titheOffering: titheMap[name] ?? 0
+        })))
 
     }, [attendanceData])
 
@@ -178,8 +242,17 @@ const Content = () => {
     }
 
     // Calculate monthly attendance data using raw API data
-    const calculateMonthlyAttendance = (attendances: any[]) => {
-        const monthlyData: Record<string, any> = {}
+    const calculateMonthlyAttendance = (attendances: Attendance[]) => {
+        const monthlyData: Record<string, {
+            month: number;
+            sundayWorship: number;
+            houseCaring: number;
+            searchScriptures: number;
+            thursdayRevival: number;
+            mondayBible: number;
+            total: number;
+        }> = {}
+
         const currentYear = new Date().getFullYear()
 
         attendances.forEach(attendance => {
@@ -187,7 +260,7 @@ const Content = () => {
                 const monthKey = `${attendance.year}-${attendance.month}`
                 if (!monthlyData[monthKey]) {
                     monthlyData[monthKey] = {
-                        month: attendance.month,
+                        month: Number(attendance.month),
                         sundayWorship: 0,
                         houseCaring: 0,
                         searchScriptures: 0,
@@ -228,7 +301,7 @@ const Content = () => {
         return Object.values(monthlyData).sort((a, b) => {
             const months = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December']
-            return months.indexOf(a.month) - months.indexOf(b.month)
+            return months.indexOf(a.month.toString()) - months.indexOf(b.month.toString())
         })
     }
 
@@ -242,7 +315,7 @@ const Content = () => {
     }: {
         title: string
         value: number | string
-        icon: any
+        icon: Icon
         color: string
         description?: string
         trend?: number
@@ -331,7 +404,7 @@ const Content = () => {
                         <Tooltip cursor={false} animationDuration={100} />
                         <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={serviceDistribution} dataKey="value" nameKey="name">
                             <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
-                                const { cx = 0, cy = 0 } = viewBox || {}
+                                const { cx = 0, cy = 0 } = viewBox ?? { cx: 0, cy: 0 }
                                 return (
                                     <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
                                         <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>
@@ -405,6 +478,86 @@ const Content = () => {
         )
     }
 
+    const NewComersLineChart = () => {
+        const chart = useChart({
+            data: monthlyNewComers,
+            series: [{ name: "newComers", color: "teal.solid" }],
+        })
+
+        return (
+            <Chart.Root maxH="sm" chart={chart}>
+                <LineChart data={chart.data}>
+                    <CartesianGrid stroke={chart.color("border")} vertical={false} />
+                    <XAxis
+                        axisLine={false}
+                        dataKey={chart.key("month")}
+                        tickFormatter={(value: string) => String(value).slice(0, 3)}
+                        stroke={chart.color("border")}
+                        label={{ value: "Month", position: "bottom" }}
+                    />
+                    <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={10}
+                        stroke={chart.color("border")}
+                        label={{ value: "New Comers", position: "left", angle: -90 }}
+                    />
+                    <Tooltip animationDuration={100} cursor={false} content={<Chart.Tooltip />} />
+                    {chart.series.map((item) => (
+                        <Line
+                            key={item.name}
+                            isAnimationActive={false}
+                            dataKey={chart.key(item.name)}
+                            stroke={chart.color(item.color)}
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                    ))}
+                </LineChart>
+            </Chart.Root>
+        )
+    }
+
+    const TitheOfferingLineChart = () => {
+        const chart = useChart({
+            data: monthlyTitheOffering,
+            series: [{ name: "titheOffering", color: "blue.solid" }],
+        })
+
+        return (
+            <Chart.Root maxH="sm" chart={chart}>
+                <LineChart data={chart.data}>
+                    <CartesianGrid stroke={chart.color("border")} vertical={false} />
+                    <XAxis
+                        axisLine={false}
+                        dataKey={chart.key("month")}
+                        tickFormatter={(value: string) => String(value).slice(0, 3)}
+                        stroke={chart.color("border")}
+                        label={{ value: "Month", position: "bottom" }}
+                    />
+                    <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tickMargin={10}
+                        stroke={chart.color("border")}
+                        label={{ value: "Tithe & Offering", position: "left", angle: -90 }}
+                    />
+                    <Tooltip animationDuration={100} cursor={false} content={<Chart.Tooltip />} />
+                    {chart.series.map((item) => (
+                        <Line
+                            key={item.name}
+                            isAnimationActive={false}
+                            dataKey={chart.key(item.name)}
+                            stroke={chart.color(item.color)}
+                            strokeWidth={2}
+                            dot={false}
+                        />
+                    ))}
+                </LineChart>
+            </Chart.Root>
+        )
+    }
+
     // Loading state
     if (isLoading) {
         return (
@@ -435,23 +588,23 @@ const Content = () => {
     if (!attendanceData || attendanceData.length === 0) {
         return (
             <>
-            <VStack gap="8" align="stretch">
-                <Flex justify="space-between" align="center">
-                    <VStack align="start" gap="1">
-                        <Heading size="3xl">Attendance Dashboard</Heading>
-                        <Text color="gray.600" fontSize="lg">
-                            Overview of all church service attendance
-                        </Text>
-                    </VStack>
-                </Flex>
+                <VStack gap="8" align="stretch">
+                    <Flex justify="space-between" align="center">
+                        <VStack align="start" gap="1">
+                            <Heading size="3xl">Attendance Dashboard</Heading>
+                            <Text color="gray.600" fontSize="lg">
+                                Overview of all church service attendance
+                            </Text>
+                        </VStack>
+                    </Flex>
 
-                <Alert.Root status="info" variant="subtle" rounded="lg">
-                    <VStack align="start" gap="2">
-                        <Text fontWeight="bold">No attendance data available</Text>
-                        <Text>Start by adding your first attendance record.</Text>
-                    </VStack>
-                </Alert.Root>
-            </VStack>
+                    <Alert.Root status="info" variant="subtle" rounded="lg">
+                        <VStack align="start" gap="2">
+                            <Text fontWeight="bold">No attendance data available</Text>
+                            <Text>Start by adding your first attendance record.</Text>
+                        </VStack>
+                    </Alert.Root>
+                </VStack>
 
                 {/* Quick Actions */}
                 <Card.Root border="1px" borderColor="gray.200" rounded="xl">
@@ -569,7 +722,7 @@ const Content = () => {
                                 _hover={{
                                     bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.50`,
                                     borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}.200`,
-                                    _dark:{
+                                    _dark: {
                                         bg: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}/10`,
                                         borderColor: `${getServiceColor(serviceType as ServiceType).replace('.solid', '')}`,
 
@@ -594,11 +747,52 @@ const Content = () => {
                 </Card.Body>
             </Card.Root>
 
+            {/* New Comers and Tithe/Offering Trends */}
+            <SimpleGrid columns={{ base: 1, md: 2 }} gap="6">
+                <Card.Root border="1px" borderColor="gray.200" rounded="xl">
+                    <Card.Header pb="4">
+                        <Flex justify="space-between" align="center">
+                            <VStack align="start" gap="1">
+                                <Heading size="lg">New Comers Over Months</Heading>
+                                <Text color="gray.600">
+                                    Trend of newcomers for the current year
+                                </Text>
+                            </VStack>
+                            <Badge colorPalette="blue" variant="subtle" fontSize="sm">
+                                {new Date().getFullYear()}
+                            </Badge>
+                        </Flex>
+                    </Card.Header>
+                    <Card.Body pt="0">
+                        <NewComersLineChart />
+                    </Card.Body>
+                </Card.Root>
+
+                <Card.Root border="1px" borderColor="gray.200" rounded="xl">
+                    <Card.Header pb="4">
+                        <Flex justify="space-between" align="center">
+                            <VStack align="start" gap="1">
+                                <Heading size="lg">Tithe & Offering Over Months</Heading>
+                                <Text color="gray.600">
+                                    Total amount across months for current year
+                                </Text>
+                            </VStack>
+                            <Badge colorPalette="purple" variant="subtle" fontSize="sm">
+                                {new Date().getFullYear()}
+                            </Badge>
+                        </Flex>
+                    </Card.Header>
+                    <Card.Body pt="0">
+                        <TitheOfferingLineChart />
+                    </Card.Body>
+                </Card.Root>
+            </SimpleGrid>
+
 
             {/* Charts Section */}
             <SimpleGrid columns={{ base: 1, lg: 2 }} gap="8">
                 {/* Service Distribution Chart */}
-                <Card.Root  border="1px" borderColor="gray.200" rounded="xl">
+                <Card.Root border="1px" borderColor="gray.200" rounded="xl">
                     <Card.Header pb="4">
                         <Flex justify="space-between" align="center">
                             <VStack align="start" gap="1">
@@ -642,7 +836,7 @@ const Content = () => {
                                             </HStack>
                                             <Badge
                                                 variant="subtle"
-                                                colorPalette={item.color.replace('.solid', '') as any}
+                                                colorPalette={item.color.replace('.solid', '') as ColorPalette}
                                             >
                                                 {item.value}
                                             </Badge>
@@ -652,7 +846,7 @@ const Content = () => {
 
                                 {/* Summary Stats */}
                                 <Box
-                                bg="bg"
+                                    bg="bg"
                                     rounded="lg"
                                     p="4"
                                     w="full"
@@ -743,7 +937,7 @@ const Content = () => {
                                                     {config.name}
                                                 </Text>
                                                 <Badge
-                                                    colorPalette={getServiceColor(serviceType as ServiceType).replace('.solid', '') as any}
+                                                    colorPalette={getServiceColor(serviceType as ServiceType).replace('.solid', '') as ColorPalette}
                                                     variant="subtle"
                                                 >
                                                     {stats.records} records

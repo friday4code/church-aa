@@ -8,18 +8,11 @@ import {
     Portal,
     ButtonGroup,
     Pagination,
-    HStack,
-    Button,
-    Box,
+    Show,
+    FormatNumber,
 } from "@chakra-ui/react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import { type AttendanceRecord, type ServiceType } from "@/types/attendance.type"
-import {
-    exportAttendanceToExcel,
-    exportAttendanceToCSV,
-    exportAttendanceToPDF,
-    copyAttendanceToClipboard,
-} from "@/utils/attendance.utils"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 
 interface AttendanceTableProps {
@@ -53,6 +46,7 @@ const AttendanceTable = ({
     onEditAttendance,
     onDeleteAttendance,
     onPageChange,
+    serviceType
 }: AttendanceTableProps) => {
     const { districts = [] } = useDistricts()
     const getDistrictName = (districtId: number): string => {
@@ -60,59 +54,10 @@ const AttendanceTable = ({
         return district?.name || `District ${districtId}`
     }
 
+    const isMainServiceType = serviceType === 'sunday-worship' || serviceType === "thursday-revival" || serviceType === "monday-bible";
+
     return (
         <>
-            {/* Export Buttons */}
-            {/* <Box hideBelow={"md"}>
-                <HStack justify="space-between" w="full">
-                    <HStack>
-                        <Button
-                            rounded="xl"
-                            variant="solid"
-                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                            color={{ base: "accent", _dark: "accent.100" }}
-                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                            size="sm"
-                            onClick={async () => await copyAttendanceToClipboard(paginatedAttendances, districts)}
-                        >
-                            Copy
-                        </Button>
-                        <Button
-                            variant="solid"
-                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                            color={{ base: "accent", _dark: "accent.100" }}
-                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                            size="sm"
-                            rounded="xl"
-                            onClick={() => exportAttendanceToExcel(paginatedAttendances, districts)}
-                        >
-                            Excel
-                        </Button>
-                        <Button
-                            variant="solid"
-                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                            color={{ base: "accent", _dark: "accent.100" }}
-                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                            size="sm"
-                            rounded="xl"
-                            onClick={() => exportAttendanceToCSV(paginatedAttendances, districts)}
-                        >
-                            CSV
-                        </Button>
-                        <Button
-                            variant="solid"
-                            bg={{ base: "whiteAlpha.500", _dark: "whiteAlpha.100" }}
-                            color={{ base: "accent", _dark: "accent.100" }}
-                            _hover={{ bg: { base: "white", _dark: "whiteAlpha.200" } }}
-                            size="sm"
-                            rounded="xl"
-                            onClick={() => exportAttendanceToPDF(paginatedAttendances, districts)}
-                        >
-                            PDF
-                        </Button>
-                    </HStack>
-                </HStack>
-            </Box> */}
 
             {/* Table */}
             <Table.ScrollArea _scrollbar={{ h: 1 }} _scrollbarThumb={{ bg: "bg.inverted/20", rounded: "full" }} borderWidth="1px" maxW={{ md: "62em", "2xl": "full" }} w={{ md: "62em", "2xl": "full" }} rounded="xl" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
@@ -204,6 +149,24 @@ const AttendanceTable = ({
                             >
                                 Children Girls {sortField === 'children_girls' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
+
+                            <Show when={isMainServiceType}>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => onSort('new_comers')}
+                                >
+                                    New Comers {sortField === 'new_comers' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                                <Table.ColumnHeader
+                                    fontWeight={"bold"}
+                                    cursor="pointer"
+                                    onClick={() => onSort('tithe_offering')}
+                                >
+                                    Tithe & Offering {sortField === 'tithe_offering' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                </Table.ColumnHeader>
+                            </Show>
+
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 textAlign="center">
@@ -237,6 +200,12 @@ const AttendanceTable = ({
                                 <Table.Cell>{attendance.youth_girls}</Table.Cell>
                                 <Table.Cell>{attendance.children_boys}</Table.Cell>
                                 <Table.Cell>{attendance.children_girls}</Table.Cell>
+
+                                <Show when={isMainServiceType}>
+                                    <Table.Cell>{attendance.new_comers}</Table.Cell>
+                                    <Table.Cell>₦<FormatNumber minimumFractionDigits={2} maximumFractionDigits={2} value={attendance.tithe_offering} /></Table.Cell>
+                                </Show>
+
                                 <Table.Cell textAlign="center">
                                     <Menu.Root>
                                         <Menu.Trigger asChild>

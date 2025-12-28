@@ -9,11 +9,12 @@ import {
     Select,
     NumberInput,
     Heading,
+    InputGroup,
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { AttendanceSchema, type AttendanceFormData } from "../../../schemas/attendance.schema"
-import type { AttendanceRecord } from "@/types/attendance.type"
+import type { AttendanceRecord, ServiceType } from "@/types/attendance.type"
 import { createListCollection } from "@chakra-ui/react"
 import { getMonthOptions, getWeekOptions, getYearOptions } from "@/utils/attendance.utils"
 import { useStates } from "../../../hooks/useState"
@@ -26,6 +27,9 @@ import RegionIdCombobox from "../../../components/RegionIdCombobox"
 import DistrictIdCombobox from "../../../components/DistrictIdCombobox"
 import GroupIdCombobox from "../../../components/GroupIdCombobox"
 import OldGroupIdCombobox from "../../../components/OldGroupIdCombobox"
+import type { S } from "vitest/dist/chunks/config.Cy0C388Z.js"
+import { useMemo } from "react"
+import { useParams } from "react-router"
 
 // Collections for Select components
 const monthCollection = createListCollection({
@@ -56,6 +60,13 @@ interface AttendanceEditFormProps {
 }
 
 const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFormProps) => {
+    const { type } = useParams();
+    const isMainServiceType = type === 'sunday-worship' || type === "thursday-revival" || type === "monday-bible";
+    const extraFields = useMemo(() => isMainServiceType ? {
+        new_comers: attendance?.new_comers || 0,
+        tithe_offering: attendance?.tithe_offering || 0,
+    } : {}, [attendance, isMainServiceType])
+
     const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm<AttendanceFormData>({
         resolver: zodResolver(AttendanceSchema),
         defaultValues: {
@@ -74,6 +85,9 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
             children_boys: attendance.children_boys,
             children_girls: attendance.children_girls,
             year: attendance.year,
+            new_comers: attendance.new_comers,
+            tithe_offering: attendance.tithe_offering,
+            ...extraFields,
         }
     })
 
@@ -221,7 +235,7 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
                                 </Select.Control>
                                 <Select.Positioner>
                                     <Select.Content>
-                                        {monthCollection.items.map((item: any) => (
+                                        {monthCollection.items.map((item: Record<string, string>) => (
                                             <Select.Item item={item} key={item.value}>
                                                 {item.label}
                                                 <Select.ItemIndicator />
@@ -261,7 +275,7 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
                                 </Select.Control>
                                 <Select.Positioner>
                                     <Select.Content>
-                                        {weekCollection.items.map((item: any) => (
+                                        {weekCollection.items.map((item: Record<string, string>) => (
                                             <Select.Item item={item} key={item.value}>
                                                 {item.label}
                                                 <Select.ItemIndicator />
@@ -292,7 +306,7 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
                                 </Select.Control>
                                 <Select.Positioner>
                                     <Select.Content>
-                                        {yearCollection.items.map((item: any) => (
+                                        {yearCollection.items.map((item: Record<string, string>) => (
                                             <Select.Item item={item} key={item.value}>
                                                 {item.label}
                                                 <Select.ItemIndicator />
@@ -382,6 +396,38 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
                                 <NumberInput.Input rounded="lg" {...register('children_girls', { valueAsNumber: true })} />
                             </NumberInput.Root>
                             <Field.ErrorText>{errors.children_girls?.message}</Field.ErrorText>
+                        </Field.Root>
+                    </HStack>
+
+                    <HStack gap="4" w="full">
+                        <Field.Root required invalid={!!errors.new_comers}>
+                            <Field.Label>New Comers</Field.Label>
+                            <NumberInput.Root
+                                min={0}
+                                onValueChange={(e) => setValue('new_comers', e.valueAsNumber)}
+                            >
+                                <NumberInput.Control />
+                                <NumberInput.Input rounded="lg" {...register('new_comers', { valueAsNumber: true })} />
+                            </NumberInput.Root>
+                            <Field.ErrorText>{errors.new_comers?.message}</Field.ErrorText>
+                        </Field.Root>
+
+                        <Field.Root required invalid={!!errors.tithe_offering}>
+                            <Field.Label>Tithe Offering</Field.Label>
+                            <NumberInput.Root
+                                min={0}
+                                formatOptions={{
+                                    style: 'decimal',
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                }}
+                                onValueChange={(e) => setValue('tithe_offering', e.valueAsNumber)}
+                            >
+                                <InputGroup startElement={"₦"}>
+                                    <NumberInput.Input placeholder="50000" rounded="lg" {...register('tithe_offering', { valueAsNumber: true })} />
+                                </InputGroup>
+                            </NumberInput.Root>
+                            <Field.ErrorText>{errors.tithe_offering?.message}</Field.ErrorText>
                         </Field.Root>
                     </HStack>
                 </VStack>

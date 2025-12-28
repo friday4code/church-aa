@@ -18,6 +18,8 @@ export interface AttendanceRecord {
     youth_girls: number;
     created_at: string;
     updated_at: string;
+    new_comers?: number;
+    tithe_offering?: number;
 }
 
 export interface Attendance {
@@ -39,6 +41,8 @@ export interface Attendance {
     youth_girls: number;
     created_at: string;
     updated_at: string;
+    new_comers?: number;
+    tithe_offering?: number;
 }
 
 export interface Attendance {
@@ -60,6 +64,8 @@ export interface Attendance {
     oldGroup?: string;
     createdAt: Date;
     updatedAt: Date;
+    new_comers?: number;
+    tithe_offering?: number;
 }
 export interface Region {
     code: string;

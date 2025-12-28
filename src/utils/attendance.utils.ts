@@ -70,7 +70,7 @@ export const copyAttendanceToClipboard = async (attendances: Attendance[], distr
         return district?.name || `District ${districtId}`
     }
 
-    const headers = ['District', 'Month', 'Week', 'Year', 'Men', 'Women', 'Youth Boys', 'Youth Girls', 'Children Boys', 'Children Girls', 'Total'];
+    const headers = ['District', 'Month', 'Week', 'Year', 'Men', 'Women', 'Youth Boys', 'Youth Girls', 'Children Boys', 'Children Girls', 'New Comers', 'Tithe & Offering', 'Total'];
     const data = attendances.map(attendance => [
         getDistrictName(attendance.district_id),
         attendance.month,
@@ -82,6 +82,8 @@ export const copyAttendanceToClipboard = async (attendances: Attendance[], distr
         attendance.youth_girls.toString(),
         attendance.children_boys.toString(),
         attendance.children_girls.toString(),
+        String(attendance.new_comers ?? 0),
+        String(attendance.tithe_offering ?? 0),
         (attendance.men + attendance.women + attendance.youth_boys + attendance.youth_girls + attendance.children_boys + attendance.children_girls).toString()
     ]);
 
@@ -115,6 +117,8 @@ export const exportAttendanceToExcel = (attendances: Attendance[], districts?: a
         'Youth Girls': attendance.youth_girls,
         'Children Boys': attendance.children_boys,
         'Children Girls': attendance.children_girls,
+        'New Comers': attendance.new_comers ?? 0,
+        'Tithe & Offering': attendance.tithe_offering ?? 0,
         'Total': attendance.men + attendance.women + attendance.youth_boys + attendance.youth_girls + attendance.children_boys + attendance.children_girls,
         'Service Type': attendance.service_type,
     }));
@@ -135,6 +139,8 @@ export const exportAttendanceToExcel = (attendances: Attendance[], districts?: a
         { wch: 12 }, // Youth Girls
         { wch: 14 }, // Children Boys
         { wch: 14 }, // Children Girls
+        { wch: 12 }, // New Comers
+        { wch: 16 }, // Tithe & Offering
         { wch: 10 }, // Total
         { wch: 14 }, // Service Type
     ];
@@ -149,7 +155,7 @@ export const exportAttendanceToCSV = (attendances: Attendance[], districts?: any
         return district?.name || `District ${districtId}`;
     };
 
-    const headers = ['District', 'Month', 'Week', 'Year', 'Men', 'Women', 'Youth Boys', 'Youth Girls', 'Children Boys', 'Children Girls', 'Total'];
+    const headers = ['District', 'Month', 'Week', 'Year', 'Men', 'Women', 'Youth Boys', 'Youth Girls', 'Children Boys', 'Children Girls', 'New Comers', 'Tithe & Offering', 'Total'];
     const data = attendances.map(attendance => [
         getDistrictName(attendance.district_id),
         attendance.month,
@@ -161,6 +167,8 @@ export const exportAttendanceToCSV = (attendances: Attendance[], districts?: any
         attendance.youth_girls.toString(),
         attendance.children_boys.toString(),
         attendance.children_girls.toString(),
+        String(attendance.new_comers ?? 0),
+        String(attendance.tithe_offering ?? 0),
         (attendance.men + attendance.women + attendance.youth_boys + attendance.youth_girls + attendance.children_boys + attendance.children_girls).toString()
     ]);
 
@@ -211,6 +219,8 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
         attendance.youth_girls.toString(),
         attendance.children_boys.toString(),
         attendance.children_girls.toString(),
+        String(attendance.new_comers ?? 0),
+        String(attendance.tithe_offering ?? 0),
         (attendance.men + attendance.women + attendance.youth_boys + attendance.youth_girls + attendance.children_boys + attendance.children_girls).toString(),
     ]);
 
@@ -225,8 +235,10 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
             'Women',
             'Youth Boys',
             'Youth Girls',
-            'Child Boys',
-            'Child Girls',
+            'Children Boys',
+            'Children Girls',
+            'New Comers',
+            'Tithe & Offering',
             'Total',
         ]],
         body: tableData,
@@ -282,7 +294,9 @@ export const transformApiToStore = (apiRecord: AttendanceRecord): Attendance => 
         old_group_id: apiRecord.old_group_id,
         service_type: mapServiceTypeToInternal(apiRecord.service_type),
         created_at: apiRecord.created_at,
-        updated_at: apiRecord.updated_at
+        updated_at: apiRecord.updated_at,
+        new_comers: apiRecord.new_comers ?? 0,
+        tithe_offering: apiRecord.tithe_offering ?? 0
     };
 };
 
@@ -303,6 +317,8 @@ export const transformStoreToApi = (attendance: Partial<Attendance>, mode: 'crea
         youth_girls: attendance.youth_girls,
         children_boys: attendance.children_boys,
         children_girls: attendance.children_girls,
+        new_comers: attendance.new_comers ?? 0,
+        tithe_offering: attendance.tithe_offering ?? 0,
     };
 
     if (mode === 'update') {
@@ -332,7 +348,9 @@ export const transformFormToStore = (formData: AttendanceFormData, serviceType: 
         region_id: formData.region_id,
         group_id: formData.group_id,
         old_group_id: formData.old_group_id,
-        service_type: serviceType
+        service_type: serviceType,
+        new_comers: formData.new_comers ?? 0,
+        tithe_offering: formData.tithe_offering ?? 0,
     };
 };
 
@@ -352,7 +370,9 @@ export const transformStoreToForm = (attendance: Attendance): AttendanceFormData
         region_id: attendance.region_id,
         group_id: attendance.group_id,
         old_group_id: attendance.old_group_id,
-        service_type: attendance.service_type
+        service_type: attendance.service_type,
+        new_comers: attendance.new_comers ?? 0,
+        tithe_offering: attendance.tithe_offering ?? 0,
     };
 };
 

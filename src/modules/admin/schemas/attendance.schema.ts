@@ -16,7 +16,9 @@ export const AttendanceSchema = z.object({
     youth_boys: z.number().min(0, 'Youth Boys count cannot be negative'),
     youth_girls: z.number().min(0, 'Youth Girls count cannot be negative'),
     children_boys: z.number().min(0, 'Children Boys count cannot be negative'),
-    children_girls: z.number().min(0, 'Children Girls count cannot be negative')
+    children_girls: z.number().min(0, 'Children Girls count cannot be negative'),
+    new_comers: z.number().min(0, 'New Comers count cannot be negative').optional(),
+    tithe_offering: z.number().min(0, 'Tithe Offering count cannot be negative').optional(),
 });
 
 export type AttendanceFormData = z.infer<typeof AttendanceSchema>;
