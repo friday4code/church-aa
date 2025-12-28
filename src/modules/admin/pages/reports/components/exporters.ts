@@ -10,7 +10,7 @@ export type MonthSpec = { months?: string[]; single?: string; range?: { from: nu
 
 const pad = (n: number) => n.toString().padStart(2, '0')
 
-export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup' | 'youth') => {
+export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup' | 'youth' | 'stateNewComers' | 'stateTitheOffering') => {
   const d = new Date()
   const stamp = `${d.getFullYear()}_${pad(d.getMonth() + 1)}_${pad(d.getDate())}__${pad(d.getHours())}_${pad(d.getMinutes())}_${pad(d.getSeconds())}`
   if (type === 'state') return `State Report Sheet File_${stamp}.xlsx`
@@ -18,6 +18,8 @@ export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group
   if (type === 'district') return `District Report Sheet File_${stamp}.xlsx`
   if (type === 'oldGroup') return `Old Group Report Sheet File_${stamp}.xlsx`
   if (type === 'youth') return `Youth Monthly Report_${stamp}.xlsx`
+  if (type === 'stateNewComers') return `State New Comers Report_${stamp}.xlsx`
+  if (type === 'stateTitheOffering') return `State Tithe & Offering Report_${stamp}.xlsx`
   return `Group Report Sheet File_${stamp}.xlsx`
 }
 
@@ -193,6 +195,117 @@ export const buildStateReportSheet = (
     }
   }
 
+  return ws
+}
+
+const formatNaira = (amount: number) => {
+  const val = Number(amount || 0)
+  return `₦${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+export const buildStateNewComersReportSheet = (
+  data: AttendanceRecord[],
+  regions: { id: number; name: string }[],
+  stateName: string,
+  year: number,
+  spec: MonthSpec
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${stateName} (State)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Regions', 'Month', 'New Comers'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year).map(d => d.month))
+
+  for (const m of months) {
+    for (const r of regions) {
+      const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
+      const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+      rows.push([r.name, m, newcomers])
+    }
+    const monthSubtotal = data.filter(x => x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    rows.push(['SubTotal', '', monthSubtotal])
+    rows.push(['', '', ''])
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 18 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildStateTitheOfferingReportSheet = (
+  data: AttendanceRecord[],
+  regions: { id: number; name: string }[],
+  stateName: string,
+  year: number,
+  spec: MonthSpec
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${stateName} (State)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Regions', 'Month', 'Tithe & Offering'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year).map(d => d.month))
+
+  for (const m of months) {
+    for (const r of regions) {
+      const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
+      const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+      rows.push([r.name, m, formatNaira(amount)])
+    }
+    const subtotalAmt = data.filter(x => x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    rows.push(['SubTotal', '', formatNaira(subtotalAmt)])
+    rows.push(['', '', ''])
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 22 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
   return ws
 }
 

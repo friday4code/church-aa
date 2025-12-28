@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet, buildYouthMonthlyReportSheet } from '../exporters'
+import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet } from '../exporters'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import XLSX from 'xlsx-js-style'
 
 const sampleAttendance: AttendanceRecord[] = [
-  { id: 1, children_boys: 2, children_girls: 3, district_id: 10, group_id: 100, men: 5, month: 'January', old_group_id: 900, region_id: 5, service_type: 'Sunday Service', state_id: 2, week: 1, women: 4, year: 2025, youth_boys: 1, youth_girls: 2, created_at: '', updated_at: '' },
-  { id: 2, children_boys: 1, children_girls: 1, district_id: 11, group_id: 101, men: 3, month: 'January', old_group_id: 901, region_id: 5, service_type: 'House Caring', state_id: 2, week: 2, women: 2, year: 2025, youth_boys: 0, youth_girls: 1, created_at: '', updated_at: '' },
-  { id: 3, children_boys: 0, children_girls: 2, district_id: 12, group_id: 102, men: 7, month: 'February', old_group_id: 900, region_id: 6, service_type: 'Sunday Service', state_id: 2, week: 3, women: 6, year: 2025, youth_boys: 3, youth_girls: 1, created_at: '', updated_at: '' },
+  { id: 1, children_boys: 2, children_girls: 3, district_id: 10, group_id: 100, men: 5, month: 'January', old_group_id: 900, region_id: 5, service_type: 'Sunday Service', state_id: 2, week: 1, women: 4, year: 2025, youth_boys: 1, youth_girls: 2, created_at: '', updated_at: '', new_comers: 2, tithe_offering: 50000 },
+  { id: 2, children_boys: 1, children_girls: 1, district_id: 11, group_id: 101, men: 3, month: 'January', old_group_id: 901, region_id: 5, service_type: 'House Caring', state_id: 2, week: 2, women: 2, year: 2025, youth_boys: 0, youth_girls: 1, created_at: '', updated_at: '', new_comers: 1, tithe_offering: 15000 },
+  { id: 3, children_boys: 0, children_girls: 2, district_id: 12, group_id: 102, men: 7, month: 'February', old_group_id: 900, region_id: 6, service_type: 'Sunday Service', state_id: 2, week: 3, women: 6, year: 2025, youth_boys: 3, youth_girls: 1, created_at: '', updated_at: '', new_comers: 3, tithe_offering: 7500 },
 ]
 
 describe('getReportFileName', () => {
@@ -57,6 +57,14 @@ describe('getReportFileName', () => {
     expect(name.endsWith('.xlsx')).toBe(true)
     const stamp = name.replace('Youth Monthly Report_', '').replace('.xlsx', '')
     expect(/^[0-9]{4}_[0-9]{2}_[0-9]{2}__[0-9]{2}_[0-9]{2}_[0-9]{2}$/.test(stamp)).toBe(true)
+  })
+  it('generates newcomers filename', () => {
+    const name = getReportFileName('stateNewComers')
+    expect(name.startsWith('State New Comers Report_')).toBe(true)
+  })
+  it('generates tithe filename', () => {
+    const name = getReportFileName('stateTitheOffering')
+    expect(name.startsWith('State Tithe & Offering Report_')).toBe(true)
   })
 })
 
@@ -157,6 +165,31 @@ describe('buildStateReportSheet', () => {
     const sheet = buildStateReportSheet(sampleAttendance, regions, 'AKWA IBOM', 2025, { range: { from: 1, to: 12 } })
     const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][]
     expect(data[1][0]).toBe('January - December 2025')
+  })
+})
+
+describe('buildStateNewComersReportSheet', () => {
+  it('builds newcomers worksheet with aggregated values', () => {
+    const regions = [ { id: 5, name: 'Region Five' }, { id: 6, name: 'Region Six' } ]
+    const sheet = buildStateNewComersReportSheet(sampleAttendance, regions, 'AKWA IBOM', 2025, { months: ['January','February'] })
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[]
+    expect(data[3][0]).toBe('Regions')
+    const janRows = (data as any[]).filter((r: any[]) => r[1] === 'January')
+    expect(janRows.length).toBeGreaterThan(0)
+    const firstValue = (data as any[])[4][2]
+    expect(typeof firstValue === 'number' || typeof firstValue === 'string').toBe(true)
+  })
+})
+
+describe('buildStateTitheOfferingReportSheet', () => {
+  it('builds tithe worksheet with currency formatted values', () => {
+    const regions = [ { id: 5, name: 'Region Five' }, { id: 6, name: 'Region Six' } ]
+    const sheet = buildStateTitheOfferingReportSheet(sampleAttendance, regions, 'AKWA IBOM', 2025, { months: ['January','February'] })
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[]
+    expect(data[3][2]).toBe('Tithe & Offering')
+    const val = (data as any[])[4][2]
+    expect(typeof val).toBe('string')
+    expect(String(val)).toMatch(/^₦/)
   })
 })
 

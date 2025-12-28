@@ -18,7 +18,7 @@ import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
 import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -30,6 +30,7 @@ import { useAuth } from "@/hooks/useAuth"
 import type { User } from "@/types/users.type"
 import { Toaster, toaster } from "@/components/ui/toaster"
 import type { Group } from "@/types/groups.type"
+import type { YouthAttendance } from "@/types/youthAttendance.type"
 
 // ----------------------------------------------------------------------
 // 1. STRICT MEMOIZATION
@@ -451,7 +452,7 @@ export const ReportsContent = () => {
                 const rid = data.region ? parseInt(data.region, 10) : (authUser as User | null)?.region_id ?? undefined
                 const filteredWeekly = youthWeeklyAttendances.filter(a => a.year === yr && a.month === mLabel && (!rid || a.region_id === rid))
                 const rName = rid ? (regions.find(r => r.id === rid)?.name || 'Region') : 'Region'
-                const sheet = buildYouthMonthlyReportSheet(filteredWeekly as any, rName, mLabel, yr, (groups as Group[]).map(g => ({ id: g.id, name: g.name })))
+                const sheet = buildYouthMonthlyReportSheet(filteredWeekly as YouthAttendance[], rName, mLabel, yr, (groups as Group[]).map(g => ({ id: g.id, name: g.name })))
                 exportSheet(sheet, getReportFileName('youth'), 'Youth Monthly Report')
             } else {
                 toaster.error({ description: 'Unsupported report type', closable: true })
@@ -465,6 +466,97 @@ export const ReportsContent = () => {
         }
     })
 
+    const handleDownloadNewComersReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'state') {
+                toaster.error({ description: 'Switch to State report to download newcomers report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: {
+                stateId?: number
+                year?: number
+                monthRange?: { from: number; to: number }
+            } = {}
+            let stateName = 'AKWA IBOM'
+            if (data.state) {
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                if (sObj) { filterCriteria.stateId = sObj.id; stateName = sObj.name || sObj.stateName || stateName }
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) {
+                    filterCriteria.monthRange = { from: fIdx, to: tIdx }
+                }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.stateId) {
+                toaster.error({ description: 'Select a state', closable: true })
+                return
+            }
+            const stateRegions = getRegionsByStateName(stateName, regions as unknown as Region[])
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const sheet = buildStateNewComersReportSheet(filtered, (stateRegions as Region[]).sort((a, b) => a.name.localeCompare(b.name)), stateName, filterCriteria.year ?? new Date().getFullYear(), spec)
+            exportSheet(sheet, getReportFileName('stateNewComers'), 'New Comers Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate New Comers report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+
+    const handleDownloadTitheOfferingReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'state') {
+                toaster.error({ description: 'Switch to State report to download tithe & offering report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: {
+                stateId?: number
+                year?: number
+                monthRange?: { from: number; to: number }
+            } = {}
+            let stateName = 'AKWA IBOM'
+            if (data.state) {
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                if (sObj) { filterCriteria.stateId = sObj.id; stateName = sObj.name || sObj.stateName || stateName }
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) {
+                    filterCriteria.monthRange = { from: fIdx, to: tIdx }
+                }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.stateId) {
+                toaster.error({ description: 'Select a state', closable: true })
+                return
+            }
+            const stateRegions = getRegionsByStateName(stateName, regions as unknown as Region[])
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const sheet = buildStateTitheOfferingReportSheet(filtered, (stateRegions as Region[]).sort((a, b) => a.name.localeCompare(b.name)), stateName, filterCriteria.year ?? new Date().getFullYear(), spec)
+            exportSheet(sheet, getReportFileName('stateTitheOffering'), 'Tithe & Offering Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate Tithe & Offering report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
     // ----------------------------------------------------------------------
     // 8. RENDERER
     // ----------------------------------------------------------------------
@@ -495,6 +587,8 @@ export const ReportsContent = () => {
                 return <MemoStateAttendanceReport
                     {...commonProps}
                     statesCollection={scopedCollections.s}
+                    onDownloadNewComers={handleDownloadNewComersReport}
+                    onDownloadTitheOffering={handleDownloadTitheOfferingReport}
                 />
             case "region":
                 return <MemoRegionAttendanceReport
