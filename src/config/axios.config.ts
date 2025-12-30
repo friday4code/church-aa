@@ -264,7 +264,7 @@ axiosClient.interceptors.response.use(
 
     // Network or unknown errors
     if (!error.response) {
-      console.error("🌐 Network error or no response from server:", error.message);
+      console.error("🌐 Network error or no response from server:", error);
       toaster.error({
         title: "Network Error",
         description: error.response?.data?.error || "Please check your internet connection and try again.",

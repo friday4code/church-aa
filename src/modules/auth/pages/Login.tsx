@@ -89,7 +89,6 @@ const Login = () => {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-        setError,
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema)
     });
@@ -98,12 +97,6 @@ const Login = () => {
         mutation.mutate(data);
         console.log(data);
 
-    };
-
-    const clearPasswordError = () => {
-        if (errors.password) {
-            setError("password", { type: undefined, message: undefined });
-        }
     };
 
     return (

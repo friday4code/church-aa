@@ -10,7 +10,7 @@ export type MonthSpec = { months?: string[]; single?: string; range?: { from: nu
 
 const pad = (n: number) => n.toString().padStart(2, '0')
 
-export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup' | 'youth' | 'stateNewComers' | 'stateTitheOffering') => {
+export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group' | 'oldGroup' | 'youth' | 'stateNewComers' | 'stateTitheOffering' | 'regionNewComers' | 'regionTitheOffering' | 'groupNewComers' | 'groupTitheOffering' | 'oldGroupNewComers' | 'oldGroupTitheOffering' | 'districtNewComers' | 'districtTitheOffering') => {
   const d = new Date()
   const stamp = `${d.getFullYear()}_${pad(d.getMonth() + 1)}_${pad(d.getDate())}__${pad(d.getHours())}_${pad(d.getMinutes())}_${pad(d.getSeconds())}`
   if (type === 'state') return `State Report Sheet File_${stamp}.xlsx`
@@ -20,6 +20,14 @@ export const getReportFileName = (type: 'state' | 'region' | 'district' | 'group
   if (type === 'youth') return `Youth Monthly Report_${stamp}.xlsx`
   if (type === 'stateNewComers') return `State New Comers Report_${stamp}.xlsx`
   if (type === 'stateTitheOffering') return `State Tithe & Offering Report_${stamp}.xlsx`
+  if (type === 'regionNewComers') return `Region New Comers Report_${stamp}.xlsx`
+  if (type === 'regionTitheOffering') return `Region Tithe & Offering Report_${stamp}.xlsx`
+  if (type === 'groupNewComers') return `Group New Comers Report_${stamp}.xlsx`
+  if (type === 'groupTitheOffering') return `Group Tithe & Offering Report_${stamp}.xlsx`
+  if (type === 'oldGroupNewComers') return `Old Group New Comers Report_${stamp}.xlsx`
+  if (type === 'oldGroupTitheOffering') return `Old Group Tithe & Offering Report_${stamp}.xlsx`
+  if (type === 'districtNewComers') return `District New Comers Report_${stamp}.xlsx`
+  if (type === 'districtTitheOffering') return `District Tithe & Offering Report_${stamp}.xlsx`
   return `Group Report Sheet File_${stamp}.xlsx`
 }
 
@@ -98,6 +106,12 @@ const sortMonths = (arr: string[]) => {
   return [...new Set(arr)].sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b))
 }
 
+const validateLabelAndMonth = (label: string, month: string) => {
+  if (!label || label.trim() === '') throw new Error('Missing or empty label value')
+  if (!month || month.trim() === '') throw new Error('Missing or empty month value')
+  if (!MONTH_ORDER.includes(month)) throw new Error(`Invalid month value: ${month}`)
+}
+
 export const buildStateReportSheet = (
   data: AttendanceRecord[],
   regions: { id: number; name: string }[],
@@ -116,6 +130,7 @@ export const buildStateReportSheet = (
     for (const r of regions) {
       const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
       const s = sumFor(items)
+      validateLabelAndMonth(r.name, m)
       rows.push([
         r.name,
         m,
@@ -225,6 +240,7 @@ export const buildStateNewComersReportSheet = (
     for (const r of regions) {
       const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
       const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+      validateLabelAndMonth(r.name, m)
       rows.push([r.name, m, newcomers])
     }
     const monthSubtotal = data.filter(x => x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
@@ -233,7 +249,7 @@ export const buildStateNewComersReportSheet = (
   }
 
   const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 18 }]
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 40 }]
   if (!ws['!merges']) ws['!merges'] = []
   ws['!merges'].push(
     { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
@@ -278,6 +294,7 @@ export const buildStateTitheOfferingReportSheet = (
     for (const r of regions) {
       const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
       const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+      validateLabelAndMonth(r.name, m)
       rows.push([r.name, m, formatNaira(amount)])
     }
     const subtotalAmt = data.filter(x => x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
@@ -286,7 +303,7 @@ export const buildStateTitheOfferingReportSheet = (
   }
 
   const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 25 }, { wch: 12 }, { wch: 22 }]
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 50 }]
   if (!ws['!merges']) ws['!merges'] = []
   ws['!merges'].push(
     { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
@@ -299,6 +316,444 @@ export const buildStateTitheOfferingReportSheet = (
   }
   for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
   for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildRegionNewComersReportSheet = (
+  data: AttendanceRecord[],
+  oldGroups: OldGroup[],
+  regionName: string,
+  year: number,
+  spec: MonthSpec,
+  regionId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${regionName} (Region)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Old Groups', 'Month', 'New Comers'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.region_id === regionId).map(d => d.month))
+  const ogs = oldGroups
+  for (const m of months) {
+    for (const og of ogs) {
+      const items = data.filter(x => x.region_id === regionId && x.old_group_id === og.id && x.year === year && x.month === m)
+      const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+      validateLabelAndMonth(og.name, m)
+      rows.push([og.name, m, newcomers])
+    }
+    const monthSubtotal = data.filter(x => x.region_id === regionId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    rows.push(['SubTotal', '', monthSubtotal])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 40 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildRegionTitheOfferingReportSheet = (
+  data: AttendanceRecord[],
+  oldGroups: OldGroup[],
+  regionName: string,
+  year: number,
+  spec: MonthSpec,
+  regionId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${regionName} (Region)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Old Groups', 'Month', 'Tithe & Offering'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.region_id === regionId).map(d => d.month))
+  const ogs = oldGroups;
+  for (const m of months) {
+    for (const og of ogs) {
+      const items = data.filter(x => x.region_id === regionId && x.old_group_id === og.id && x.year === year && x.month === m)
+      const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+      validateLabelAndMonth(og.name, m)
+      rows.push([og.name, m, formatNaira(amount)])
+    }
+    const subtotalAmt = data.filter(x => x.region_id === regionId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    rows.push(['SubTotal', '', formatNaira(subtotalAmt)])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 50 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildGroupNewComersReportSheet = (
+  data: AttendanceRecord[],
+  districts: Array<{ id: number; name: string; group_id?: number }>,
+  groupName: string,
+  year: number,
+  spec: MonthSpec,
+  groupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${groupName} (Group)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Districts', 'Month', 'New Comers'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
+  const ds = districts;
+  for (const m of months) {
+    for (const d of ds) {
+      const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m)
+      const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+      validateLabelAndMonth(d.name, m)
+      rows.push([d.name, m, newcomers])
+    }
+    const monthSubtotal = data.filter(x => x.group_id === groupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    rows.push(['SubTotal', '', monthSubtotal])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 40 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildGroupTitheOfferingReportSheet = (
+  data: AttendanceRecord[],
+  districts: Array<{ id: number; name: string; group_id?: number }>,
+  groupName: string,
+  year: number,
+  spec: MonthSpec,
+  groupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${groupName} (Group)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Districts', 'Month', 'Tithe & Offering'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
+  const ds = districts;
+  for (const m of months) {
+    for (const d of ds) {
+      const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m)
+      const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+      validateLabelAndMonth(d.name, m)
+      rows.push([d.name, m, formatNaira(amount)])
+    }
+    const subtotalAmt = data.filter(x => x.group_id === groupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    rows.push(['SubTotal', '', formatNaira(subtotalAmt)])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 50 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildOldGroupNewComersReportSheet = (
+  data: AttendanceRecord[],
+  groups: Group[],
+  oldGroupName: string,
+  year: number,
+  spec: MonthSpec,
+  oldGroupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${oldGroupName} (Old Group)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Groups', 'Month', 'New Comers'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.old_group_id === oldGroupId).map(d => d.month))
+  const gs = groups
+  for (const m of months) {
+    for (const g of gs) {
+      const items = data.filter(x => x.old_group_id === oldGroupId && x.group_id === g.id && x.year === year && x.month === m)
+      const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+      validateLabelAndMonth(g.name, m)
+      rows.push([g.name, m, newcomers])
+    }
+    const monthSubtotal = data.filter(x => x.old_group_id === oldGroupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    rows.push(['SubTotal', '', monthSubtotal])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 40 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildOldGroupTitheOfferingReportSheet = (
+  data: AttendanceRecord[],
+  groups: Group[],
+  oldGroupName: string,
+  year: number,
+  spec: MonthSpec,
+  oldGroupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${oldGroupName} (Old Group)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Groups', 'Month', 'Tithe & Offering'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.old_group_id === oldGroupId).map(d => d.month))
+  const gs = groups
+  for (const m of months) {
+    for (const g of gs) {
+      const items = data.filter(x => x.old_group_id === oldGroupId && x.group_id === g.id && x.year === year && x.month === m)
+      const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+      validateLabelAndMonth(g.name, m)
+      rows.push([g.name, m, formatNaira(amount)])
+    }
+    const subtotalAmt = data.filter(x => x.old_group_id === oldGroupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    rows.push(['SubTotal', '', formatNaira(subtotalAmt)])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 50 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildDistrictNewComersReportSheet = (
+  data: AttendanceRecord[],
+  districts: Array<{ id: number; name: string; group_id?: number }>,
+  contextName: string,
+  year: number,
+  spec: MonthSpec,
+  groupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${contextName} (District)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Period of report', 'Month', 'New Comers'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
+  const ds = districts
+  for (const m of months) {
+    for (const d of ds) {
+      for (let wk = 1; wk <= 5; wk++) {
+        const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m && x.week === wk)
+        const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+        validateLabelAndMonth(`Week ${wk}`, m)
+        rows.push([`Week ${wk}`, m, newcomers])
+      }
+    }
+    const monthSubtotal = data.filter(x => x.group_id === groupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    rows.push(['SubTotal', '', monthSubtotal])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 40 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0].toString().includes("Week")) { setCellStyle(i, 0, WEEK_STYLE) }
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'SubTotal') {
+      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
+      setCellStyle(i, 1, SUBTOTAL_STYLE)
+      setCellStyle(i, 2, SUBTOTAL_NUM_STYLE)
+    }
+  }
+  return ws
+}
+
+export const buildDistrictTitheOfferingReportSheet = (
+  data: AttendanceRecord[],
+  districts: Array<{ id: number; name: string; group_id?: number }>,
+  contextName: string,
+  year: number,
+  spec: MonthSpec,
+  groupId: number
+) => {
+  const baseMonths = monthsToUse(spec)
+  const title = `Deeper Life Bible Church, ${contextName} (District)`
+  const subtitle = buildSubtitle(spec, year)
+  const rows: (string | number)[][] = [
+    [title, '', ''],
+    [subtitle, '', ''],
+    ['', '', ''],
+    ['Period of report', 'Month', 'Tithe & Offering'],
+  ]
+  const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.group_id === groupId).map(d => d.month))
+  const ds = districts;
+  for (const m of months) {
+    for (const d of ds) {
+      for (let wk = 1; wk <= 5; wk++) {
+        const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m && x.week === wk)
+        const amount = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+        validateLabelAndMonth(`Week ${wk}`, m)
+        rows.push([`Week ${wk}`, m, formatNaira(amount)])
+      }
+    }
+    const subtotalAmt = data.filter(x => x.group_id === groupId && x.year === year && x.month === m).reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    rows.push(['SubTotal', '', formatNaira(subtotalAmt)])
+    rows.push(['', '', ''])
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows)
+  ws['!cols'] = [{ wch: 60 }, { wch: 24 }, { wch: 50 }]
+  if (!ws['!merges']) ws['!merges'] = []
+  ws['!merges'].push(
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }
+  )
+  const setCellStyle = (row: number, col: number, style: Style) => {
+    const addr = XLSX.utils.encode_cell({ r: row, c: col })
+    const cell = ws[addr] as unknown as { s?: Style }
+    if (cell) cell.s = style
+  }
+  for (let c = 0; c <= 2; c++) { setCellStyle(0, c, TITLE_STYLE); setCellStyle(1, c, TITLE_STYLE) }
+  for (let c = 0; c <= 2; c++) { setCellStyle(3, c, HEADER_STYLE) }
+  for (let i = 0; i < rows.length; i++) if (rows[i] && rows[i][0].toString().includes("Week")) { setCellStyle(i, 0, WEEK_STYLE) }
   for (let i = 0; i < rows.length; i++) {
     if (rows[i] && rows[i][0] === 'SubTotal') {
       setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
@@ -323,13 +778,13 @@ export const buildRegionReportSheet = (
   const header = buildHeaderBlock(title, subtitle, 'Old Groups')
   const rows: (string | number)[][] = [...header]
   const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year && d.region_id === regionId).map(d => d.month))
-  const ogs = oldGroups.filter(g => g.region === regionName)
-  //   const ogs = oldGroups.filter(g => Number(g.region_id) === Number(regionId))
+  const ogs = oldGroups.filter(g => Number(g.region_id) === Number(regionId))
 
   for (const m of months) {
     for (const og of ogs) {
       const items = data.filter(x => x.region_id === regionId && x.old_group_id === og.id && x.year === year && x.month === m)
       const s = sumFor(items)
+      validateLabelAndMonth(og.name, m)
       rows.push([
         og.name,
         m,
@@ -427,6 +882,7 @@ export const buildOldGroupReportSheet = (
     for (const g of gs) {
       const items = data.filter(x => x.old_group_id === oldGroupId && x.group_id === g.id && x.year === year && x.month === m)
       const s = sumFor(items)
+      validateLabelAndMonth(g.name, m)
       rows.push([
         g.name,
         m,
@@ -494,8 +950,9 @@ export const buildDistrictReportSheet = (
       for (let wk = 1; wk <= 5; wk++) {
         const items = data.filter(x => x.group_id === groupId && x.district_id === d.id && x.year === year && x.month === m && x.week === wk)
         const s = sumFor(items)
+        validateLabelAndMonth(`${d.name} - Week ${wk}`, m)
         rows.push([
-          `Week ${wk}`,
+          `${d.name} - Week ${wk}`,
           m,
           s.men,
           s.women,

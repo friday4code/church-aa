@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet } from '../exporters'
+import { getReportFileName, buildStateReportSheet, buildRegionReportSheet, buildGroupReportSheet, buildOldGroupReportSheet, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet, buildRegionNewComersReportSheet, buildRegionTitheOfferingReportSheet } from '../exporters'
 import type { AttendanceRecord } from '@/types/attendance.type'
 import type { OldGroup } from '@/types/oldGroups.type'
 import XLSX from 'xlsx-js-style'
@@ -65,6 +65,52 @@ describe('getReportFileName', () => {
   it('generates tithe filename', () => {
     const name = getReportFileName('stateTitheOffering')
     expect(name.startsWith('State Tithe & Offering Report_')).toBe(true)
+  })
+})
+describe('buildRegionNewComersReportSheet', () => {
+  it('populates Old Groups and Month columns', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: 'OG-900', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    const sheet = buildRegionNewComersReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['January'] }, 5)
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][]
+    const row = data.find(r => r[0] === 'OG-900' && r[1] === 'January')
+    expect(row).toBeTruthy()
+  })
+  it('throws error for missing old group name', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: '', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    expect(() => buildRegionNewComersReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['January'] }, 5)).toThrow(/Missing or empty label value/)
+  })
+  it('throws error for invalid month label', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: 'OG-900', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    expect(() => buildRegionNewComersReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['FooMonth'] }, 5)).toThrow(/Invalid month value/)
+  })
+})
+describe('buildRegionTitheOfferingReportSheet', () => {
+  it('populates Old Groups and Month columns', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: 'OG-900', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    const sheet = buildRegionTitheOfferingReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['January'] }, 5)
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as (string | number)[][]
+    const row = data.find(r => r[0] === 'OG-900' && r[1] === 'January')
+    expect(row).toBeTruthy()
+  })
+  it('throws error for missing old group name', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: '', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    expect(() => buildRegionTitheOfferingReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['January'] }, 5)).toThrow(/Missing or empty label value/)
+  })
+  it('throws error for invalid month label', () => {
+    const oldGroups: OldGroup[] = [
+      { id: 900, name: 'OG-900', code: 'OG900', leader: '', state: '', region: '', state_id: 2, region_id: 5 },
+    ]
+    expect(() => buildRegionTitheOfferingReportSheet(sampleAttendance, oldGroups, 'Region Five', 2025, { months: ['FooMonth'] }, 5)).toThrow(/Invalid month value/)
   })
 })
 
@@ -190,6 +236,14 @@ describe('buildStateTitheOfferingReportSheet', () => {
     const val = (data as any[])[4][2]
     expect(typeof val).toBe('string')
     expect(String(val)).toMatch(/^₦/)
+  })
+  it('throws error for invalid month label', () => {
+    const regions = [ { id: 5, name: 'Region Five' } ]
+    expect(() => buildStateTitheOfferingReportSheet(sampleAttendance, regions, 'AKWA IBOM', 2025, { months: ['FooMonth'] })).toThrow(/Invalid month value/)
+  })
+  it('throws error for missing region name', () => {
+    const regions = [ { id: 5, name: '' } ]
+    expect(() => buildStateTitheOfferingReportSheet(sampleAttendance, regions as any, 'AKWA IBOM', 2025, { months: ['January'] })).toThrow(/Missing or empty label value/)
   })
 })
 

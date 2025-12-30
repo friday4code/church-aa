@@ -41,6 +41,8 @@ interface RegionAttendanceReportProps {
     monthsCollection: Array<{ label: string; value: string }>
     onDownload: (data: ReportFormValues) => void
     isLoading?: boolean
+    onDownloadNewComers?: (data: ReportFormValues) => void
+    onDownloadTitheOffering?: (data: ReportFormValues) => void
 }
 
 export const RegionAttendanceReport = ({
@@ -50,6 +52,8 @@ export const RegionAttendanceReport = ({
     monthsCollection,
     onDownload,
     isLoading = false,
+    onDownloadNewComers,
+    onDownloadTitheOffering,
 }: RegionAttendanceReportProps) => {
     const { user: authUser } = useAuth()
     const { user } = useMe()
@@ -197,9 +201,36 @@ export const RegionAttendanceReport = ({
                             colorPalette="accent"
                             disabled={isLoading}
                             rounded="xl"
+                            w={{ base: "100%", md: "auto" }}
                         >
                             <DocumentDownload size="20" />
                             Download Report
+                        </Button>
+                    </Flex>
+                    <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
+                        <Button
+                            type="button"
+                            bg="accent.100"
+                            color={{ base: "white", _dark: "gray.900" }}
+                            _hover={{ bg: "accent.200" }}
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadNewComers?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download New Comers Report
+                        </Button>
+                        <Button
+                            type="button"
+                            bg="accent.100"
+                            color={{ base: "white", _dark: "gray.900" }}
+                            _hover={{ bg: "accent.200" }}
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadTitheOffering?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Tithe & Offering Report
                         </Button>
                     </Flex>
                 </form>

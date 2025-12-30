@@ -18,7 +18,7 @@ import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
 import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet, buildRegionNewComersReportSheet, buildRegionTitheOfferingReportSheet, buildGroupNewComersReportSheet, buildGroupTitheOfferingReportSheet, buildOldGroupNewComersReportSheet, buildOldGroupTitheOfferingReportSheet, buildDistrictNewComersReportSheet, buildDistrictTitheOfferingReportSheet } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -557,6 +557,385 @@ export const ReportsContent = () => {
             setIsReportGenerating(false)
         }
     })
+
+    const handleDownloadRegionNewComersReport = useStableCallback(async (data: ReportFormValues) => {   
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'region') {
+                toaster.error({ description: 'Switch to Region report to download newcomers report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { regionId?: number; year?: number; monthRange?: { from: number; to: number }; stateId?: number } = {}
+            if (data.state) {
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                if (sObj) filterCriteria.stateId = sObj.id
+            }
+            if (data.region) {
+                const rObj = Array.from(maps.region.values()).find(r => (r.id || r.regionName) === Number(data.region))
+                
+                if (rObj) filterCriteria.regionId = rObj.id
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            
+            if (!filterCriteria.regionId) {
+                toaster.error({ description: 'Select a region', closable: true })
+                return
+            }
+            const rObj = regions.find(r => Number(r.id) === Number(filterCriteria.regionId))
+            const rName = rObj?.name || 'Region'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            let sourceOldGroups: OldGroup[] = oldGroups as OldGroup[]
+            const apiOldGroups = await adminApi.getOldGroupsByRegionId(Number(filterCriteria.regionId))
+
+            if (apiOldGroups && apiOldGroups.length) {
+                const names = new Set(apiOldGroups.map(x => x.name))
+                sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name)).sort((a, b) => a.name.localeCompare(b.name))
+            }
+            const filteredOldGroups = getOldGroupsByRegion(rName, sourceOldGroups)
+            
+            const sheet = buildRegionNewComersReportSheet(filtered, filteredOldGroups, rName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.regionId))
+            exportSheet(sheet, getReportFileName('regionNewComers'), 'New Comers Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate New Comers report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadRegionTitheOfferingReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'region') {
+                toaster.error({ description: 'Switch to Region report to download tithe & offering report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { regionId?: number; year?: number; monthRange?: { from: number; to: number }; stateId?: number } = {}
+            if (data.state) {
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                if (sObj) filterCriteria.stateId = sObj.id
+            }
+            if (data.region) {
+                const rObj = Array.from(maps.region.values()).find(r => (r.id || r.regionName) === Number(data.region))
+                if (rObj) filterCriteria.regionId = rObj.id
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.regionId) {
+                toaster.error({ description: 'Select a region', closable: true })
+                return
+            }
+            const rObj = regions.find(r => Number(r.id) === Number(filterCriteria.regionId))
+            const rName = rObj?.name || 'Region'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            let sourceOldGroups: OldGroup[] = oldGroups as OldGroup[]
+            const apiOldGroups = await adminApi.getOldGroupsByRegionId(Number(filterCriteria.regionId))
+            if (apiOldGroups && apiOldGroups.length) {
+                const names = new Set(apiOldGroups.map(x => x.name))
+                sourceOldGroups = (oldGroups as OldGroup[]).filter(og => names.has(og.name)).sort((a, b) => a.name.localeCompare(b.name))
+            }
+            const filteredOldGroups = getOldGroupsByRegion(rName, sourceOldGroups)
+            const sheet = buildRegionTitheOfferingReportSheet(filtered, filteredOldGroups, rName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.regionId))
+            exportSheet(sheet, getReportFileName('regionTitheOffering'), 'Tithe & Offering Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate Tithe & Offering report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadGroupNewComersReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'group') {
+                toaster.error({ description: 'Switch to Group report to download newcomers report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { groupId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.group) {
+                const gId = parseInt(data.group, 10)
+                if (!Number.isNaN(gId)) filterCriteria.groupId = gId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.groupId) {
+                toaster.error({ description: 'Select a group', closable: true })
+                return
+            }
+            const gObj = groups.find(g => Number(g.id) === Number(filterCriteria.groupId))
+            const gName = gObj?.name || 'Group'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            let districts: Array<{ id: number; name: string; group_id?: number }> = []
+            try {
+                const apiDistricts = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId))
+                districts = (apiDistricts || []).map(d => ({ id: d.id, name: d.name, group_id: Number(filterCriteria.groupId) }))
+            } catch {
+                const ids = Array.from(new Set(filtered.filter(x => x.group_id === Number(filterCriteria.groupId)).map(x => x.district_id).filter(Boolean))) as number[]
+                districts = ids.map(id => ({ id, name: `District ${id}`, group_id: Number(filterCriteria.groupId) }))
+            }
+            if (districts.length === 0) {
+                toaster.error({ description: 'No districts found for selected group', closable: true })
+                return
+            }
+            const sheet = buildGroupNewComersReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+            exportSheet(sheet, getReportFileName('groupNewComers'), 'New Comers Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate New Comers report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadGroupTitheOfferingReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'group') {
+                toaster.error({ description: 'Switch to Group report to download tithe & offering report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { groupId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.group) {
+                const gId = parseInt(data.group, 10)
+                if (!Number.isNaN(gId)) filterCriteria.groupId = gId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.groupId) {
+                toaster.error({ description: 'Select a group', closable: true })
+                return
+            }
+            const gObj = groups.find(g => Number(g.id) === Number(filterCriteria.groupId))
+            const gName = gObj?.name || 'Group'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            let districts: Array<{ id: number; name: string; group_id?: number }> = []
+            try {
+                const apiDistricts = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId))
+                districts = (apiDistricts || []).map(d => ({ id: d.id, name: d.name, group_id: Number(filterCriteria.groupId) }))
+            } catch {
+                const ids = Array.from(new Set(filtered.filter(x => x.group_id === Number(filterCriteria.groupId)).map(x => x.district_id).filter(Boolean))) as number[]
+                districts = ids.map(id => ({ id, name: `District ${id}`, group_id: Number(filterCriteria.groupId) }))
+            }
+            if (districts.length === 0) {
+                toaster.error({ description: 'No districts found for selected group', closable: true })
+                return
+            }
+            const sheet = buildGroupTitheOfferingReportSheet(filtered, districts, gName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+            exportSheet(sheet, getReportFileName('groupTitheOffering'), 'Tithe & Offering Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate Tithe & Offering report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadOldGroupNewComersReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'oldGroup') {
+                toaster.error({ description: 'Switch to Old Group report to download newcomers report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { oldGroupId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.oldGroup) {
+                const ogId = parseInt(data.oldGroup, 10)
+                if (!Number.isNaN(ogId)) filterCriteria.oldGroupId = ogId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.oldGroupId) {
+                toaster.error({ description: 'Select an old group', closable: true })
+                return
+            }
+            const ogObj = oldGroups.find(g => Number(g.id) === Number(filterCriteria.oldGroupId))
+            const ogName = ogObj?.name || 'Old Group'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const groupsByOg = await adminApi.getGroupsByOldGroupId(Number(filterCriteria.oldGroupId))
+            const sheet = buildOldGroupNewComersReportSheet(filtered, (groupsByOg as Group[]).sort((a, b) => a.name.localeCompare(b.name)), ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
+            exportSheet(sheet, getReportFileName('oldGroupNewComers'), 'New Comers Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate New Comers report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadOldGroupTitheOfferingReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'oldGroup') {
+                toaster.error({ description: 'Switch to Old Group report to download tithe & offering report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { oldGroupId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.oldGroup) {
+                const ogId = parseInt(data.oldGroup, 10)
+                if (!Number.isNaN(ogId)) filterCriteria.oldGroupId = ogId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            if (!filterCriteria.oldGroupId) {
+                toaster.error({ description: 'Select an old group', closable: true })
+                return
+            }
+            const ogObj = oldGroups.find(g => Number(g.id) === Number(filterCriteria.oldGroupId))
+            const ogName = ogObj?.name || 'Old Group'
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const groupsByOg = await adminApi.getGroupsByOldGroupId(Number(filterCriteria.oldGroupId))
+            const sheet = buildOldGroupTitheOfferingReportSheet(filtered, (groupsByOg as Group[]).sort((a, b) => a.name.localeCompare(b.name)), ogName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.oldGroupId))
+            exportSheet(sheet, getReportFileName('oldGroupTitheOffering'), 'Tithe & Offering Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate Tithe & Offering report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadDistrictNewComersReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'district') {
+                toaster.error({ description: 'Switch to District report to download newcomers report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { groupId?: number; districtId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.group) {
+                const gId = parseInt(data.group, 10)
+                if (!Number.isNaN(gId)) filterCriteria.groupId = gId
+            }
+            if (data.district) {
+                const dId = parseInt(data.district, 10)
+                if (!Number.isNaN(dId)) filterCriteria.districtId = dId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            const selectedDistrictId = filterCriteria.districtId
+            if (selectedDistrictId == null || !filterCriteria.groupId) {
+                toaster.error({ description: 'Select a district and group', closable: true })
+                return
+            }
+            const dObjs = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId)) || []
+            const dObj = dObjs.find(g => g.id === Number(selectedDistrictId))
+            const dName = dObj?.name || `District ${selectedDistrictId}`
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const districtsList: Array<{ id: number; name: string; group_id?: number }> = [{ id: selectedDistrictId, name: dName, group_id: Number(filterCriteria.groupId) }]
+            const sheet = buildDistrictNewComersReportSheet(filtered, districtsList, dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+            exportSheet(sheet, getReportFileName('districtNewComers'), 'New Comers Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate New Comers report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+    const handleDownloadDistrictTitheOfferingReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (deferredTab !== 'district') {
+                toaster.error({ description: 'Switch to District report to download tithe & offering report', closable: true })
+                return
+            }
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: { groupId?: number; districtId?: number; year?: number; monthRange?: { from: number; to: number } } = {}
+            if (data.group) {
+                const gId = parseInt(data.group, 10)
+                if (!Number.isNaN(gId)) filterCriteria.groupId = gId
+            }
+            if (data.district) {
+                const dId = parseInt(data.district, 10)
+                if (!Number.isNaN(dId)) filterCriteria.districtId = dId
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) filterCriteria.monthRange = { from: fIdx, to: tIdx }
+            }
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            const selectedDistrictId = filterCriteria.districtId
+            if (selectedDistrictId == null || !filterCriteria.groupId) {
+                toaster.error({ description: 'Select a district and group', closable: true })
+                return
+            }
+            const dObjs = await adminApi.getDistrictsByGroupId(Number(filterCriteria.groupId)) || []
+            const dObj = dObjs.find(g => g.id === Number(selectedDistrictId))
+            const dName = dObj?.name || `District ${selectedDistrictId}`
+            const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+            const districtsList: Array<{ id: number; name: string; group_id?: number }> = [{ id: selectedDistrictId, name: dName, group_id: Number(filterCriteria.groupId) }]
+            const sheet = buildDistrictTitheOfferingReportSheet(filtered, districtsList, dName, filterCriteria.year ?? new Date().getFullYear(), spec, Number(filterCriteria.groupId))
+            exportSheet(sheet, getReportFileName('districtTitheOffering'), 'Tithe & Offering Report')
+        } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate Tithe & Offering report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
     // ----------------------------------------------------------------------
     // 8. RENDERER
     // ----------------------------------------------------------------------
@@ -595,6 +974,8 @@ export const ReportsContent = () => {
                     {...commonProps}
                     statesCollection={scopedCollections.s}
                     regionsCollection={scopedCollections.r}
+                    onDownloadNewComers={handleDownloadRegionNewComersReport}
+                    onDownloadTitheOffering={handleDownloadRegionTitheOfferingReport}
                 />
             case "group":
                 return <MemoGroupAttendanceReport
@@ -603,6 +984,8 @@ export const ReportsContent = () => {
                     regionsCollection={scopedCollections.r}
                     groupsCollection={scopedCollections.g}
                     oldGroupsCollection={scopedCollections.og}
+                    onDownloadNewComers={handleDownloadGroupNewComersReport}
+                    onDownloadTitheOffering={handleDownloadGroupTitheOfferingReport}
                 />
             case "oldGroup":
                 return <MemoOldGroupAttendanceReport
@@ -610,6 +993,8 @@ export const ReportsContent = () => {
                     statesCollection={scopedCollections.s}
                     regionsCollection={scopedCollections.r}
                     oldGroupsCollection={scopedCollections.og}
+                    onDownloadNewComers={handleDownloadOldGroupNewComersReport}
+                    onDownloadTitheOffering={handleDownloadOldGroupTitheOfferingReport}
                 />
             case "district":
                 return <MemoDistrictAttendanceReport
@@ -617,6 +1002,8 @@ export const ReportsContent = () => {
                     statesCollection={scopedCollections.s}
                     regionsCollection={scopedCollections.r}
                     groupsCollection={scopedCollections.g}
+                    onDownloadNewComers={handleDownloadDistrictNewComersReport}
+                    onDownloadTitheOffering={handleDownloadDistrictTitheOfferingReport}
                 />
             case "youth":
                 return <MemoYouthAttendanceReport

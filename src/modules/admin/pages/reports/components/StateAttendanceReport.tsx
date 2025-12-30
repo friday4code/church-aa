@@ -150,12 +150,13 @@ export const StateAttendanceReport = ({
                             _hover={{ bg: "accent.200" }}
                             disabled={isLoading}
                             rounded="xl"
+                            w={{ base: "100%", md: "auto" }}
                         >
                             <DocumentDownload size="20" />
                             Download Report
                         </Button>
                     </Flex>
-                    <Flex justify="end" mt="3" gap="3">
+                    <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
                         <Button
                             type="button"
                             bg="accent.100"

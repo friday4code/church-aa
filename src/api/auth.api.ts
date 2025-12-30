@@ -5,7 +5,7 @@ import type { RefereeFormData } from "@/modules/auth/pages/RefereeForm"
 import type { LoginResponse, GetCurrentUserResponse } from "@/types/auth.type"
 
 export const authApi = {
-    login: async (credentials: LoginFormData): Promise<LoginResponse> => {
+    login: async (credentials: LoginFormData): Promise<LoginResponse> => {        
         const { data } = await axiosClient.post<LoginResponse>("/auth/login", credentials);
         return data;
     },
