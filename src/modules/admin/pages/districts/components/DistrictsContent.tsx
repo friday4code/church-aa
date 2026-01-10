@@ -18,6 +18,8 @@ import type { DistrictFormData } from "@/modules/admin/schemas/districts.schema"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 
 // Lazy load components
 const DistrictsHeader = lazy(() => import("./DistrictsHeader"))
@@ -65,6 +67,8 @@ export const DistrictsContent = () => {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [stateFilter, setStateFilter] = useState("")
     const [regionFilter, setRegionFilter] = useState("")
+    const [oldGroupFilter, setOldGroupFilter] = useState("")
+    const [groupFilter, setGroupFilter] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 50
     const [selectedDistricts, setSelectedDistricts] = useState<number[]>([])
@@ -94,6 +98,8 @@ export const DistrictsContent = () => {
     })
     const { states } = useStates()
     const { regions } = useRegions()
+    const { oldGroups } = useOldGroups();
+    const { groups } = useGroups();
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -117,11 +123,21 @@ export const DistrictsContent = () => {
                 district.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 district.code.toLowerCase().includes(searchQuery.toLowerCase())
             )
-            const matchesState = stateFilter ? district.state_id?.toString() === stateFilter : true
-            const matchesRegion = regionFilter ? district.region_id?.toString() === regionFilter : true
+            const matchesState = stateFilter ? district.state_id?.toString() == stateFilter : true
+            const matchesRegion = regionFilter ? district.region_id?.toString() == regionFilter : true
+            const matchesOldGroup = oldGroupFilter ? district.old_group_id?.toString() == oldGroupFilter : true
+            const matchesGroup = groupFilter ? district.group_id?.toString() == groupFilter : true
 
-            return matchesSearch && matchesState && matchesRegion
+            console.log("matchesSearch",matchesSearch)
+            console.log("matchesState",matchesState)
+            console.log("matchesRegion",matchesRegion)
+            console.log("matchesOldGroup",matchesOldGroup)
+            console.log("matchesGroup",matchesGroup)
+
+            return matchesSearch && (matchesState && matchesRegion && matchesOldGroup && matchesGroup)  
         })
+        
+        console.log("filtered",filtered)
 
         // Sorting
         filtered.sort((a: District, b: District) => {
@@ -141,7 +157,7 @@ export const DistrictsContent = () => {
         })
 
         return filtered
-    }, [districts, searchQuery, sortField, sortOrder, stateFilter, regionFilter])
+    }, [districts, searchQuery, sortField, sortOrder, stateFilter, regionFilter, oldGroupFilter, groupFilter])
 
     // Pagination
     const totalDistricts = filteredAndSortedDistricts.length
@@ -279,10 +295,16 @@ export const DistrictsContent = () => {
                         onSearch={handleSearch}
                         states={states || []}
                         regions={regions || []}
+                        oldGroups={oldGroups || []}
+                        groups={groups || []}
                         stateFilter={stateFilter}
                         setStateFilter={setStateFilter}
                         regionFilter={regionFilter}
                         setRegionFilter={setRegionFilter}
+                        oldGroupFilter={oldGroupFilter}
+                        setOldGroupFilter={setOldGroupFilter}
+                        groupFilter={groupFilter}
+                        setGroupFilter={setGroupFilter} 
                     />
                 </Suspense>
 

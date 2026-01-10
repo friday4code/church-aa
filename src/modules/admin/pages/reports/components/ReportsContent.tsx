@@ -968,7 +968,7 @@ export const ReportsContent = () => {
                     statesCollection={scopedCollections.s}
                     onDownloadNewComers={handleDownloadNewComersReport}
                     onDownloadTitheOffering={handleDownloadTitheOfferingReport}
-                    onDownloadConsolidated={handleDownloadConsolidatedReport}
+                    // onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "region":
                 return <MemoRegionAttendanceReport
