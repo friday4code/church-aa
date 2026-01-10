@@ -1,14 +1,13 @@
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton, VStack, IconButton, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton, VStack, IconButton, Drawer, Portal, Box, NativeSelect } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare, DocumentDownload } from "iconsax-reactjs"
 import type { Attendance } from "../../../stores/attendance.store"
 import { useState, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { exportAttendanceToExcel, exportAttendanceToCSV, exportAttendanceToPDF, copyAttendanceToClipboard } from "@/utils/attendance.utils"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
-
-
+import type { Group } from "@/types/groups.type"
 
 interface AttendanceHeaderProps {
     serviceName: string
@@ -16,6 +15,13 @@ interface AttendanceHeaderProps {
     onAddAttendance: () => void
     onSearch: (value: string) => void
     onNavigateBack?: () => void
+    yearFilter: string
+    setYearFilter: (value: string) => void
+    monthFilter: string
+    setMonthFilter: (value: string) => void
+    groupFilter: string
+    setGroupFilter: (value: string) => void
+    groups: Group[]
 }
 
 const AttendanceHeader = ({
@@ -23,7 +29,14 @@ const AttendanceHeader = ({
     serviceAttendances,
     onAddAttendance,
     onSearch,
-    onNavigateBack
+    onNavigateBack,
+    yearFilter,
+    setYearFilter,
+    monthFilter,
+    setMonthFilter,
+    groupFilter,
+    setGroupFilter,
+    groups
 }: AttendanceHeaderProps) => {
     const navigate = useNavigate()
     const { districts = [] } = useDistricts()
@@ -123,6 +136,50 @@ const AttendanceHeader = ({
                                                 Add Attendance
                                             </Button>
 
+                                            {/* Filters in Mobile Drawer */}
+                                            <VStack gap={3} align="stretch">
+                                                <Heading size="sm" color="fg.muted">Filters</Heading>
+                                                <NativeSelect.Root size="md">
+                                                    <NativeSelect.Field 
+                                                        placeholder="All Years" 
+                                                        value={yearFilter} 
+                                                        onChange={(e) => setYearFilter(e.target.value)}
+                                                        rounded="xl"
+                                                    >
+                                                        {[2023, 2024, 2025, 2026].map((year) => (
+                                                            <option key={year} value={year}>{year}</option>
+                                                        ))}
+                                                    </NativeSelect.Field>
+                                                    <NativeSelect.Indicator />
+                                                </NativeSelect.Root>
+                                                <NativeSelect.Root size="md">
+                                                    <NativeSelect.Field 
+                                                        placeholder="All Months" 
+                                                        value={monthFilter} 
+                                                        onChange={(e) => setMonthFilter(e.target.value)}
+                                                        rounded="xl"
+                                                    >
+                                                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => (
+                                                            <option key={month} value={month}>{month}</option>
+                                                        ))}
+                                                    </NativeSelect.Field>
+                                                    <NativeSelect.Indicator />
+                                                </NativeSelect.Root>
+                                                <NativeSelect.Root size="md">
+                                                    <NativeSelect.Field 
+                                                        placeholder="All Groups" 
+                                                        value={groupFilter} 
+                                                        onChange={(e) => setGroupFilter(e.target.value)}
+                                                        rounded="xl"
+                                                    >
+                                                        {groups?.map((group) => (
+                                                            <option key={group.id} value={group.id}>{group.name}</option>
+                                                        ))}
+                                                    </NativeSelect.Field>
+                                                    <NativeSelect.Indicator />
+                                                </NativeSelect.Root>
+                                            </VStack>
+
                                             {/* Export Buttons */}
                                             <VStack gap={3} align="stretch">
                                                 <Heading size="sm" color="fg.muted">Export Data</Heading>
@@ -211,24 +268,72 @@ const AttendanceHeader = ({
 
                 </Flex>
 
-                {/* Second line: Search input (full width) */}
-                <HStack w="full" justify={"space-between"}>
-                    <InputGroup
-                        maxW="full"
-                        colorPalette={"accent"}
-                        startElement={<SearchNormal1 />}
-                        endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
-                    >
-                        <Input
-                            bg="bg"
-                            rounded="xl"
-                            placeholder="Search attendance..."
-                            value={search}
-                            onChange={handleChange}
-                            size={{ base: "md", md: "lg" }}
-                        />
-                    </InputGroup>
-                    <Box hideBelow={"md"}>
+                {/* Second line: Search input and filters */}
+                <VStack w="full" gap={4}>
+                    <HStack w="full" flexDir={{ base: "column", md: "row" }} gap={4}>
+                        <InputGroup
+                            flex={1}
+                            w="full"
+                            colorPalette={"accent"}
+                            startElement={<SearchNormal1 />}
+                            endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
+                        >
+                            <Input
+                                bg="bg"
+                                rounded="xl"
+                                placeholder="Search attendance..."
+                                value={search}
+                                onChange={handleChange}
+                                size={{ base: "md", md: "lg" }}
+                            />
+                        </InputGroup>
+
+                        <HStack w={{ base: "full", md: "auto" }} gap={2}>
+                            <NativeSelect.Root size="md" width={{ base: "full", md: "120px" }}>
+                                <NativeSelect.Field
+                                    placeholder="Year"
+                                    value={yearFilter}
+                                    onChange={(e) => setYearFilter(e.target.value)}
+                                    rounded="xl"
+                                    bg="bg"
+                                >
+                                    <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
+                                    <option value="2026">2026</option>
+                                </NativeSelect.Field>
+                            </NativeSelect.Root>
+
+                            <NativeSelect.Root size="md" width={{ base: "full", md: "140px" }}>
+                                <NativeSelect.Field
+                                    placeholder="Month"
+                                    value={monthFilter}
+                                    onChange={(e) => setMonthFilter(e.target.value)}
+                                    rounded="xl"
+                                    bg="bg"
+                                >
+                                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </NativeSelect.Field>
+                            </NativeSelect.Root>
+
+                            <NativeSelect.Root size="md" width={{ base: "full", md: "200px" }}>
+                                <NativeSelect.Field
+                                    placeholder="Group"
+                                    value={groupFilter}
+                                    onChange={(e) => setGroupFilter(e.target.value)}
+                                    rounded="xl"
+                                    bg="bg"
+                                >
+                                    {groups.map(g => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </NativeSelect.Field>
+                            </NativeSelect.Root>
+                        </HStack>
+                    </HStack>
+
+                    <Box hideBelow={"md"} w="full">
                         <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
                             <Button
                                 rounded="xl"
@@ -288,7 +393,7 @@ const AttendanceHeader = ({
                             </Button>
                         </HStack>
                     </Box>
-                </HStack>
+                </VStack>
 
             </VStack>
         </>

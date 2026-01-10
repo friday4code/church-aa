@@ -88,7 +88,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof State>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 50
     const [selectedStates, setSelectedStates] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -126,41 +126,47 @@ const Content = () => {
 
     // Filter and sort states - use states directly
     const filteredAndSortedStates = useMemo(() => {
-        let filtered = states.filter(state =>
+        let filtered = states.filter((state: State) =>
             state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             state.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             state.leader.toLowerCase().includes(searchQuery.toLowerCase())
         )
 
         // Sorting
-        filtered.sort((a, b) => {
+            filtered.sort((a: State, b: State) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
             if (sortOrder === 'asc') {
-                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return -1;
+                if (bValue == null) return 1;
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
             } else {
-                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return 1;
+                if (bValue == null) return -1;
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
             }
         })
 
         return filtered
     }, [states, searchQuery, sortField, sortOrder])
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedStates.length / pageSize)
-    const paginatedStates = filteredAndSortedStates.slice(
+    const totalStates = useMemo(() => filteredAndSortedStates.length, [filteredAndSortedStates])
+    const paginatedStates = useMemo(() => filteredAndSortedStates.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
-    )
+    ), [filteredAndSortedStates, currentPage, pageSize])    
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedStates.map(state => state.id)
-    const allIds = filteredAndSortedStates.map(state => state.id)
+    const allIdsOnCurrentPage = paginatedStates.map((state: State) => state.id)
+    const allIds = filteredAndSortedStates.map((state: State) => state.id)
 
     const isAllSelectedOnPage = paginatedStates.length > 0 &&
-        paginatedStates.every(state => selectedStates.includes(state.id))
+        paginatedStates.every((state: State) => selectedStates.includes(state.id))
 
     const isAllSelected = filteredAndSortedStates.length > 0 &&
-        filteredAndSortedStates.every(state => selectedStates.includes(state.id))
+        filteredAndSortedStates.every((state: State) => selectedStates.includes(state.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
@@ -280,7 +286,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <StatesHeader
-                        states={states}
+                        states={paginatedStates}
                         onAddState={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -292,13 +298,13 @@ const Content = () => {
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <StatesTable
-                                    // states={states} // Use states directly
+                                    pageSize={pageSize}
                                     paginatedStates={paginatedStates}
                                     selectedStates={selectedStates}
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    totalStates={totalStates}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}
@@ -313,6 +319,7 @@ const Content = () => {
                     </Card.Body>
                 </Card.Root>
             </VStack>
+
             {/* Action Bar for selected items */}
             {isSuperAdmin && isActionBarOpen && (
                 <Suspense fallback={<ActionBarLoading />}>

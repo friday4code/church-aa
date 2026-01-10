@@ -22,6 +22,7 @@ interface AttendanceTableProps {
     sortOrder: 'asc' | 'desc'
     currentPage: number
     totalPages: number
+    pageSize?: number
     isAllSelectedOnPage: boolean
     serviceType: ServiceType
     onSort: (field: keyof AttendanceRecord) => void
@@ -39,6 +40,7 @@ const AttendanceTable = ({
     sortOrder,
     currentPage,
     totalPages,
+    pageSize = 10,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -78,6 +80,13 @@ const AttendanceTable = ({
                                 fontWeight={"bold"}
                             >
                                 S/N
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('id')}
+                            >
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -187,7 +196,8 @@ const AttendanceTable = ({
                                         <Checkbox.Control cursor="pointer" rounded="md" />
                                     </Checkbox.Root>
                                 </Table.Cell>
-                                <Table.Cell>{index + 1}</Table.Cell>
+                                <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+                                <Table.Cell>{attendance.id}</Table.Cell>
                                 <Table.Cell fontWeight="medium">
                                     {getDistrictName(attendance.district_id)}
                                 </Table.Cell>

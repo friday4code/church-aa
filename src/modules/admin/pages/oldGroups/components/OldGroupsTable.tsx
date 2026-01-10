@@ -9,12 +9,13 @@ import type { OldGroup } from "@/types/oldGroups.type"
 import { useAuth } from "@/hooks/useAuth"
 
 interface OldGroupsTableProps {
-    paginatedGroups: OldGroup[]
+    paginatedOldGroups: OldGroup[]
     selectedGroups: number[]
     sortField: keyof OldGroup
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    totalOldGroups: number
+    pageSize?: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof OldGroup) => void
@@ -27,12 +28,13 @@ interface OldGroupsTableProps {
 
 const OldGroupsTable = ({
     isLoading,
-    paginatedGroups,
+    paginatedOldGroups,
     selectedGroups,
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalOldGroups,
+    pageSize = 50,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -47,7 +49,7 @@ const OldGroupsTable = ({
     const handleEdit = useCallback((g: OldGroup) => onEditGroup(g), [onEditGroup])
     const handleDelete = useCallback((g: OldGroup) => onDeleteGroup(g), [onDeleteGroup])
 
-    const Row = memo(({ group, index }: { group: OldGroup; index: number }) => (
+    const Row = memo(({ group, index, currentPage, pageSize }: { group: OldGroup; index: number; currentPage: number; pageSize: number }) => (
         <Table.Row key={group.id}>
             {isSuperAdmin && (
                 <Table.Cell>
@@ -57,7 +59,8 @@ const OldGroupsTable = ({
                     </Checkbox.Root>
                 </Table.Cell>
             )}
-            <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+            <Table.Cell>{group.id}</Table.Cell>
             <Table.Cell fontWeight="medium">{group.region}</Table.Cell>
             <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
             <Table.Cell>{group.code}</Table.Cell>
@@ -89,10 +92,10 @@ const OldGroupsTable = ({
     ), (a, b) => a.group === b.group && a.index === b.index)
 
     const rows = useMemo(() => (
-        paginatedGroups.map((group, index) => (
-            <Row key={group.id} group={group} index={index} />
+        paginatedOldGroups.map((group, index) => (
+            <Row key={group.id} group={group} index={index} currentPage={currentPage} pageSize={pageSize} />
         ))
-    ), [paginatedGroups, selectedGroups, handleSelect, handleEdit, handleDelete])
+    ), [paginatedOldGroups, selectedGroups, handleSelect, handleEdit, handleDelete, currentPage, pageSize])
     return (
         <>
             {/* Table */}
@@ -112,12 +115,13 @@ const OldGroupsTable = ({
                                     </Checkbox.Root>
                                 </Table.ColumnHeader>
                             )}
+                            <Table.ColumnHeader fontWeight="bold">S/N</Table.ColumnHeader>
                             <Table.ColumnHeader
-                                fontWeight={"bold"}
+                                fontWeight="bold"
                                 cursor="pointer"
                                 onClick={() => onSort('id')}
                             >
-                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -163,11 +167,11 @@ const OldGroupsTable = ({
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalOldGroups > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalOldGroups}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

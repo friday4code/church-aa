@@ -39,7 +39,7 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['districts'] });
 
@@ -66,7 +66,7 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['districts'] });
 
@@ -92,7 +92,7 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['districts'] });
 

@@ -57,6 +57,8 @@ export const YouthAttendanceTable = ({ data, isLoading, onEdit, onDelete }: Yout
         <Table.Root size="sm" striped>
             <Table.Header>
                 <Table.Row>
+                    <Table.ColumnHeader>S/N</Table.ColumnHeader>
+                    <Table.ColumnHeader>ID</Table.ColumnHeader>
                     <Table.ColumnHeader>Group</Table.ColumnHeader>
                     <Table.ColumnHeader>District</Table.ColumnHeader>
                     <Table.ColumnHeader>Date</Table.ColumnHeader>
@@ -68,8 +70,10 @@ export const YouthAttendanceTable = ({ data, isLoading, onEdit, onDelete }: Yout
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {data.map((record) => (
+                {data.map((record, index) => (
                     <Table.Row key={record.id}>
+                        <Table.Cell>{index + 1}</Table.Cell>
+                        <Table.Cell>{record.id}</Table.Cell>
                         <Table.Cell fontWeight="medium">{getGroupName(record.group_id)}</Table.Cell>
                         <Table.Cell fontSize="sm">{getDistrictName(record.district_id)}</Table.Cell>
                         <Table.Cell fontSize="sm">{record.month} {record.year}{record.week ? ` (Week ${record.week})` : ''}</Table.Cell>

@@ -49,7 +49,7 @@ const ForgotPassword = () => {
                 description: "Password reset instructions sent to your email!",
             });
 
-            await delay(2000);
+            //await delay(2000);
 
             // Optionally redirect to login page or confirmation page
             navigate("/login");

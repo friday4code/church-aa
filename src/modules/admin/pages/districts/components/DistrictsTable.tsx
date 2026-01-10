@@ -2,7 +2,7 @@
 "use client"
 
 import { Table, Checkbox, IconButton, Menu, Portal, ButtonGroup, Pagination } from "@chakra-ui/react"
-import { memo, useMemo, useCallback } from "react"
+import { memo, useCallback } from "react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
 import type { District } from "@/types/districts.type"
 import { useAuth } from "@/hooks/useAuth"
@@ -13,7 +13,8 @@ interface DistrictsTableProps {
     sortField: keyof District
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    totalDistricts: number
+    pageSize: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof District) => void
@@ -24,13 +25,89 @@ interface DistrictsTableProps {
     onPageChange: (page: number) => void
 }
 
+const Row = memo(({ 
+    district, 
+    index, 
+    currentPage, 
+    totalDistricts,
+    pageSize, 
+    isSuperAdmin, 
+    isSelected, 
+    onSelect, 
+    onEdit, 
+    onDelete 
+}: { 
+    district: District
+    index: number
+    currentPage: number
+    totalDistricts: number
+    pageSize: number
+    isSuperAdmin: boolean
+    isSelected: boolean
+    onSelect: (id: number) => void
+    onEdit: (d: District) => void
+    onDelete: (d: District) => void
+}) => (
+    <Table.Row>
+        {isSuperAdmin && (
+            <Table.Cell>
+                <Checkbox.Root 
+                    colorPalette={"accent"} 
+                    checked={isSelected} 
+                    onCheckedChange={() => onSelect(district.id)}
+                >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control cursor="pointer" rounded="md" />
+                </Checkbox.Root>
+            </Table.Cell>
+        )}
+        <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+        <Table.Cell>{district.id}</Table.Cell>
+        <Table.Cell fontWeight="medium">{district.group}</Table.Cell>
+        <Table.Cell fontWeight="medium">{district.name}</Table.Cell>
+        <Table.Cell>{district.leader}</Table.Cell>
+        {isSuperAdmin && (
+            <Table.Cell textAlign="center">
+                <Menu.Root>
+                    <Menu.Trigger asChild>
+                        <IconButton rounded="xl" variant="ghost" size="sm">
+                            <More />
+                        </IconButton>
+                    </Menu.Trigger>
+                    <Portal>
+                        <Menu.Positioner>
+                            <Menu.Content rounded="lg">
+                                <Menu.Item value="edit" onClick={() => onEdit(district)}>
+                                    <Edit /> Edit
+                                </Menu.Item>
+                                <Menu.Item color="red" value="delete" colorPalette="red" onClick={() => onDelete(district)}>
+                                    <Trash /> Delete
+                                </Menu.Item>
+                            </Menu.Content>
+                        </Menu.Positioner>
+                    </Portal>
+                </Menu.Root>
+            </Table.Cell>
+        )}
+    </Table.Row>
+), (prev, next) => (
+    prev.district === next.district && 
+    prev.index === next.index && 
+    prev.currentPage === next.currentPage && 
+    prev.totalDistricts === next.totalDistricts &&
+    prev.pageSize === next.pageSize &&
+    prev.isSuperAdmin === next.isSuperAdmin &&
+    prev.isSelected === next.isSelected
+))
+
 const DistrictsTable = ({
     paginatedDistricts,
     selectedDistricts,
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalDistricts,
+    pageSize,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -44,52 +121,6 @@ const DistrictsTable = ({
     const handleSelect = useCallback((id: number) => onSelectDistrict(id), [onSelectDistrict])
     const handleEdit = useCallback((d: District) => onEditDistrict(d), [onEditDistrict])
     const handleDelete = useCallback((d: District) => onDeleteDistrict(d), [onDeleteDistrict])
-
-    const Row = memo(({ district, index }: { district: District; index: number }) => (
-        <Table.Row key={district.id}>
-            {isSuperAdmin && (
-                <Table.Cell>
-                    <Checkbox.Root colorPalette={"accent"} checked={selectedDistricts.includes(district.id)} onCheckedChange={() => handleSelect(district.id)}>
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control cursor="pointer" rounded="md" />
-                    </Checkbox.Root>
-                </Table.Cell>
-            )}
-            <Table.Cell>{index + 1}</Table.Cell>
-            <Table.Cell fontWeight="medium">{district.group}</Table.Cell>
-            <Table.Cell fontWeight="medium">{district.name}</Table.Cell>
-            <Table.Cell>{district.leader}</Table.Cell>
-            {isSuperAdmin && (
-                <Table.Cell textAlign="center">
-                    <Menu.Root>
-                        <Menu.Trigger asChild>
-                            <IconButton rounded="xl" variant="ghost" size="sm">
-                                <More />
-                            </IconButton>
-                        </Menu.Trigger>
-                        <Portal>
-                            <Menu.Positioner>
-                                <Menu.Content rounded="lg">
-                                    <Menu.Item value="edit" onClick={() => handleEdit(district)}>
-                                        <Edit /> Edit
-                                    </Menu.Item>
-                                    <Menu.Item color="red" value="delete" colorPalette="red" onClick={() => handleDelete(district)}>
-                                        <Trash /> Delete
-                                    </Menu.Item>
-                                </Menu.Content>
-                            </Menu.Positioner>
-                        </Portal>
-                    </Menu.Root>
-                </Table.Cell>
-            )}
-        </Table.Row>
-    ), (a, b) => a.district === b.district && a.index === b.index)
-
-    const rows = useMemo(() => (
-        paginatedDistricts.map((district, index) => (
-            <Row key={district.id} district={district} index={index} />
-        ))
-    ), [paginatedDistricts, selectedDistricts, handleSelect, handleEdit, handleDelete])
 
     return (
         <>
@@ -110,12 +141,13 @@ const DistrictsTable = ({
                                     </Checkbox.Root>
                                 </Table.ColumnHeader>
                             )}
+                            <Table.ColumnHeader fontWeight="bold">S/N</Table.ColumnHeader>
                             <Table.ColumnHeader
-                                fontWeight={"bold"}
+                                fontWeight="bold"
                                 cursor="pointer"
                                 onClick={() => onSort('id')}
                             >
-                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -149,17 +181,31 @@ const DistrictsTable = ({
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
-                        {rows}
+                        {paginatedDistricts.map((district, index) => (
+                            <Row 
+                                key={district.id} 
+                                district={district} 
+                                index={index} 
+                                currentPage={currentPage} 
+                                totalDistricts={totalDistricts}
+                                pageSize={pageSize}
+                                isSuperAdmin={isSuperAdmin}
+                                isSelected={selectedDistricts.includes(district.id)}
+                                onSelect={handleSelect}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                            />
+                        ))}
                     </Table.Body>
                 </Table.Root>
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalDistricts > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalDistricts}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

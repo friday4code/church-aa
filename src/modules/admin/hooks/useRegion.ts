@@ -4,6 +4,12 @@ import { toaster } from "@/components/ui/toaster";
 import { adminApi } from "@/api/admin.api";
 import { delay } from "@/utils/helpers";
 
+export interface Region {
+    id: number;
+    name: string;
+    state_id?: number;
+}
+
 interface UseRegionsOptions {
     onCreateSuccess?: () => void;
     onUpdateSuccess?: () => void;
@@ -39,7 +45,7 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['regions'] });
 
@@ -68,7 +74,7 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['regions'] });
 
@@ -96,7 +102,7 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['regions'] });
 

@@ -50,7 +50,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                 description: "Your password has been changed successfully",
                 duration: 3000,
             })
-            await delay(1000);
+            
             onClose()
             reset()
         } catch {
@@ -60,7 +60,7 @@ export const ChangePasswordDialog = ({ isOpen, onClose }: ChangePasswordDialogPr
                 duration: 3000,
             })
 
-            await delay(1000)
+            //await delay(1000)
         }
     }
 

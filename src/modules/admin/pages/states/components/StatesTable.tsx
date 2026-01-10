@@ -20,7 +20,8 @@ interface StatesTableProps {
     sortField: keyof State
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    totalStates: number
+    pageSize: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof State) => void
@@ -38,7 +39,8 @@ const StatesTable = ({
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalStates,
+    pageSize = 50,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -73,10 +75,15 @@ const StatesTable = ({
                             )}
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
+                            >
+                                S/N
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
                                 cursor="pointer"
                                 onClick={() => onSort('id')}
                             >
-                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -123,7 +130,8 @@ const StatesTable = ({
                                         </Checkbox.Root>
                                     </Table.Cell>
                                 )}
-                                <Table.Cell>{index + 1}</Table.Cell>
+                                <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+                                <Table.Cell>{state.id}</Table.Cell>
                                 <Table.Cell fontWeight="medium">{state.name}</Table.Cell>
                                 <Table.Cell>{state.code}</Table.Cell>
                                 <Table.Cell>{state.leader}</Table.Cell>
@@ -165,11 +173,11 @@ const StatesTable = ({
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalStates > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalStates}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

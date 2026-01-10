@@ -19,13 +19,15 @@ import { Tooltip } from "@/components/ui/tooltip"
 
 type MinimalUser = { id: number; name: string; email: string; phone: string | null; roles?: string[] }
 
+//Add totalUsers to UsersTableProps interface for proper pagination
 interface UsersTableProps {
     paginatedUsers: MinimalUser[]
     selectedUsers: number[]
     sortField: string
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    totalUsers: number
+    pageSize: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof User) => void
@@ -124,7 +126,8 @@ const UsersTable = ({
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalUsers,
+    pageSize,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -179,13 +182,7 @@ const UsersTable = ({
                                     </Tooltip>
                                 )}
                             </Table.ColumnHeader>
-                            <Table.ColumnHeader
-                                fontWeight={"bold"}
-                                cursor="pointer"
-                                onClick={() => onSort('id')}
-                            >
-                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
-                            </Table.ColumnHeader>
+                            <Table.ColumnHeader>S/N</Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
                                 cursor="pointer"
@@ -228,11 +225,11 @@ const UsersTable = ({
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalUsers > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalUsers}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

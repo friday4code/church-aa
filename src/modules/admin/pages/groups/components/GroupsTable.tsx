@@ -14,7 +14,8 @@ interface GroupsTableProps {
     sortField: keyof Group
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    totalGroups: number
+    pageSize?: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof Group) => void
@@ -32,7 +33,8 @@ const GroupsTable = ({
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalGroups,
+    pageSize = 50,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -47,7 +49,7 @@ const GroupsTable = ({
     const handleEdit = useCallback((g: Group) => onEditGroup(g), [onEditGroup])
     const handleDelete = useCallback((g: Group) => onDeleteGroup(g), [onDeleteGroup])
 
-    const Row = memo(({ group, index }: { group: Group; index: number }) => (
+    const Row = memo(({ group, index, currentPage, pageSize }: { group: Group; index: number; currentPage: number; pageSize: number }) => (
         <Table.Row key={group.id}>
             {isSuperAdmin && (
                 <Table.Cell>
@@ -57,7 +59,8 @@ const GroupsTable = ({
                     </Checkbox.Root>
                 </Table.Cell>
             )}
-            <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+            <Table.Cell>{group.id}</Table.Cell>
             <Table.Cell>{group.old_group || '-'}</Table.Cell>
             <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
             <Table.Cell>{group.leader || '-'}</Table.Cell>
@@ -89,9 +92,9 @@ const GroupsTable = ({
 
     const rows = useMemo(() => (
         paginatedGroups?.map((group, index) => (
-            <Row key={group.id} group={group} index={index} />
+            <Row key={group.id} group={group} index={index} currentPage={currentPage} pageSize={pageSize} />
         ))
-    ), [paginatedGroups, selectedGroups, handleSelect, handleEdit, handleDelete])
+    ), [paginatedGroups, selectedGroups, handleSelect, handleEdit, handleDelete, currentPage, pageSize])
 
     return (
         <>
@@ -112,12 +115,13 @@ const GroupsTable = ({
                                     </Checkbox.Root>
                                 </Table.ColumnHeader>
                             )}
+                            <Table.ColumnHeader fontWeight="bold">S/N</Table.ColumnHeader>
                             <Table.ColumnHeader
-                                fontWeight={"bold"}
+                                fontWeight="bold"
                                 cursor="pointer"
                                 onClick={() => onSort('id')}
                             >
-                                S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -156,11 +160,11 @@ const GroupsTable = ({
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalGroups > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalGroups}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

@@ -73,8 +73,8 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
 
     const downloadTemplate = () => {
         const templateData = [
-            { "STATE NAME": "LAGOS", "STATE CODE": "LAG", "LEADER": "Jane Doe" },
-            ...data.map(s => ({ "STATE NAME": s.name, "STATE CODE": s.code, "LEADER": s.leader }))
+            { "STATE": "LAGOS", "STATE CODE": "LAG", "LEADER": "Jane Doe" },
+            ...data.map(s => ({ "STATE": s.name, "STATE CODE": s.code, "LEADER": s.leader }))
         ]
 
         const worksheet = utils.json_to_sheet(templateData)
@@ -118,10 +118,14 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
                 return ''
             }
 
+            // Track processed entities to prevent duplicates within the file
+            const processedCodes = new Set<string>();
+            const processedNames = new Set<string>();
+
             // Process each row
             jsonData.forEach((row, index) => {
                 try {
-                    const stateName = getCell(row, ['STATE NAME', 'State Name'])
+                    const stateName = getCell(row, ['STATE', 'STATE NAME', 'State Name'])
                     const stateCode = getCell(row, ['STATE CODE', 'State Code'])
                     const leader = getCell(row, ['LEADER', 'Leader', 'State Leader'])
 
@@ -130,10 +134,22 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
                         return
                     }
 
-                    // Check if state already exists (by code or name)
+                    const normalizedCode = stateCode.toUpperCase();
+                    const normalizedName = stateName.toLowerCase();
+
+                    // Check for in-file duplicates
+                    if (processedCodes.has(normalizedCode) || processedNames.has(normalizedName)) {
+                        result.errors.push(`Row ${index + 1}: Duplicate entry in file for State ${stateName} (${stateCode})`)
+                        return;
+                    }
+
+                    processedCodes.add(normalizedCode);
+                    processedNames.add(normalizedName);
+
+                    // Check if state already exists (by code or name) in DB data
                     const existingState = data.find(
-                        state => state.code === stateCode.toUpperCase() ||
-                            state.name.toLowerCase() === stateName.toLowerCase()
+                        state => state.code === normalizedCode ||
+                            state.name.toLowerCase() === normalizedName
                     )
 
                     if (existingState) {

@@ -32,6 +32,7 @@ interface StateAttendanceReportProps {
     isLoading?: boolean
     onDownloadNewComers?: (data: ReportFormValues) => void
     onDownloadTitheOffering?: (data: ReportFormValues) => void
+    onDownloadConsolidated?: (data: ReportFormValues) => void
 }
 
 export const StateAttendanceReport = ({
@@ -145,9 +146,7 @@ export const StateAttendanceReport = ({
                     <Flex justify="end">
                         <Button
                             type="submit"
-                            bg="accent.100"
-                            color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: "accent.200" }}
+                            colorPalette="accent"
                             disabled={isLoading}
                             rounded="xl"
                             w={{ base: "100%", md: "auto" }}
@@ -159,9 +158,19 @@ export const StateAttendanceReport = ({
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
                         <Button
                             type="button"
-                            bg="accent.100"
-                            color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: "accent.200" }}
+                            colorPalette="accent"
+                            variant="surface"
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Consolidated Report
+                        </Button>
+                        <Button
+                            type="button"
+                            colorPalette="accent"
+                            variant="surface"
                             disabled={isLoading}
                             rounded="xl"
                             onClick={() => onDownloadNewComers?.(form.getValues() as ReportFormValues)}
@@ -171,9 +180,8 @@ export const StateAttendanceReport = ({
                         </Button>
                         <Button
                             type="button"
-                            bg="accent.100"
-                            color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: "accent.200" }}
+                            colorPalette="accent"
+                            variant="surface"
                             disabled={isLoading}
                             rounded="xl"
                             onClick={() => onDownloadTitheOffering?.(form.getValues() as ReportFormValues)}

@@ -57,6 +57,9 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const [currentPage, setCurrentPage] = useState(1)
     const pageSize = 10
     const [selectedAttendances, setSelectedAttendances] = useState<number[]>([])
+    const [yearFilter, setYearFilter] = useState<string>("")
+    const [monthFilter, setMonthFilter] = useState<string>("")
+    const [groupFilter, setGroupFilter] = useState<string>("")
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
@@ -98,7 +101,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         mutationFn: (data: any) => adminApi.createAttendance(data),
         onSuccess: async () => {
             toaster.create({ title: 'Attendance created successfully' })
-            await delay(1000);
+            
             queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDialogState({ isOpen: false, mode: "add" })
         },
@@ -111,7 +114,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         mutationFn: ({ id, data }: { id: number; data: any }) => adminApi.updateAttendance(id, data),
         onSuccess: async () => {
             toaster.create({ title: 'Attendance updated successfully' });
-            await delay(1000);
+            
             queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDialogState({ isOpen: false, mode: "edit" })
         },
@@ -125,7 +128,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         onSuccess: async () => {
             toaster.create({ title: 'Attendance deleted successfully' })
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDeleteDialogState({ isOpen: false })
@@ -151,16 +154,26 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     // Get districts for name lookup in search
     const { districts } = useDistricts()
 
+    const { data: groups = [] } = useQuery({
+        queryKey: ['groups'],
+        queryFn: adminApi.getGroups
+    })
+
     // Filter and sort attendances
     const filteredAndSortedAttendances = useMemo(() => {
         let filtered = serviceAttendances.filter(attendance => {
             const districtName = districts?.find(d => d.id === attendance.district_id)?.name || ''
-            return (
+            const matchesSearch = (
                 attendance.month.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 attendance.year.toString().includes(searchQuery) ||
                 String(attendance.district_id).includes(searchQuery) ||
                 districtName.toLowerCase().includes(searchQuery.toLowerCase())
             )
+            const matchesYear = yearFilter ? attendance.year.toString() === yearFilter : true
+            const matchesMonth = monthFilter ? attendance.month === monthFilter : true
+            const matchesGroup = groupFilter ? attendance.group_id.toString() === groupFilter : true
+
+            return matchesSearch && matchesYear && matchesMonth && matchesGroup
         })
 
         // Sorting
@@ -182,7 +195,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         })
 
         return filtered
-    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts])
+    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, groupFilter])
 
     // Calculate totals
     const totals = useMemo(() => calculateTotals(filteredAndSortedAttendances), [filteredAndSortedAttendances])
@@ -311,6 +324,13 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         onAddAttendance={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         onNavigateBack={() => navigate("/admin/attendance")}
+                        yearFilter={yearFilter}
+                        setYearFilter={setYearFilter}
+                        monthFilter={monthFilter}
+                        setMonthFilter={setMonthFilter}
+                        groupFilter={groupFilter}
+                        setGroupFilter={setGroupFilter}
+                        groups={groups as any}
                     />
                 </Suspense>
 

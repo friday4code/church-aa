@@ -18,7 +18,7 @@ import OldGroupAttendanceReport from "./OldGroupAttendanceReport"
 import DistrictAttendanceReport from "./DistrictAttendanceReport"
 import YouthAttendanceReport from "./YouthAttendanceReport"
 import type { ReportFormValues } from "./ReportFilters"
-import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet, buildRegionNewComersReportSheet, buildRegionTitheOfferingReportSheet, buildGroupNewComersReportSheet, buildGroupTitheOfferingReportSheet, buildOldGroupNewComersReportSheet, buildOldGroupTitheOfferingReportSheet, buildDistrictNewComersReportSheet, buildDistrictTitheOfferingReportSheet } from "./exporters"
+import { buildStateReportSheet, buildRegionReportSheet, buildOldGroupReportSheet, buildDistrictReportSheet, buildGroupReportSheet, exportSheet, getReportFileName, buildYouthMonthlyReportSheet, buildStateNewComersReportSheet, buildStateTitheOfferingReportSheet, buildRegionNewComersReportSheet, buildRegionTitheOfferingReportSheet, buildGroupNewComersReportSheet, buildGroupTitheOfferingReportSheet, buildOldGroupNewComersReportSheet, buildOldGroupTitheOfferingReportSheet, buildDistrictNewComersReportSheet, buildDistrictTitheOfferingReportSheet, buildConsolidatedReportSheet } from "./exporters"
 import { filterAttendanceRecords } from "@/utils/reportProcessing.utils"
 import type { AttendanceRecord } from "@/types/attendance.type"
 import type { OldGroup } from "@/types/oldGroups.type"
@@ -968,6 +968,7 @@ export const ReportsContent = () => {
                     statesCollection={scopedCollections.s}
                     onDownloadNewComers={handleDownloadNewComersReport}
                     onDownloadTitheOffering={handleDownloadTitheOfferingReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "region":
                 return <MemoRegionAttendanceReport
@@ -1038,6 +1039,14 @@ export const ReportsContent = () => {
                     <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
                         {allowedReportTypes.map((type) => {
                             const isActive = selectedTab === type
+                            const labelMap: Record<string, string> = {
+                                state: 'State',
+                                region: 'Region',
+                                oldGroup: 'Old Group of Districts',
+                                group: 'Group',
+                                district: 'District',
+                                youth: 'Youth'
+                            }
                             return (
                                 <Button
                                     key={type}
@@ -1050,7 +1059,7 @@ export const ReportsContent = () => {
                                     rounded="xl"
                                     textTransform="capitalize"
                                 >
-                                    {type} Report
+                                    {labelMap[type] || type} Report
                                 </Button>
                             )
                         })}

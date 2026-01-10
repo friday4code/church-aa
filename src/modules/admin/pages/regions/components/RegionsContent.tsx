@@ -9,7 +9,6 @@ import {
     Card,
     Spinner,
     Center,
-    Text,
 } from "@chakra-ui/react"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
 import type { Region } from "@/types/regions.type"
@@ -55,7 +54,7 @@ const RegionsContent = () => {
     const [sortField, setSortField] = useState<keyof Region>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 50
     const [selectedRegions, setSelectedRegions] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -93,20 +92,24 @@ const RegionsContent = () => {
 
     // Filter and sort regions
     const filteredAndSortedRegions = useMemo(() => {
-        let filtered = regions.filter(region =>
+        let filtered = regions.filter((region: Region) =>
             region.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             region.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
             region.leader.toLowerCase().includes(searchQuery.toLowerCase())
         )
 
         // Sorting
-        filtered.sort((a, b) => {
+        filtered.sort((a: Region, b: Region) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
             if (sortOrder === 'asc') {
-                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+                return aValue != null && bValue != null
+                    ? aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+                    : (aValue == null ? 1 : -1) // treat undefined/null as greater than any other value
             } else {
-                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+                return aValue != null && bValue != null
+                    ? aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+                    : (aValue == null ? 1 : -1) // treat undefined/null as greater than any other value
             }
         })
 
@@ -114,21 +117,21 @@ const RegionsContent = () => {
     }, [regions, searchQuery, sortField, sortOrder])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedRegions.length / pageSize)
+    const totalRegions = filteredAndSortedRegions.length
     const paginatedRegions = filteredAndSortedRegions.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedRegions.map(region => region.id)
-    const allIds = filteredAndSortedRegions.map(region => region.id)
+    const allIdsOnCurrentPage = paginatedRegions.map((region: Region) => region.id)
+    const allIds = filteredAndSortedRegions.map((region: Region) => region.id)
 
     const isAllSelectedOnPage = paginatedRegions.length > 0 &&
-        paginatedRegions.every(region => selectedRegions.includes(region.id))
+        paginatedRegions.every((region: Region) => selectedRegions.includes(region.id))
 
     const isAllSelected = filteredAndSortedRegions.length > 0 &&
-        filteredAndSortedRegions.every(region => selectedRegions.includes(region.id))
+        filteredAndSortedRegions.every((region: Region) => selectedRegions.includes(region.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
@@ -216,7 +219,7 @@ const RegionsContent = () => {
     }
 
     const handleSaveRegion = (data: any) => {
-        console.log("save",data);
+        console.log("save", data);
 
         if (dialogState.mode === 'add') {
             createRegion(data)
@@ -234,7 +237,7 @@ const RegionsContent = () => {
         }
     }, [selectedRegions, isActionBarOpen])
 
-    
+
 
     return (
         <>
@@ -242,7 +245,7 @@ const RegionsContent = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <RegionsHeader
-                        regions={regions}
+                        regions={paginatedRegions}
                         onAddRegion={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -254,12 +257,13 @@ const RegionsContent = () => {
                             {/* Table */}
                             <Suspense fallback={<RegionsTableLoading />}>
                                 <RegionsTable
+                                    pageSize={pageSize}
                                     paginatedRegions={paginatedRegions}
                                     selectedRegions={selectedRegions}
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    totalRegions={totalRegions}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}

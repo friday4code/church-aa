@@ -8,7 +8,7 @@ import {
     Portal,
     Center
 } from "@chakra-ui/react";
-import { NavLink, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { Box1, Chart1, Chart2, House, Layer, Location, Logout, Map, Map1, NoteText, Notepad, People, Profile, SidebarLeft, SidebarRight } from "iconsax-reactjs";
 import { useSidebarStore } from "@/store/ui.store";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +20,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 const AdminSidebar: React.FC = () => {
     const { isCollapsed, toggle } = useSidebarStore();
     const location = useLocation();
-    const { hasRole } = useAuth();
+    const { hasRole, logout } = useAuth();
 
     const isLinkActive = (href: string): boolean => {
         if (location.pathname === href) return true;
@@ -138,24 +138,23 @@ const AdminSidebar: React.FC = () => {
                         w="full"
                         left={0}
                         right={0}
-                        px={isCollapsed ? "5" : 6}
+                        px={isCollapsed ? "2" : 6}
                         justify={isCollapsed ? "start" : "space-between"}
                     >
-                        {/* {!isCollapsed && <Image src="/logo.png" w="10" />} */}
 
                         <IconButton
-                            // bg={"white"}
-                            color="white"
-                            _hover={{ color: "accent" }}
-                            size='sm'
-                            rounded="xl"
-                            variant={"ghost"}
+                            size="xs"
                             onClick={toggle}
+                            variant="subtle"
                         >
                             {isCollapsed ? <SidebarRight /> : <SidebarLeft />}
                         </IconButton>
 
-                        {!isCollapsed && <ColorModeButton bg={{ base: "whiteAlpha.900", _dark: "transparent" }} rounded='lg' size="xs" />}
+                        <IconButton size="xs" colorPalette="red" variant="subtle" onClick={logout}>
+                            <Logout />
+                        </IconButton>
+
+                        {!isCollapsed && <ColorModeButton size="xs" bg={{ base: "whiteAlpha.900", _dark: "transparent" }} />}
 
                         {!isCollapsed && <ProfileAvatar />}
 
@@ -176,29 +175,13 @@ export default AdminSidebar;
 
 
 const ProfileAvatar = () => {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-
+    const { user } = useAuth();
     return (
-        <Menu.Root positioning={{ placement: "right-end" }}>
-            <Menu.Trigger cursor="pointer" rounded="full" focusRing="outside">
-                <Avatar.Root size="sm">
-                    <Avatar.Fallback name={user?.name} />
-                    <Avatar.Image src={undefined} />
-                </Avatar.Root>
-            </Menu.Trigger>
-            <Portal>
-                <Menu.Positioner>
-                    <Menu.Content>
-                        <Menu.Item value="account" onClick={() => navigate("/admin/profile")}>
-                            <Profile variant="Bulk" /> Profile
-                        </Menu.Item>
-                        <Menu.Item onSelect={logout} color="red" value="logout">
-                            <Logout /> Logout
-                        </Menu.Item>
-                    </Menu.Content>
-                </Menu.Positioner>
-            </Portal>
-        </Menu.Root>
+        <Link to="/admin/profile">
+            <Avatar.Root size="xs" shape="rounded">
+                <Avatar.Fallback name={user?.name} />
+                <Avatar.Image src={undefined} />
+            </Avatar.Root>
+        </Link>
     )
 }

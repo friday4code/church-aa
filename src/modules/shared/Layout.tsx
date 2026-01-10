@@ -87,7 +87,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
                     zIndex={1}
                     transition="all"
                     transitionDuration="slow"
-                    w={{ base: "full", md: isCollapsed ? "80px" : "200px" }}
+                    w={{ base: "full", md: isCollapsed ? "90px" : "200px" }}
                     maxW="lg"
                 >
                     <ScrollArea.Viewport>

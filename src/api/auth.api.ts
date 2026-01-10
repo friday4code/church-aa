@@ -32,7 +32,7 @@ export const authApi = {
 
     requestPasswordReset: async (payload: { email: string }): Promise<{ status: boolean, message: string }> => {
         const { data } = await axiosClient.post("/auth/forgot-password", payload);
-        // await delay(2000);
+        // //await delay(2000);
         // return { status: true, message: "Password reset email sent successfully!" }
         return data;
     },

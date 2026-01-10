@@ -88,7 +88,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof Group>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 50
     const [selectedGroups, setSelectedGroups] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -126,7 +126,8 @@ const Content = () => {
 
     // Filter and sort groups
     const filteredAndSortedGroups = useMemo(() => {
-        let filtered = groups.filter(group =>
+// components/groups/Groups.tsx
+        let filtered = groups.filter((group: Group) =>
             group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.leader?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -134,13 +135,19 @@ const Content = () => {
         )
 
         // Sorting
-        filtered.sort((a, b) => {
+        filtered.sort((a: Group, b: Group) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
             if (sortOrder === 'asc') {
-                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return -1;
+                if (bValue == null) return 1;
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
             } else {
-                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return 1;
+                if (bValue == null) return -1;
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;  
             }
         })
 
@@ -148,21 +155,21 @@ const Content = () => {
     }, [groups, searchQuery, sortField, sortOrder])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedGroups.length / pageSize)
+    const totalGroups = filteredAndSortedGroups.length
     const paginatedGroups = filteredAndSortedGroups.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedGroups.map(group => group.id)
-    const allIds = filteredAndSortedGroups.map(group => group.id)
+    const allIdsOnCurrentPage = paginatedGroups.map((group: Group) => group.id)
+    const allIds = filteredAndSortedGroups.map((group: Group) => group.id)
 
     const isAllSelectedOnPage = paginatedGroups.length > 0 &&
-        paginatedGroups.every(group => selectedGroups.includes(group.id))
+        paginatedGroups.every((group: Group) => selectedGroups.includes(group.id))
 
     const isAllSelected = filteredAndSortedGroups.length > 0 &&
-        filteredAndSortedGroups.every(group => selectedGroups.includes(group.id))
+        filteredAndSortedGroups.every((group: Group) => selectedGroups.includes(group.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
@@ -296,7 +303,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <GroupsHeader
-                        groups={groups}
+                        groups={paginatedGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -313,7 +320,7 @@ const Content = () => {
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    totalGroups={totalGroups}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}

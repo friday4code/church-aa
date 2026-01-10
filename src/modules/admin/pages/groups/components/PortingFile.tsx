@@ -123,6 +123,9 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                 return ''
             }
 
+            // Track processed entities to prevent duplicates within the file
+            const processedGroups = new Set<string>();
+
             // Process each row
             for (const [index, row] of jsonData.entries()) {
                 try {
@@ -143,9 +146,16 @@ const UploadGroupsFromFile = ({ data }: UploadGroupsFromFileProps) => {
                         continue
                     }
 
+                    const normalizedGroupName = groupName.toLowerCase();
+                    if (processedGroups.has(normalizedGroupName)) {
+                        result.errors.push(`Row ${index + 1}: Duplicate entry in file for Group ${groupName}`)
+                        continue;
+                    }
+                    processedGroups.add(normalizedGroupName);
+
                     // Check if group already exists (by name or other identifier)
                     const existingGroup = data.find(
-                        group => group.name.toLowerCase() === groupName.toLowerCase() ||
+                        group => group.name.toLowerCase() === normalizedGroupName ||
                             group.id === index + 1 // Using index as fallback identifier
                     )
 

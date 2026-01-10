@@ -4,6 +4,11 @@ import { toaster } from "@/components/ui/toaster";
 import { adminApi } from "@/api/admin.api";
 import { delay } from "@/utils/helpers";
 
+export interface State {
+    id: number;
+    name: string;
+}
+
 interface UseStatesOptions {
     onCreateSuccess?: () => void;
     onUpdateSuccess?: () => void;
@@ -39,7 +44,7 @@ export const useStates = (options: UseStatesOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['states'] });
 
@@ -68,7 +73,7 @@ export const useStates = (options: UseStatesOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['states'] });
 
@@ -96,7 +101,7 @@ export const useStates = (options: UseStatesOptions = {}) => {
                 closable: true,
             });
 
-            await delay(1000);
+            
 
             queryClient.invalidateQueries({ queryKey: ['states'] });
 

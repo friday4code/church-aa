@@ -4,7 +4,6 @@
 import { Table, Checkbox, IconButton, Menu, Portal, ButtonGroup, Pagination } from "@chakra-ui/react"
 import { memo, useMemo, useCallback } from "react"
 import { More, Edit, Trash, ArrowLeft3, ArrowRight3 } from "iconsax-reactjs"
-import RegionsTableLoading from "./RegionsTableLoading"
 import type { Region } from "@/types/regions.type"
 import { useAuth } from "@/hooks/useAuth"
 
@@ -14,7 +13,8 @@ interface RegionsTableProps {
     sortField: keyof Region
     sortOrder: 'asc' | 'desc'
     currentPage: number
-    totalPages: number
+    pageSize: number
+    totalRegions: number
     isLoading?: boolean
     isAllSelectedOnPage: boolean
     onSort: (field: keyof Region) => void
@@ -26,13 +26,13 @@ interface RegionsTableProps {
 }
 
 const RegionsTable = ({
-    isLoading,
+    pageSize,
     paginatedRegions,
     selectedRegions,
     sortField,
     sortOrder,
     currentPage,
-    totalPages,
+    totalRegions,
     isAllSelectedOnPage,
     onSort,
     onSelectAllOnPage,
@@ -47,7 +47,7 @@ const RegionsTable = ({
     const handleEdit = useCallback((r: Region) => onEditRegion(r), [onEditRegion])
     const handleDelete = useCallback((r: Region) => onDeleteRegion(r), [onDeleteRegion])
 
-    const Row = memo(({ region, index }: { region: Region; index: number }) => (
+    const Row = memo(({ region, index, currentPage, pageSize }: { region: Region; index: number; currentPage: number; pageSize: number }) => (
         <Table.Row key={region.id}>
             {isSuperAdmin && (
                 <Table.Cell>
@@ -57,7 +57,8 @@ const RegionsTable = ({
                     </Checkbox.Root>
                 </Table.Cell>
             )}
-            <Table.Cell>{index + 1}</Table.Cell>
+            <Table.Cell>{(currentPage - 1) * pageSize + index + 1}</Table.Cell>
+            <Table.Cell>{region.id}</Table.Cell>
             <Table.Cell fontWeight="medium">{region.name}</Table.Cell>
             <Table.Cell>{region.state}</Table.Cell>
             <Table.Cell>{region.code}</Table.Cell>
@@ -90,7 +91,7 @@ const RegionsTable = ({
 
     const rows = useMemo(() => (
         paginatedRegions.map((region, index) => (
-            <Row key={region.id} region={region} index={index} />
+            <Row key={region.id} currentPage={currentPage} pageSize={pageSize} region={region} index={index} />
         ))
     ), [paginatedRegions, selectedRegions, handleSelect, handleEdit, handleDelete])
     return (
@@ -117,6 +118,13 @@ const RegionsTable = ({
                                 onClick={() => onSort('id')}
                             >
                                 S/N {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('id')}
+                            >
+                                ID {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             <Table.ColumnHeader
                                 fontWeight={"bold"}
@@ -162,11 +170,11 @@ const RegionsTable = ({
             </Table.ScrollArea>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {totalRegions > pageSize && (
                 <Pagination.Root
                     colorPalette={"accent"}
-                    count={totalPages}
-                    pageSize={1}
+                    count={totalRegions}
+                    pageSize={pageSize}
                     page={currentPage}
                     onPageChange={(d) => onPageChange(d.page)}
                 >

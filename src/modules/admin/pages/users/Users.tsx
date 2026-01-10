@@ -88,7 +88,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof User>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 4
     const [selectedUsers, setSelectedUsers] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -177,7 +177,7 @@ const Content = () => {
     }, [users, searchQuery, sortField, sortOrder, hasRole, authUser])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedUsers.length / pageSize)
+    const totalUsers = filteredAndSortedUsers.length
     const paginatedUsers = filteredAndSortedUsers.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
@@ -363,7 +363,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <UsersHeader
-                        users={users}
+                        users={paginatedUsers}
                         onAddUser={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -395,7 +395,8 @@ const Content = () => {
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    totalUsers={totalUsers}
+                                    pageSize={pageSize}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}

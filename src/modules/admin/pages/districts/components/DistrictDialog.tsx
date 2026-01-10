@@ -22,6 +22,8 @@ import { adminApi } from "@/api/admin.api"
 import { toaster } from "@/components/ui/toaster"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
+import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 
 interface DistrictDialogProps {
     isLoading?: boolean
@@ -43,6 +45,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     const districtDialogSchema = z.object({
         state_id: z.number().min(1, 'State is required'),
         region_id: z.number().min(1, 'Region (LGA) is required'),
+        old_group_id: z.number().min(1, 'Old Group is required'),
+        group_id: z.number().min(1, 'Group is required'),
         name: z.string().min(1, 'District name is required'),
         leader: z.string().min(1, 'District leader is required'),
         code: z.string().min(1, 'District code is required'),
@@ -55,6 +59,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         defaultValues: {
             state_id: district?.state_id || userStateId || 0,
             region_id: district?.region_id || 0,
+            old_group_id: district?.old_group_id || 0,
+            group_id: district?.group_id || 0,
             name: district?.name || '',
             leader: district?.leader || '',
             code: district?.code || '',
@@ -65,6 +71,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
 
     const currentStateName = watch('state_name')
     const currentRegionId = watch('region_id')
+    const currentOldGroupId = watch('old_group_id')
+    const currentGroupId = watch('group_id')
     const watchedStateId = watch('state_id')
 
     // Get state name for display
@@ -321,6 +329,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
 
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
+                                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('state_name')} />
                                     <input type="hidden" {...register('region_name')} />
                                     

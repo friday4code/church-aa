@@ -134,6 +134,9 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                 return ''
             }
 
+            // Track processed entities to prevent duplicates within the file
+            const processedRegions = new Set<string>();
+
             // Process each row
             for (const [index, row] of jsonData.entries()) {
                 try {
@@ -153,6 +156,13 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                         result.errors.push(`Row ${index + 1}: State "${state}" not found in system`)
                         continue
                     }
+
+                    const uniqueKey = `${state.toLowerCase()}-${regionName.toLowerCase()}`;
+                    if (processedRegions.has(uniqueKey)) {
+                         result.errors.push(`Row ${index + 1}: Duplicate entry in file for Region ${regionName} in ${state}`)
+                         continue;
+                    }
+                    processedRegions.add(uniqueKey);
 
                     // Check if region already exists (by name and state)
                     const existingRegion = regionsData.find(

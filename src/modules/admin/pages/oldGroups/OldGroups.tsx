@@ -19,12 +19,11 @@ import { toaster, Toaster } from "@/components/ui/toaster"
 import { useOldGroups } from "../../hooks/useOldGroup"
 import type { OldGroupFormData } from "../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
-import { delay } from "@/utils/helpers"
 import { useAuth } from "@/hooks/useAuth"
 
 // Lazy load components
 const OldGroupsHeader = lazy(() => import("./components/OldGroupsHeader"))
-const ExportButtons = lazy(() => import("./components/ExportButtons"))
+// const ExportButtons = lazy(() => import("./components/ExportButtons"))
 const OldGroupsTable = lazy(() => import("./components/OldGroupsTable"))
 const OldGroupsActionBar = lazy(() => import("./components/OldGroupsActionBar"))
 const OldGroupDialog = lazy(() => import("./components/OldGroupDialog"))
@@ -91,7 +90,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof OldGroup>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 50
     const [selectedGroups, setSelectedGroups] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -109,12 +108,12 @@ const Content = () => {
     } = useOldGroups({
         async onCreateSuccess() {
             toaster.success({ description: ` Old group created!` });
-            await delay(1000);
+            
             setDialogState({ isOpen: false, mode: 'add' })
         },
         async onUpdateSuccess() {
             toaster.success({ description: `Old group updated!` });
-            await delay(1000);
+            
             setDialogState({ isOpen: false, mode: 'edit' })
         },
     })
@@ -134,42 +133,49 @@ const Content = () => {
 
     // Filter and sort groups
     const filteredAndSortedGroups = useMemo(() => {
-        let filtered = oldGroups.filter(group =>
+// components/oldgroups/OldGroups.tsx
+        let filtered = oldGroups.filter((group: OldGroup) =>
             group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (group.leader && group.leader.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
         // Sorting
-        filtered.sort((a, b) => {
+        filtered.sort((a: OldGroup, b: OldGroup) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
             if (sortOrder === 'asc') {
-                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return -1;
+                if (bValue == null) return 1;
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
             } else {
-                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
+                if (aValue == null && bValue == null) return 0;
+                if (aValue == null) return 1;
+                if (bValue == null) return -1;
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
             }
         })
 
         return filtered
-    }, [oldGroups, searchQuery, sortField, sortOrder])
+    }, [oldGroups, searchQuery, sortField, sortOrder, pageSize])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedGroups.length / pageSize)
-    const paginatedGroups = filteredAndSortedGroups.slice(
+    const totalOldGroups = filteredAndSortedGroups.length
+    const paginatedOldGroups = filteredAndSortedGroups.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedGroups.map(group => group.id)
-    const allIds = filteredAndSortedGroups.map(group => group.id)
+    const allIdsOnCurrentPage = useMemo(() => paginatedOldGroups.map((group: OldGroup) => group.id), [paginatedOldGroups])
+    const allIds = useMemo(() => filteredAndSortedGroups.map((group: OldGroup) => group.id), [filteredAndSortedGroups])
 
-    const isAllSelectedOnPage = paginatedGroups.length > 0 &&
-        paginatedGroups.every(group => selectedGroups.includes(group.id))
+    const isAllSelectedOnPage = useMemo(() => paginatedOldGroups.length > 0 &&
+        paginatedOldGroups.every((group: OldGroup) => selectedGroups.includes(group.id)), [paginatedOldGroups, selectedGroups])   
 
     const isAllSelected = filteredAndSortedGroups.length > 0 &&
-        filteredAndSortedGroups.every(group => selectedGroups.includes(group.id))
+        filteredAndSortedGroups.every((group: OldGroup) => selectedGroups.includes(group.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
@@ -288,7 +294,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <OldGroupsHeader
-                        oldGroups={oldGroups}
+                        oldGroups={paginatedOldGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                     />
@@ -301,12 +307,13 @@ const Content = () => {
                             {/* Table */}
                             <Suspense fallback={<TableLoading />}>
                                 <OldGroupsTable
-                                    paginatedGroups={paginatedGroups}
+                                    paginatedOldGroups={paginatedOldGroups}
                                     selectedGroups={selectedGroups}
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    pageSize={pageSize}
+                                    totalOldGroups={totalOldGroups}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}
@@ -370,7 +377,7 @@ const Content = () => {
                         <BulkDeleteDialog
                             isOpen={isBulkDeleteOpen}
                             selectedGroups={selectedGroups}
-                            groups={paginatedGroups}
+                            groups={paginatedOldGroups}
                             onClose={() => setIsBulkDeleteOpen(false)}
                             onConfirm={confirmBulkDelete}
                         />
@@ -383,7 +390,7 @@ const Content = () => {
                         <BulkEditDialog
                             isOpen={isBulkEditOpen}
                             selectedGroups={selectedGroups}
-                            groups={paginatedGroups}
+                            groups={paginatedOldGroups}
                             onClose={handleBulkEditClose}
                             onUpdate={handleBulkUpdate}
                             isLoading={isUpdating}

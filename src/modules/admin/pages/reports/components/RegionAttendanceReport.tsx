@@ -210,9 +210,8 @@ export const RegionAttendanceReport = ({
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
                         <Button
                             type="button"
-                            bg="accent.100"
-                            color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: "accent.200" }}
+                            colorPalette="accent"
+                            variant="surface"
                             disabled={isLoading}
                             rounded="xl"
                             onClick={() => onDownloadNewComers?.(form.getValues() as ReportFormValues)}
@@ -222,9 +221,8 @@ export const RegionAttendanceReport = ({
                         </Button>
                         <Button
                             type="button"
-                            bg="accent.100"
-                            color={{ base: "white", _dark: "gray.900" }}
-                            _hover={{ bg: "accent.200" }}
+                            colorPalette="accent"
+                            variant="surface"
                             disabled={isLoading}
                             rounded="xl"
                             onClick={() => onDownloadTitheOffering?.(form.getValues() as ReportFormValues)}

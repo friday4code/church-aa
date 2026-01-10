@@ -77,7 +77,7 @@ const Login = () => {
                 description: "Login successful!",
             });
 
-            await delay(1000);
+            
 
             // Get the appropriate redirect path based on user roles from the response
             const redirectPath = getRedirectPath(response.user?.roles || []);

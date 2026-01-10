@@ -1,23 +1,41 @@
 // components/districts/components/DistrictsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, NativeSelect } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadDistrictsFromFile from "../../../components/PortingFile"
 import DistrictsExport from "./DistrictsExport"
 import type { District } from "@/types/districts.type"
 import { useNavigate } from "react-router"
+import type { State } from "@/modules/admin/hooks/useState"
+import type { Region } from "@/modules/admin/hooks/useRegion"
 
 interface DistrictsHeaderProps {
     districts: District[]
     onAddDistrict: () => void
     onSearch: (value: string) => void
+    states: State[]
+    regions: Region[]
+    stateFilter: string
+    setStateFilter: (value: string) => void
+    regionFilter: string
+    setRegionFilter: (value: string) => void
 }
 
 import { useState, useCallback } from "react"
 import { useAuth } from "@/hooks/useAuth"
 
-const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeaderProps) => {
+const DistrictsHeader = ({ 
+    districts, 
+    onAddDistrict, 
+    onSearch,
+    states,
+    regions,
+    stateFilter,
+    setStateFilter,
+    regionFilter,
+    setRegionFilter
+}: DistrictsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -125,6 +143,7 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
                     )}
 
                     {isSuperAdmin && <HStack hideBelow={"md"}>
+                        {/* <DistrictsExport districts={districts} /> */}
                         <UploadDistrictsFromFile data={districts} />
 
                         {/* desktop Add District Button */}
@@ -145,10 +164,16 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
 
                 </Flex>
 
-                {/* Second line: Search input (full width) */}
-                <HStack w="full" justify={"space-between"}>
+                {/* Second line: Search + Filters + Actions */}
+                <Flex
+                    direction={{ base: "column", md: "row" }}
+                    gap={4}
+                    justify="space-between"
+                    align={{ base: "stretch", md: "center" }}
+                >
                     <InputGroup
-                        maxW="full"
+                        flex="1"
+                        maxW={{ md: "320px" }}
                         colorPalette={"accent"}
                         startElement={<SearchNormal1 />}
                         endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
@@ -162,10 +187,42 @@ const DistrictsHeader = ({ districts, onAddDistrict, onSearch }: DistrictsHeader
                             size={{ base: "md", md: "lg" }}
                         />
                     </InputGroup>
+
+                    {/* Filters */}
+                    <HStack gap={2} overflowX="auto" pb={{ base: 2, md: 0 }}>
+                        <NativeSelect.Root size="md" width="150px">
+                            <NativeSelect.Field 
+                                placeholder="All States" 
+                                value={stateFilter} 
+                                onChange={(e) => setStateFilter(e.target.value)}
+                                rounded="xl"
+                            >
+                                {states?.map((state) => (
+                                    <option key={state.id} value={state.id}>{state.name}</option>
+                                ))}
+                            </NativeSelect.Field>
+                            <NativeSelect.Indicator />
+                        </NativeSelect.Root>
+
+                        <NativeSelect.Root size="md" width="150px">
+                            <NativeSelect.Field 
+                                placeholder="All Regions" 
+                                value={regionFilter} 
+                                onChange={(e) => setRegionFilter(e.target.value)}
+                                rounded="xl"
+                            >
+                                {regions?.map((region) => (
+                                    <option key={region.id} value={region.id}>{region.name}</option>
+                                ))}
+                            </NativeSelect.Field>
+                            <NativeSelect.Indicator />
+                        </NativeSelect.Root>
+                    </HStack>
+
                     <Box hideBelow={"md"}>
                         <DistrictsExport districts={districts} />
                     </Box>
-                </HStack>
+                </Flex>
 
             </VStack>
         </>

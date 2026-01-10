@@ -16,10 +16,12 @@ import { useAuth } from "@/hooks/useAuth"
 import type { District, Districts } from "@/types/districts.type"
 import type { DistrictFormData } from "@/modules/admin/schemas/districts.schema"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
 
 // Lazy load components
 const DistrictsHeader = lazy(() => import("./DistrictsHeader"))
-const DistrictsExport = lazy(() => import("./DistrictsExport"))
+// const DistrictsExport = lazy(() => import("./DistrictsExport"))
 const DistrictsTable = lazy(() => import("./DistrictsTable"))
 const DistrictsActionBar = lazy(() => import("./DistrictsActionBar"))
 const DistrictDialog = lazy(() => import("./DistrictDialog"))
@@ -61,8 +63,10 @@ export const DistrictsContent = () => {
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof District>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+    const [stateFilter, setStateFilter] = useState("")
+    const [regionFilter, setRegionFilter] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const pageSize = 50
     const [selectedDistricts, setSelectedDistricts] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -88,6 +92,8 @@ export const DistrictsContent = () => {
             setDeleteDialogState({ isOpen: false })
         },
     })
+    const { states } = useStates()
+    const { regions } = useRegions()
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -103,16 +109,22 @@ export const DistrictsContent = () => {
 
     // Filter and sort districts
     const filteredAndSortedDistricts = useMemo(() => {
-        let filtered = (districts as Districts)?.filter(district =>
-            district.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            district.code.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        let filtered = (districts as Districts)?.filter((district: District) => {
+            const matchesSearch = (
+                district.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                district.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                district.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                district.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                district.code.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            const matchesState = stateFilter ? district.state_id?.toString() === stateFilter : true
+            const matchesRegion = regionFilter ? district.region_id?.toString() === regionFilter : true
+
+            return matchesSearch && matchesState && matchesRegion
+        })
 
         // Sorting
-        filtered.sort((a, b) => {
+        filtered.sort((a: District, b: District) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
 
@@ -129,24 +141,24 @@ export const DistrictsContent = () => {
         })
 
         return filtered
-    }, [districts, searchQuery, sortField, sortOrder])
+    }, [districts, searchQuery, sortField, sortOrder, stateFilter, regionFilter])
 
     // Pagination
-    const totalPages = Math.ceil(filteredAndSortedDistricts.length / pageSize)
+    const totalDistricts = filteredAndSortedDistricts.length
     const paginatedDistricts = filteredAndSortedDistricts.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
     )
 
     // Selection logic
-    const allIdsOnCurrentPage = paginatedDistricts.map(district => district.id)
-    const allIds = filteredAndSortedDistricts.map(district => district.id)
+    const allIdsOnCurrentPage = paginatedDistricts.map((district: District) => district.id)
+    const allIds = filteredAndSortedDistricts.map((district: District) => district.id)
 
     const isAllSelectedOnPage = paginatedDistricts.length > 0 &&
-        paginatedDistricts.every(district => selectedDistricts.includes(district.id))
+        paginatedDistricts.every((district: District) => selectedDistricts.includes(district.id))
 
     const isAllSelected = filteredAndSortedDistricts.length > 0 &&
-        filteredAndSortedDistricts.every(district => selectedDistricts.includes(district.id))
+        filteredAndSortedDistricts.every((district: District) => selectedDistricts.includes(district.id))
 
     const handleSelectAllOnPage = () => {
         if (isAllSelectedOnPage) {
@@ -256,26 +268,21 @@ export const DistrictsContent = () => {
         }
     }, [selectedDistricts, isActionBarOpen])
 
-    // if (isLoading && districts.length === 0) {
-    //     return (
-    //         <Center h="400px">
-    //             <VStack gap="4">
-    //                 <Spinner size="xl" color="accent.500" />
-    //                 <Text fontSize="lg" color="gray.600">Loading districts...</Text>
-    //             </VStack>
-    //         </Center>
-    //     )
-    // }
-
     return (
         <>
             <VStack gap="6" align="stretch">
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <DistrictsHeader
-                        districts={districts}
+                        districts={paginatedDistricts}
                         onAddDistrict={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
+                        states={states || []}
+                        regions={regions || []}
+                        stateFilter={stateFilter}
+                        setStateFilter={setStateFilter}
+                        regionFilter={regionFilter}
+                        setRegionFilter={setRegionFilter}
                     />
                 </Suspense>
 
@@ -290,15 +297,15 @@ export const DistrictsContent = () => {
                                     sortField={sortField}
                                     sortOrder={sortOrder}
                                     currentPage={currentPage}
-                                    totalPages={totalPages}
+                                    totalDistricts={totalDistricts}
+                                    pageSize={pageSize}
                                     isAllSelectedOnPage={isAllSelectedOnPage}
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}
                                     onSelectDistrict={handleSelectDistrict}
-                                    onEditDistrict={(district) => setDialogState({ isOpen: true, district, mode: 'edit' })}
+                                    onEditDistrict={(district) => setDialogState({ isOpen: true, mode: 'edit', district })}
                                     onDeleteDistrict={handleDeleteDistrict}
                                     onPageChange={setCurrentPage}
-                                    isLoading={isLoading}
                                 />
                             </Suspense>
 
