@@ -2,8 +2,10 @@
 export interface State {
     code: string;
     id: number;
-    leader: string;
     name: string;
+    leader: string;
+    leader_email:string;
+    leader_phone:string;
 }
 
 export type States = State[];

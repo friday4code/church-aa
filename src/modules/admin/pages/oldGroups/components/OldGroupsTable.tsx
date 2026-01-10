@@ -65,6 +65,8 @@ const OldGroupsTable = ({
             <Table.Cell fontWeight="medium">{group.name}</Table.Cell>
             <Table.Cell>{group.code}</Table.Cell>
             <Table.Cell>{group.leader}</Table.Cell>
+            <Table.Cell>{group.leader_email}</Table.Cell>
+            <Table.Cell>{group.leader_phone}</Table.Cell>
             {isSuperAdmin && (
                 <Table.Cell textAlign="center">
                     <Menu.Root>
@@ -99,7 +101,7 @@ const OldGroupsTable = ({
     return (
         <>
             {/* Table */}
-            <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
+            <Table.ScrollArea borderWidth="1px" maxW="calc(100vw - 18rem)" w="full" rounded="xl">
                 <Table.Root size="sm">
                     <Table.Header>
                         <Table.Row fontSize={"md"}>
@@ -150,6 +152,20 @@ const OldGroupsTable = ({
                                 onClick={() => onSort('leader')}
                             >
                                 Group Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_email' as keyof OldGroup)}
+                            >
+                                Leader Email {sortField === 'leader_email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_phone' as keyof OldGroup)}
+                            >
+                                Leader Phone {sortField === 'leader_phone' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             {isSuperAdmin && (
                                 <Table.ColumnHeader

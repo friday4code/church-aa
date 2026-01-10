@@ -12,8 +12,7 @@ import {
 } from "@chakra-ui/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { type DistrictFormData } from "../../../schemas/districts.schema"
-import { z } from "zod"
+import { districtSchema, type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
@@ -24,6 +23,7 @@ import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
+import type { State } from "@/types/states.type"
 
 interface DistrictDialogProps {
     isLoading?: boolean
@@ -42,20 +42,9 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
     const generatedCodesCache = useRef<Set<string>>(new Set())
 
-    const districtDialogSchema = z.object({
-        state_id: z.number().min(1, 'State is required'),
-        region_id: z.number().min(1, 'Region (LGA) is required'),
-        old_group_id: z.number().min(1, 'Old Group is required'),
-        group_id: z.number().min(1, 'Group is required'),
-        name: z.string().min(1, 'District name is required'),
-        leader: z.string().min(1, 'District leader is required'),
-        code: z.string().min(1, 'District code is required'),
-        state_name: z.string().optional(),
-        region_name: z.string().optional(),
-    })
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<DistrictFormData>({
-        resolver: zodResolver(districtDialogSchema),
+        resolver: zodResolver(districtSchema),
         defaultValues: {
             state_id: district?.state_id || userStateId || 0,
             region_id: district?.region_id || 0,
@@ -63,6 +52,8 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
             group_id: district?.group_id || 0,
             name: district?.name || '',
             leader: district?.leader || '',
+            leader_email: district?.leader_email || '',
+            leader_phone: district?.leader_phone || '',
             code: district?.code || '',
             state_name: district?.state || '',
             region_name: district?.region || '',
@@ -96,7 +87,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     // Handle state selection - convert name to ID
     const handleStateChange = (stateName: string) => {
         if (stateName) {
-            const state = states?.find(s => s.name === stateName)
+            const state = states?.find((s: State) => s.name === stateName)
             if (state) {
                 setValue('state_id', state.id, { shouldValidate: false })
                 setValue('state_name', stateName, { shouldValidate: false })
@@ -144,6 +135,17 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         }
     }
 
+    const handleOldGroupIdChange = (oldGroupId?: number) => {
+        setValue('old_group_id', oldGroupId || 0, { shouldValidate: false })
+        setValue('group_id', 0, { shouldValidate: false })
+        trigger('old_group_id')
+    }
+
+    const handleGroupIdChange = (groupId?: number) => {
+        setValue('group_id', groupId || 0, { shouldValidate: false })
+        trigger('group_id')
+    }
+
     const onSubmit = (data: DistrictFormData) => {
         onSave(data)
         reset()
@@ -171,7 +173,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                 let stateId = district.state_id || 0
                 const regionId = district.region_id || 0
                 if (!stateId && district.state && states?.length) {
-                    const foundState = states.find(s => s.name === district.state)
+                    const foundState = states.find((s: State) => s.name === district.state)
                     stateId = foundState?.id || 0
                 }
                 // region name will be resolved by RegionIdCombobox
@@ -179,8 +181,12 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                 reset({
                     state_id: stateId,
                     region_id: regionId,
+                    old_group_id: district.old_group_id || 0,
+                    group_id: district.group_id || 0,
                     name: district.name,
                     leader: district.leader || '',
+                    leader_email: district.leader_email || '',
+                    leader_phone: district.leader_phone || '',
                     code: district.code || '',
                     state_name: district.state || '',
                     region_name: '',
@@ -190,8 +196,12 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                 reset({
                     state_id: isSuperAdmin ? 0 : user?.state_id || 0,
                     region_id: user?.region_id || 0,
+                    old_group_id: 0,
+                    group_id: 0,
                     name: '',
                     leader: '',
+                    leader_email: '',
+                    leader_phone: '',
                     code: '',
                     state_name: '',
                     region_name: '',
@@ -229,7 +239,7 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
         }
 
         if (!currentStateName && states?.length) {
-            const matchedState = states.find((state) => state.id === userStateId)
+            const matchedState = states.find((state: State) => state.id === userStateId)
             if (matchedState) {
                 setValue('state_name', matchedState.name)
             }
@@ -281,7 +291,25 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                                     </Field.Root>
 
-                                    
+                                    <Field.Root required invalid={!!errors.old_group_id}>
+                                        <OldGroupIdCombobox
+                                            value={currentOldGroupId}
+                                            onChange={handleOldGroupIdChange}
+                                            invalid={!!errors.old_group_id}
+                                            regionId={currentRegionId}
+                                        />
+                                        <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root required invalid={!!errors.group_id}>
+                                        <GroupIdCombobox
+                                            value={currentGroupId}
+                                            onChange={handleGroupIdChange}
+                                            invalid={!!errors.group_id}
+                                            oldGroupId={currentOldGroupId}
+                                        />
+                                        <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
+                                    </Field.Root>
 
                                     <Field.Root required invalid={!!errors.name}>
                                         <Field.Label>District Name
@@ -327,13 +355,32 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                     </Field.Root>
 
+                                    <Field.Root invalid={!!errors.leader_email}>
+                                        <Field.Label>Leader Email</Field.Label>
+                                        <Input
+                                            rounded="lg"
+                                            type="email"
+                                            placeholder="Enter leader email address"
+                                            {...register('leader_email')}
+                                        />
+                                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root invalid={!!errors.leader_phone}>
+                                        <Field.Label>Leader Phone</Field.Label>
+                                        <Input
+                                            rounded="lg"
+                                            placeholder="Enter leader phone number"
+                                            {...register('leader_phone')}
+                                        />
+                                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
+                                    </Field.Root>
+
                                     <input type="hidden" {...register('state_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('region_id', { valueAsNumber: true })} />
-                                    <input type="hidden" {...register('old_group_id', { valueAsNumber: true })} />
-                                    <input type="hidden" {...register('group_id', { valueAsNumber: true })} />
                                     <input type="hidden" {...register('state_name')} />
                                     <input type="hidden" {...register('region_name')} />
-                                    
+
                                 </VStack>
                             </form>
                         </Dialog.Body>

@@ -10,15 +10,27 @@ export const exportRegionsToExcel = (data: Region[], filename: string = 'regions
         'State': item.state,
         'Region Name': item.name,
         'Region Code': item.code,
-        'Region Leader': item.leader
+        'Region Leader': item.leader,
+        'Leader Email': item.leader_email,
+        'Leader Phone': item.leader_phone,
     })))
 
+    // Add columns for leader_email and leader_phone
+    worksheet['A1'].v = 'State'
+    worksheet['B1'].v = 'Region Name'
+    worksheet['C1'].v = 'Region Code'
+    worksheet['D1'].v = 'Region Leader'
+    worksheet['E1'].v = 'Leader Email'
+    worksheet['F1'].v = 'Leader Phone'
+    
     // Set column widths to fit content
     const colWidths = [
         { wch: Math.max(...data.map(item => item.state?.length || 0), 'State'.length) + 2 }, // State
         { wch: Math.max(...data.map(item => item.name?.length || 0), 'Region Name'.length) + 2 }, // Region Name
         { wch: Math.max(...data.map(item => item.code?.length || 0), 'Region Code'.length) + 2 }, // Region Code
         { wch: Math.max(...data.map(item => item.leader?.length || 0), 'Region Leader'.length) + 2 }, // Region Leader
+        { wch: Math.max(...data.map(item => item.leader_email?.length || 0), 'Leader Email'.length) + 2 }, // Leader Email
+        { wch: Math.max(...data.map(item => item.leader_phone?.length || 0), 'Leader Phone'.length) + 2 }, // Leader Phone
     ]
     worksheet['!cols'] = colWidths
 
@@ -32,7 +44,9 @@ export const exportRegionsToCSV = (data: Region[], filename: string = 'regions')
         'State': item.state,
         'Region Name': item.name,
         'Region Code': item.code,
-        'Region Leader': item.leader
+        'Region Leader': item.leader,
+        'Leader Email': item.leader_email,
+        'Leader Phone': item.leader_phone,
     })))
     const csv = utils.sheet_to_csv(worksheet)
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -56,8 +70,15 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
 
     autoTable(doc, {
-        head: [['State', 'Region Name', 'Region Code', 'Region Leader']],
-        body: data.map(item => [item.state, item.name, item.code, item.leader]),
+        head: [['State', 'Region Name', 'Region Code', 'Region Leader', 'Leader Email', 'Leader Phone']],
+        body: data.map(item => [
+            item.state ?? '',
+            item.name ?? '',
+            item.code ?? '',
+            item.leader ?? '',
+            item.leader_email ?? '',
+            item.leader_phone ?? ''
+        ]),
         startY: 30,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [66, 135, 245] }, // Blue header
@@ -65,7 +86,9 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
             0: { cellWidth: 'auto' }, // State
             1: { cellWidth: 'auto' }, // Region Name
             2: { cellWidth: 'auto' }, // Region Code
-            3: { cellWidth: 'auto' }  // Region Leader
+            3: { cellWidth: 'auto' },  // Region Leader
+            4: { cellWidth: 'auto' },  // Leader Email
+            5: { cellWidth: 'auto' }   // Leader Phone
         },
         tableWidth: 'wrap'
     })
@@ -88,10 +111,10 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
 
 export const copyRegionsToClipboard = async (data: Region[]) => {
     const text = data.map(item =>
-        `${item.state}\t${item.name}\t${item.code}\t${item.leader}`
+        `${item.state}\t${item.name}\t${item.code}\t${item.leader}\t${item.leader_email}\t${item.leader_phone}`
     ).join('\n')
 
-    const header = 'State\tRegion Name\tRegion Code\tRegion Leader\n'
+    const header = 'State\tRegion Name\tRegion Code\tRegion Leader\tLeader Email\tLeader Phone\n'
     await navigator.clipboard.writeText(header + text)
 }
 

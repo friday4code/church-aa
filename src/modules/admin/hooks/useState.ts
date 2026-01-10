@@ -38,15 +38,14 @@ export const useStates = (options: UseStatesOptions = {}) => {
     const createState = useMutation({
         mutationFn: adminApi.createState,
         onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['states'] });
+           
             toaster.create({
                 description: "State created successfully",
                 type: "success",
                 closable: true,
             });
 
-            
-
-            queryClient.invalidateQueries({ queryKey: ['states'] });
 
             // Call the lifted callback
             onCreateSuccess?.();
@@ -67,15 +66,12 @@ export const useStates = (options: UseStatesOptions = {}) => {
         mutationFn: ({ id, data }: { id: string | number; data: any }) =>
             adminApi.updateState(id, data),
         onSuccess: async () => {
+            queryClient.invalidateQueries({ queryKey: ['states'] });
             toaster.create({
                 description: "State updated successfully",
                 type: "success",
                 closable: true,
             });
-
-            
-
-            queryClient.invalidateQueries({ queryKey: ['states'] });
 
             // Call the lifted callback
             onUpdateSuccess?.();

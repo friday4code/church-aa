@@ -2,12 +2,6 @@
 "use client"
 
  
-import {
-    VStack,
-    Spinner,
-    Center,
-    Text,
-} from "@chakra-ui/react"
 import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"

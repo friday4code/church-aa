@@ -9,6 +9,8 @@ export const groupSchema = z.object({
     old_group_id: z.number().optional(),
     old_group_name: z.string().optional(), // Temporary field for UI, not sent to API
     code: z.string().min(1, "Group code is required"),
+    leader_email: z.email("Invalid email").optional(),
+    leader_phone: z.string().optional()
 });
 
 export type GroupFormData = z.infer<typeof groupSchema>;

@@ -95,7 +95,9 @@ const RegionsContent = () => {
         let filtered = regions.filter((region: Region) =>
             region.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             region.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            region.leader.toLowerCase().includes(searchQuery.toLowerCase())
+            region.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (region.leader_email && region.leader_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (region.leader_phone && region.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
         // Sorting
@@ -268,7 +270,7 @@ const RegionsContent = () => {
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}
                                     onSelectRegion={handleSelectRegion}
-                                    onEditRegion={(region) => setDialogState({ isOpen: true, region, mode: 'edit' })}
+                                    onEditRegion={(region: Region) => setDialogState({ isOpen: true, region, mode: 'edit' })}
                                     onDeleteRegion={handleDeleteRegion}
                                     onPageChange={setCurrentPage}
                                     isLoading={isLoading}

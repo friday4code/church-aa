@@ -3,7 +3,7 @@
 
 import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
-import UploadOldGroupsFromFile from "../../../components/PortingFile"
+import UploadOldGroupsFromFile from "./UploadOldGroups"
 import ExportButtons from "./ExportButtons"
 import type { OldGroup } from "@/types/oldGroups.type"
 import { useAuth } from "@/hooks/useAuth"

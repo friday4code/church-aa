@@ -26,7 +26,9 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
         defaultValues: {
             stateName: state.name,
             stateCode: state.code,
-            leader: state.leader
+            leader: state.leader,
+            leader_email: state.leader_email || '',
+            leader_phone: state.leader_phone || ''
         }
     })
 
@@ -88,6 +90,27 @@ const StateEditForm = ({ state, onUpdate, onCancel }: StateEditFormProps) => {
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_email}>
+                        <Field.Label>Leader Email</Field.Label>
+                        <Input
+                            rounded="lg"
+                            type="email"
+                            placeholder="Enter leader email address"
+                            {...register('leader_email')}
+                        />
+                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_phone}>
+                        <Field.Label>Leader Phone</Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter leader phone number"
+                            {...register('leader_phone')}
+                        />
+                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                     </Field.Root>
                 </VStack>
             </form>

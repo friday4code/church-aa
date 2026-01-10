@@ -13,7 +13,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { regionSchema, type RegionFormData } from "../../../schemas/region.schema"
 import type { Region } from "@/types/regions.type"
-import { useEffect, useMemo, useState } from "react"
+import type { State } from "@/types/states.type"
+import { useEffect, useState } from "react"
 import { useStates } from "@/modules/admin/hooks/useState"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 
@@ -30,13 +31,14 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
             name: region.name,
             state_id: region.state_id ?? 0,
             leader: region.leader,
+            leader_email: region.leader_email || '',
+            leader_phone: region.leader_phone || '',
             code: region.code
         }
     })
 
     const currentName = watch('name')
     const currentCode = watch('code')
-    const watchedStateId = watch('state_id')
     const { states } = useStates()
     const [selectedStateName, setSelectedStateName] = useState('')
 
@@ -55,7 +57,7 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
 
     useEffect(() => {
         if (!states?.length || selectedStateName) return
-        const matched = states.find(s => s.id === (region.state_id ?? 0))
+        const matched = states.find((s: State) => s.id === (region.state_id ?? 0))
         if (matched) {
             setSelectedStateName(matched.name)
         }
@@ -66,6 +68,8 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
             name: region.name,
             state_id: region.state_id ?? 0,
             leader: region.leader,
+            leader_email: region.leader_email || '',
+            leader_phone: region.leader_phone || '',
             code: region.code
         })
     }, [region, reset])
@@ -76,7 +80,7 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
             setValue('state_id', 0, { shouldValidate: true })
             return
         }
-        const selected = states?.find(s => s.name === stateName)
+        const selected = states?.find((s: State) => s.name === stateName)
         setValue('state_id', selected?.id ?? 0, { shouldValidate: true })
     }
 
@@ -139,6 +143,27 @@ const RegionEditForm = ({ region, onUpdate, onCancel }: RegionEditFormProps) => 
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_email}>
+                        <Field.Label>Leader Email</Field.Label>
+                        <Input
+                            rounded="lg"
+                            type="email"
+                            placeholder="Enter leader email address"
+                            {...register('leader_email')}
+                        />
+                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_phone}>
+                        <Field.Label>Leader Phone</Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter leader phone number"
+                            {...register('leader_phone')}
+                        />
+                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                     </Field.Root>
                 </VStack>
             </form>

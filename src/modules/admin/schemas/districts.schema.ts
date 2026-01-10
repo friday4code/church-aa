@@ -13,6 +13,8 @@ export const districtSchema = z.object({
     group_name: z.string().optional(), // Temporary field for UI
     state_name: z.string().optional(), // Temporary field for UI
     region_name: z.string().optional(), // Temporary field for UI
+    leader_email: z.string().optional(),
+    leader_phone: z.string().optional(),
 });
 
 export type DistrictFormData = z.infer<typeof districtSchema>;

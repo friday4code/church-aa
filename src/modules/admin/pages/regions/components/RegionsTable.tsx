@@ -63,6 +63,8 @@ const RegionsTable = ({
             <Table.Cell>{region.state}</Table.Cell>
             <Table.Cell>{region.code}</Table.Cell>
             <Table.Cell>{region.leader}</Table.Cell>
+            <Table.Cell>{region.leader_email}</Table.Cell>
+            <Table.Cell>{region.leader_phone}</Table.Cell>
             {isSuperAdmin && (
                 <Table.Cell textAlign="center">
                     <Menu.Root>
@@ -96,7 +98,7 @@ const RegionsTable = ({
     ), [paginatedRegions, selectedRegions, handleSelect, handleEdit, handleDelete])
     return (
         <>
-            <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
+            <Table.ScrollArea borderWidth="1px" maxW="calc(100vw - 18rem)" w="full" rounded="xl">
                 <Table.Root size="sm">
                     <Table.Header>
                         <Table.Row fontSize={"md"}>
@@ -153,6 +155,20 @@ const RegionsTable = ({
                                 onClick={() => onSort('leader')}
                             >
                                 Region Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_email' as keyof Region)}
+                            >
+                                Leader Email {sortField === 'leader_email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_phone' as keyof Region)}
+                            >
+                                Leader Phone {sortField === 'leader_phone' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
                             {isSuperAdmin && (
                                 <Table.ColumnHeader

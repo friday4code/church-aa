@@ -18,6 +18,9 @@ import { useStates } from "@/modules/admin/hooks/useState"
 import { adminApi } from "@/api/admin.api"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import type { State } from "@/types/states.type"
+
+
 interface OldGroupDialogProps {
     isLoading?: boolean
     isOpen: boolean
@@ -42,8 +45,10 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
             name: group?.name || '',
             code: group?.code || '',
             leader: group?.leader || '',
+            leader_email: group?.leader_email || '',
+            leader_phone: group?.leader_phone || '',
             state_id: group?.state_id ?? 0,
-            region_id: group?.region_id ?? 0,
+            region_id: group?.region_id ?? 0
         }
     })
     const currentName = watch('name')
@@ -80,7 +85,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
 
     const onSubmit = (data: OldGroupFormData) => {
         console.log(data);
-        
+
         onSave(data)
     }
     const handleClose = () => {
@@ -96,7 +101,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
             setValue('region_id', 0, { shouldValidate: true })
             return
         }
-        const selectedState = states?.find((state) => state.name === stateName)
+        const selectedState = states?.find((state: State) => state.name === stateName)
         const nextStateId = selectedState?.id ?? 0
         setValue('state_id', nextStateId, { shouldValidate: true })
         setValue('region_id', 0, { shouldValidate: true })
@@ -113,8 +118,10 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                 name: group.name,
                 code: group.code,
                 leader: group.leader,
+                leader_email: group.leader_email || '',
+                leader_phone: group.leader_phone || '',
                 state_id: (group.state_id ?? 0) as number,
-                region_id: (group.region_id ?? 0) as number,
+                region_id: (group.region_id ?? 0) as number
             })
             return
         }
@@ -122,8 +129,10 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
             name: '',
             code: '',
             leader: '',
+            leader_email: '',
+            leader_phone: '',
             state_id: isSuperAdmin ? 0 : userStateId,
-            region_id: isSuperAdmin ? 0 : userRegionId,
+            region_id: isSuperAdmin ? 0 : userRegionId
         })
     }, [group, isOpen, reset, isSuperAdmin, userStateId, userRegionId])
     useEffect(() => {
@@ -131,7 +140,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
             return
         }
         if (watchedStateId && states?.length) {
-            const matchedState = states.find((state) => state.id === watchedStateId)
+            const matchedState = states.find((state: State) => state.id === watchedStateId)
             if (matchedState) {
                 setSelectedStateName(matchedState.name)
                 return
@@ -139,7 +148,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
         }
         if (group?.state && states?.length) {
             const matchedState = states.find(
-                (state) => state.name.toLowerCase() === group.state.toLowerCase()
+                (state: State) => state.name.toLowerCase() === group.state.toLowerCase()
             )
             if (matchedState) {
                 setSelectedStateName(matchedState.name)
@@ -178,7 +187,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
 
         if ((!watchedStateId || watchedStateId === 0) && group.state) {
             const matchedState = states.find(
-                (state) => state.name.toLowerCase() === group.state.toLowerCase()
+                (state: State) => state.name.toLowerCase() === group.state.toLowerCase()
             )
 
             if (matchedState) {
@@ -193,7 +202,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
         }
         if ((!watchedRegionId || watchedRegionId === 0) && group.region) {
             const matchedRegion = regionsByState.find(
-                (region) => region.name.toLowerCase() === group.region.toLowerCase()
+                (region: any) => region.name.toLowerCase() === group.region.toLowerCase()
             )
             if (matchedRegion) {
                 setValue('region_id', matchedRegion.id, { shouldValidate: true })
@@ -299,6 +308,27 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                         </Field.Root>
 
+                                        <Field.Root invalid={!!errors.leader_email}>
+                                            <Field.Label>Leader Email</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                type="email"
+                                                placeholder="Enter leader email address"
+                                                {...register('leader_email')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                        </Field.Root>
+
+                                        <Field.Root invalid={!!errors.leader_phone}>
+                                            <Field.Label>Leader Phone</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                placeholder="Enter leader phone number"
+                                                {...register('leader_phone')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
+                                        </Field.Root>
+
                                         {isSuperAdmin && (
                                             <Field.Root required invalid={!!errors.state_id}>
                                                 <StateIdCombobox
@@ -357,7 +387,7 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
                         </Dialog.Content>
                     </Dialog.Positioner>
                 </Portal>
-            </Dialog.Root>
+            </Dialog.Root >
         </>
     )
 }

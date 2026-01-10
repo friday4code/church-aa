@@ -1,9 +1,9 @@
 // components/districts/components/DistrictsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, NativeSelect, Select, useListCollection, createListCollection, SimpleGrid } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, Select, useListCollection, createListCollection, SimpleGrid } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare, CloseCircle } from "iconsax-reactjs"
-import UploadDistrictsFromFile from "../../../components/PortingFile"
+import UploadDistrictsFromFile from "./UploadDistricts"
 import DistrictsExport from "./DistrictsExport"
 import type { District } from "@/types/districts.type"
 import { useNavigate } from "react-router"

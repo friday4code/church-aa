@@ -13,8 +13,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { oldGroupSchema, type OldGroupFormData } from "../../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
+import type { State } from "@/types/states.type"
 import { useStates } from "../../../hooks/useState"
-import { useRegions } from "../../../hooks/useRegion"
 import StateIdCombobox from "../../../components/StateIdCombobox"
 import RegionIdCombobox from "../../../components/RegionIdCombobox"
 
@@ -26,7 +26,6 @@ interface OldGroupEditFormProps {
 
 const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) => {
     const { states } = useStates()
-    const { regions } = useRegions()
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, trigger } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
@@ -34,8 +33,10 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
             name: group.name,
             code: group.code,
             leader: group.leader,
-            state_id: group.state_id,
-            region_id: group.region_id,
+            leader_email: group.leader_email || '',
+            leader_phone: group.leader_phone || '',
+            state_id: group.state_id ?? 0,
+            region_id: group.region_id ?? 0,
         }
     })
 
@@ -51,7 +52,7 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
     }
 
     const handleStateChange = (stateName: string) => {
-        const state = states?.find(s => s.name === stateName)
+        const state = states?.find((s: State) => s.name === stateName)
         if (state) {
             setValue('state_id', state.id, { shouldValidate: true })
             trigger('state_id')
@@ -65,8 +66,6 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
         trigger('region_id')
     }
 
-    
-
     const generateGroupCode = (groupName: string): string => {
         if (!groupName) return ''
         const cleanName = groupName.replace(/group/gi, '').trim()
@@ -79,11 +78,7 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
 
     // Get display names for selected IDs
     const getSelectedStateName = () => {
-        return states?.find(s => s.id === currentStateId)?.name || ''
-    }
-
-    const getSelectedRegionName = () => {
-        return regions?.find(r => r.id === currentRegionId)?.name || ''
+        return states?.find((s: State) => s.id === currentStateId)?.name || ''
     }
 
     return (
@@ -133,6 +128,27 @@ const OldGroupEditForm = ({ group, onUpdate, onCancel }: OldGroupEditFormProps) 
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_email}>
+                        <Field.Label>Leader Email</Field.Label>
+                        <Input
+                            rounded="lg"
+                            type="email"
+                            placeholder="Enter leader email address"
+                            {...register('leader_email')}
+                        />
+                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_phone}>
+                        <Field.Label>Leader Phone</Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter leader phone number"
+                            {...register('leader_phone')}
+                        />
+                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                     </Field.Root>
 
                     {/* State Selection */}

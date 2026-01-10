@@ -129,11 +129,13 @@ const Content = () => {
         let filtered = states.filter((state: State) =>
             state.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             state.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            state.leader.toLowerCase().includes(searchQuery.toLowerCase())
+            state.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (state.leader_email && state.leader_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (state.leader_phone && state.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
         // Sorting
-            filtered.sort((a: State, b: State) => {
+        filtered.sort((a: State, b: State) => {
             const aValue = a[sortField]
             const bValue = b[sortField]
             if (sortOrder === 'asc') {
@@ -156,7 +158,7 @@ const Content = () => {
     const paginatedStates = useMemo(() => filteredAndSortedStates.slice(
         (currentPage - 1) * pageSize,
         currentPage * pageSize
-    ), [filteredAndSortedStates, currentPage, pageSize])    
+    ), [filteredAndSortedStates, currentPage, pageSize])
 
     // Selection logic
     const allIdsOnCurrentPage = paginatedStates.map((state: State) => state.id)
@@ -256,9 +258,11 @@ const Content = () => {
     const handleSaveState = (data: any) => {
         // Transform data to match API structure
         const apiData = {
-            name: data.stateName,
-            code: data.stateCode,
-            leader: data.leader
+            name: data.name,
+            code: data.code,
+            leader: data.leader,
+            leader_email: data.leader_email,
+            leader_phone: data.leader_phone
         }
 
         if (dialogState.mode === 'add') {
@@ -278,7 +282,6 @@ const Content = () => {
         }
     }, [selectedStates, isActionBarOpen])
 
-    
 
     return (
         <>

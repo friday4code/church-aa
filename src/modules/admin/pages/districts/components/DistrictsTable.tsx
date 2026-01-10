@@ -25,18 +25,18 @@ interface DistrictsTableProps {
     onPageChange: (page: number) => void
 }
 
-const Row = memo(({ 
-    district, 
-    index, 
-    currentPage, 
+const Row = memo(({
+    district,
+    index,
+    currentPage,
     totalDistricts,
-    pageSize, 
-    isSuperAdmin, 
-    isSelected, 
-    onSelect, 
-    onEdit, 
-    onDelete 
-}: { 
+    pageSize,
+    isSuperAdmin,
+    isSelected,
+    onSelect,
+    onEdit,
+    onDelete
+}: {
     district: District
     index: number
     currentPage: number
@@ -51,9 +51,9 @@ const Row = memo(({
     <Table.Row>
         {isSuperAdmin && (
             <Table.Cell>
-                <Checkbox.Root 
-                    colorPalette={"accent"} 
-                    checked={isSelected} 
+                <Checkbox.Root
+                    colorPalette={"accent"}
+                    checked={isSelected}
                     onCheckedChange={() => onSelect(district.id)}
                 >
                     <Checkbox.HiddenInput />
@@ -66,6 +66,8 @@ const Row = memo(({
         <Table.Cell fontWeight="medium">{district.group}</Table.Cell>
         <Table.Cell fontWeight="medium">{district.name}</Table.Cell>
         <Table.Cell>{district.leader}</Table.Cell>
+        <Table.Cell>{district.leader_email}</Table.Cell>
+        <Table.Cell>{district.leader_phone}</Table.Cell>
         {isSuperAdmin && (
             <Table.Cell textAlign="center">
                 <Menu.Root>
@@ -91,9 +93,9 @@ const Row = memo(({
         )}
     </Table.Row>
 ), (prev, next) => (
-    prev.district === next.district && 
-    prev.index === next.index && 
-    prev.currentPage === next.currentPage && 
+    prev.district === next.district &&
+    prev.index === next.index &&
+    prev.currentPage === next.currentPage &&
     prev.totalDistricts === next.totalDistricts &&
     prev.pageSize === next.pageSize &&
     prev.isSuperAdmin === next.isSuperAdmin &&
@@ -170,6 +172,20 @@ const DistrictsTable = ({
                             >
                                 District Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_email' as keyof District)}
+                            >
+                                Leader Email {sortField === 'leader_email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_phone' as keyof District)}
+                            >
+                                Leader Phone {sortField === 'leader_phone' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
 
                             {isSuperAdmin && (
                                 <Table.ColumnHeader
@@ -182,11 +198,11 @@ const DistrictsTable = ({
                     </Table.Header>
                     <Table.Body>
                         {paginatedDistricts.map((district, index) => (
-                            <Row 
-                                key={district.id} 
-                                district={district} 
-                                index={index} 
-                                currentPage={currentPage} 
+                            <Row
+                                key={district.id}
+                                district={district}
+                                index={index}
+                                currentPage={currentPage}
                                 totalDistricts={totalDistricts}
                                 pageSize={pageSize}
                                 isSuperAdmin={isSuperAdmin}

@@ -6,13 +6,14 @@ import type { OldGroup } from '@/types/oldGroups.type'
 
 export const exportToExcel = (data: OldGroup[], filename: string = 'oldgroups') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'Group Name': item.name,
-        'Group Code': item.code,
-        'Group Leader': item.leader,
-        'State ID': item.state_id,
-        'Region ID': item.region_id,
-        'District ID': item.district_id,
-        'Group ID': item.group_id
+        'Old Group Name': item.name,
+        'Old Group Code': item.code,
+        'Old Group Leader': item.leader,
+        'Leader Email': item.leader_email ?? '',
+        'Leader Phone': item.leader_phone ?? '',
+        "State": item.state,
+        "Region": item.region,
+
     })))
     const workbook = utils.book_new()
     utils.book_append_sheet(workbook, worksheet, 'OldGroups')
@@ -21,13 +22,14 @@ export const exportToExcel = (data: OldGroup[], filename: string = 'oldgroups') 
 
 export const exportToCSV = (data: OldGroup[], filename: string = 'oldgroups') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
-        'Group Name': item.name,
-        'Group Code': item.code,
-        'Group Leader': item.leader,
-        'State ID': item.state_id,
-        'Region ID': item.region_id,
-        'District ID': item.district_id,
-        'Group ID': item.group_id
+        'Old Group Name': item.name,
+        'Old Group Code': item.code,
+        'Old Group Leader': item.leader,
+        'Leader Email': item.leader_email ?? '',
+        'Leader Phone': item.leader_phone ?? '',
+        "State": item.state,
+        "Region": item.region,
+
     })))
     const csv = utils.sheet_to_csv(worksheet)
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -45,8 +47,8 @@ export const exportToPDF = (data: OldGroup[], filename: string = 'oldgroups') =>
     doc.text('Old Groups Data', 14, 15)
 
     autoTable(doc, {
-        head: [['S/N', 'Group Name', 'Group Code', 'Group Leader', 'State ID', 'Region ID', 'District ID', 'Group ID']],
-        body: data.map((item, i) => [i, item.name, item.code, item.leader, item.state_id, item.region_id, item.district_id, item.group_id]),
+        head: [['S/N', 'Old Group Name', 'Old Group Code', 'Old Group Leader', 'Leader Email', 'Leader Phone' ,'State','Region'  ]],
+        body: data.map((item, i) => [i + 1, item.name, item.code, item.leader, item.leader_email ?? '', item.leader_phone ?? '',item.state || "",item.region || ""]),
         startY: 20,
     })
 
@@ -55,9 +57,9 @@ export const exportToPDF = (data: OldGroup[], filename: string = 'oldgroups') =>
 
 export const copyToClipboard = async (data: OldGroup[]) => {
     const text = data.map((item, i) =>
-        `${i}\t${item.name}\t${item.code}\t${item.leader}\t${item.state_id}\t${item.region_id}\t${item.district_id}\t${item.group_id}`
+        `${i + 1}\t${item.name}\t${item.code}\t${item.leader}\t${item.leader_email ?? ''}\t${item.leader_phone ?? ''}\t${item.state || ''}\t${item.region || ''}`
     ).join('\n')
 
-    const header = 'S/N\tGroup Name\tGroup Code\tGroup Leader\tState ID\tRegion ID\tDistrict ID\tGroup ID\n'
+    const header = 'S/N\tOld Group Name\tOld Group Code\tOld Group Leader\tLeader Email\tLeader Phone\tState\tRegion\n'
     await navigator.clipboard.writeText(header + text)
 }

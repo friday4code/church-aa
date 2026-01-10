@@ -4,6 +4,8 @@ export interface OldGroup {
     name: string
     code: string
     leader: string
+    leader_email?: string
+    leader_phone?: string
     state: string
     region: string
     state_id?: number | null
@@ -15,6 +17,8 @@ export interface OldGroupFormData {
     name: string
     code: string
     leader: string
+    leader_email?: string
+    leader_phone?: string
     state_id: number
     region_id: number
 }
@@ -36,6 +40,8 @@ export interface CreateOldGroupRequest {
     name: string
     code: string
     leader: string
+    leader_email?: string
+    leader_phone?: string
     state_id: number
     region_id: number
 }
@@ -44,6 +50,8 @@ export interface UpdateOldGroupRequest {
     name?: string
     code?: string
     leader?: string
+    leader_email?: string
+    leader_phone?: string
     state_id?: number
     region_id?: number
 }

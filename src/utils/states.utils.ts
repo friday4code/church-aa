@@ -39,6 +39,8 @@ export const exportStatesToExcel = (states: State[]): void => {
             'State Name': state.name,
             'State Code': state.code,
             'State Leader': state.leader,
+            "Leader Email": state.leader_email,
+            "Leader Phone": state.leader_phone,
         }));
 
         // Create worksheet
@@ -53,6 +55,8 @@ export const exportStatesToExcel = (states: State[]): void => {
             { wch: 20 }, // State Name
             { wch: 15 }, // State Code
             { wch: 20 }, // State Leader
+            { wch: 20 }, // Leader Email
+            { wch: 15 }, // Leader Phone
         ];
         worksheet['!cols'] = colWidths;
 
@@ -67,13 +71,15 @@ export const exportStatesToExcel = (states: State[]): void => {
 export const exportStatesToCSV = (states: State[]): void => {
     try {
         // CSV headers
-        const headers = ['State Name', 'State Code', 'State Leader', 'Region', 'Created Date', 'Updated Date'];
+        const headers = ['State Name', 'State Code', 'State Leader', 'Leader Email', 'Leader Phone'];
 
         // CSV data rows
         const csvRows = states.map((state) => [
             `"${state.name.replace(/"/g, '""')}"`,
             `"${state.code.replace(/"/g, '""')}"`,
             `"${state.leader.replace(/"/g, '""')}"`,
+            `"${state.leader_email.replace(/"/g, '""')}"`,
+            `"${state.leader_phone.replace(/"/g, '""')}"`,
         ]);
 
         // Combine headers and rows
@@ -125,6 +131,8 @@ export const exportStatesToPDF = (states: State[]): void => {
             state.name,
             state.code,
             state.leader,
+            state.leader_email,
+            state.leader_phone,
         ]);
 
         // Define table columns
@@ -132,6 +140,8 @@ export const exportStatesToPDF = (states: State[]): void => {
             'State Name',
             'State Code',
             'State Leader',
+            'Leader Email',
+            'Leader Phone',
         ];
 
         // Add table to PDF
@@ -157,6 +167,8 @@ export const exportStatesToPDF = (states: State[]): void => {
                 1: { cellWidth: 30 }, // State Name
                 2: { cellWidth: 20 }, // State Code
                 3: { cellWidth: 30 }, // State Leader
+                4: { cellWidth: 30 }, // Leader Email
+                5: { cellWidth: 20 }, // Leader Phone
             },
             margin: { top: 35 }
         });

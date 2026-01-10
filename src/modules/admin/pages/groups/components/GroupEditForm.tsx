@@ -23,90 +23,94 @@ import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 
 interface GroupEditFormProps {
-    group: Group
-    onUpdate: (data: Partial<GroupFormData>) => void
-    onCancel: () => void
+    group: Group;
+    onUpdate: (data: Partial<GroupFormData>) => void;
+    onCancel: () => void;
 }
 
 const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
-    const { user } = useMe()
-    
+    const { user } = useMe();
+
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
             group_name: group.name,
             leader: group.leader || '',
+            leader_email: group.leader_email || '',
+            leader_phone: group.leader_phone || '',
             state_id: group.state_id || 0,
             region_id: group.region_id || 0,
             old_group_id: undefined,
             old_group_name: group.old_group || '',
         }
-    })
+    });
 
-    const { states } = useStates()
-    const { regions } = useRegions()
-    const { oldGroups } = useOldGroups()
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
-    const watchedStateId = watch('state_id')
-    const watchedRegionId = watch('region_id')
-    const selectedOldGroupName = watch('old_group_name')
+    const { states } = useStates();
+    const { regions } = useRegions();
+    const { oldGroups } = useOldGroups();
+    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false;
+    const watchedStateId = watch('state_id');
+    const watchedRegionId = watch('region_id');
+    const selectedOldGroupName = watch('old_group_name');
     const [selectedStateName, setSelectedStateName] = ((): [string, (v: string) => void] => {
-        const s = watch('state_id')
-        const match = states?.find(st => st.id === s)?.name || ''
-        const setter = (v: string) => setValue('state_id', (states?.find(st => st.name === v)?.id ?? 0), { shouldValidate: true })
-        return [match, setter]
-    })()
+        const s = watch('state_id');
+        const match = states?.find(st => st.id === s)?.name || '';
+        const setter = (v: string) => setValue('state_id', (states?.find(st => st.name === v)?.id ?? 0), { shouldValidate: true });
+        return [match, setter];
+    })();
     const [selectedRegionName, setSelectedRegionName] = ((): [string, (v: string) => void] => {
-        const r = watch('region_id')
-        const match = regions?.find(reg => reg.id === r)?.name || ''
-        const setter = (v: string) => setValue('region_id', (regions?.find(reg => reg.name === v)?.id ?? 0), { shouldValidate: true })
-        return [match, setter]
-    })()
+        const r = watch('region_id');
+        const match = regions?.find(reg => reg.id === r)?.name || '';
+        const setter = (v: string) => setValue('region_id', (regions?.find(reg => reg.name === v)?.id ?? 0), { shouldValidate: true });
+        return [match, setter];
+    })();
 
     const filteredRegions = (regions || []).filter((region) => {
         if (region.state_id != null && watchedStateId) {
-            return Number(region.state_id) === Number(watchedStateId)
+            return Number(region.state_id) === Number(watchedStateId);
         }
-        const stateName = states?.find(s => s.id === watchedStateId)?.name
+        const stateName = states?.find(s => s.id === watchedStateId)?.name;
         if (stateName && region.state) {
-            return region.state.toLowerCase() === stateName.toLowerCase()
+            return region.state.toLowerCase() === stateName.toLowerCase();
         }
-        return false
-    })
+        return false;
+    });
 
     const handleOldGroupChange = (oldGroupName: string) => {
         if (oldGroupName) {
-            const oldGroup = oldGroups?.find(og => og.name === oldGroupName)
+            const oldGroup = oldGroups?.find(og => og.name === oldGroupName);
             if (oldGroup) {
-                setValue('old_group_id', oldGroup.id, { shouldValidate: true })
-                setValue('old_group_name', oldGroupName)
+                setValue('old_group_id', oldGroup.id, { shouldValidate: true });
+                setValue('old_group_name', oldGroupName);
             }
         } else {
-            setValue('old_group_id', undefined)
-            setValue('old_group_name', '')
+            setValue('old_group_id', undefined);
+            setValue('old_group_name', '');
         }
-    }
+    };
 
     useEffect(() => {
         reset({
             group_name: group.name,
             leader: group.leader || '',
+            leader_email: group.leader_email || '',
+            leader_phone: group.leader_phone || '',
             state_id: group.state_id || 0,
             region_id: group.region_id || 0,
             old_group_id: ((): number | undefined => {
                 if (group.old_group && oldGroups) {
-                    const found = oldGroups.find(og => og.name === group.old_group)
-                    return found?.id
+                    const found = oldGroups.find(og => og.name === group.old_group);
+                    return found?.id;
                 }
-                return undefined
+                return undefined;
             })(),
             old_group_name: group.old_group || '',
-        })
-    }, [group, reset, oldGroups])
+        });
+    }, [group, reset, oldGroups]);
 
     const onSubmit = (data: GroupFormData) => {
-        onUpdate(data)
-    }
+        onUpdate(data);
+    };
 
     return (
         <VStack gap="4" align="stretch">
@@ -138,6 +142,27 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_email}>
+                        <Field.Label>Leader Email</Field.Label>
+                        <Input
+                            rounded="lg"
+                            type="email"
+                            placeholder="Enter leader email address"
+                            {...register('leader_email')}
+                        />
+                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_phone}>
+                        <Field.Label>Leader Phone</Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter leader phone number"
+                            {...register('leader_phone')}
+                        />
+                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                     </Field.Root>
 
                     {isSuperAdmin && (
@@ -195,7 +220,7 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                 </Button>
             </HStack>
         </VStack>
-    )
-}
+    );
+};
 
 export default GroupEditForm;

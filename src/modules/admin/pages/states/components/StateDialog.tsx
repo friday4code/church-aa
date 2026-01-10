@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { stateSchema, type StateFormData } from "../../../schemas/states.schemas"
 import type { State } from "@/types/states.type"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { useStates } from "@/modules/admin/hooks/useState"
 import StateCombobox from "@/modules/admin/components/StateCombobox"
 
@@ -35,7 +35,9 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
         defaultValues: {
             stateName: state?.name || '',
             stateCode: state?.code || '',
-            leader: state?.leader || ''
+            leader: state?.leader || '',
+            leader_email: state?.leader_email || '',
+            leader_phone: state?.leader_phone || ''
         }
     })
 
@@ -55,7 +57,7 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
         const words = stateName.trim().split(/\s+/).filter(Boolean)
         const base = words.map(w => w.slice(0, 3).toUpperCase()).join('_')
         let code = base
-        const existingCodes = (states || []).map(s => s.code)
+        const existingCodes = (states || []).map((s: { code: any }) => s.code)
         let suffix = 1
         while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
             code = `${base}_${suffix}`
@@ -82,7 +84,9 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
             reset({
                 stateName: state.name,
                 stateCode: state.code,
-                leader: state.leader
+                leader: state.leader,
+                leader_email: state.leader_email || '',
+                leader_phone: state.leader_phone || ''
             })
         }
     }, [isOpen, state, reset])
@@ -147,6 +151,26 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
                                                 {...register('leader')}
                                             />
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                                                                                <Field.Root invalid={!!errors.leader_email}>
+                                            <Field.Label>Leader Email</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                type="email"
+                                                placeholder="Enter leader email address"
+                                                {...register('leader_email')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                        </Field.Root>
+
+                                        <Field.Root invalid={!!errors.leader_phone}>
+                                            <Field.Label>Leader Phone</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                placeholder="+234908877664"
+                                                {...register('leader_phone')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
+                                        </Field.Root>
                                         </Field.Root>
                                     </VStack>
                                 </form>

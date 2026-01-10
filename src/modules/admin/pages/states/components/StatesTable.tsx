@@ -106,6 +106,20 @@ const StatesTable = ({
                             >
                                 State Leader {sortField === 'leader' && (sortOrder === 'asc' ? '↑' : '↓')}
                             </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_email')}
+                            >
+                                Leader Email {sortField === 'leader_email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
+                            <Table.ColumnHeader
+                                fontWeight={"bold"}
+                                cursor="pointer"
+                                onClick={() => onSort('leader_phone')}
+                            >
+                                Leader Phone {sortField === 'leader_phone' && (sortOrder === 'asc' ? '↑' : '↓')}
+                            </Table.ColumnHeader>
                             {isSuperAdmin && (
                                 <Table.ColumnHeader
                                     fontWeight={"bold"}
@@ -135,6 +149,8 @@ const StatesTable = ({
                                 <Table.Cell fontWeight="medium">{state.name}</Table.Cell>
                                 <Table.Cell>{state.code}</Table.Cell>
                                 <Table.Cell>{state.leader}</Table.Cell>
+                                <Table.Cell>{state.leader_email}</Table.Cell>
+                                <Table.Cell>{state.leader_phone}</Table.Cell>
                                 {isSuperAdmin && (
                                     <Table.Cell textAlign="center">
                                         <Menu.Root>

@@ -108,16 +108,16 @@ const Content = () => {
     } = useOldGroups({
         async onCreateSuccess() {
             toaster.success({ description: ` Old group created!` });
-            
+
             setDialogState({ isOpen: false, mode: 'add' })
         },
         async onUpdateSuccess() {
             toaster.success({ description: `Old group updated!` });
-            
+
             setDialogState({ isOpen: false, mode: 'edit' })
         },
     })
-    
+
 
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
@@ -133,11 +133,13 @@ const Content = () => {
 
     // Filter and sort groups
     const filteredAndSortedGroups = useMemo(() => {
-// components/oldgroups/OldGroups.tsx
+        // components/oldgroups/OldGroups.tsx
         let filtered = oldGroups.filter((group: OldGroup) =>
             group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (group.leader && group.leader.toLowerCase().includes(searchQuery.toLowerCase()))
+            (group.leader && group.leader.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (group.leader_email && group.leader_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (group.leader_phone && group.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
         // Sorting
@@ -172,7 +174,7 @@ const Content = () => {
     const allIds = useMemo(() => filteredAndSortedGroups.map((group: OldGroup) => group.id), [filteredAndSortedGroups])
 
     const isAllSelectedOnPage = useMemo(() => paginatedOldGroups.length > 0 &&
-        paginatedOldGroups.every((group: OldGroup) => selectedGroups.includes(group.id)), [paginatedOldGroups, selectedGroups])   
+        paginatedOldGroups.every((group: OldGroup) => selectedGroups.includes(group.id)), [paginatedOldGroups, selectedGroups])
 
     const isAllSelected = filteredAndSortedGroups.length > 0 &&
         filteredAndSortedGroups.every((group: OldGroup) => selectedGroups.includes(group.id))
@@ -263,7 +265,7 @@ const Content = () => {
             createOldGroup(data);
         } else if (dialogState.group) {
             console.log(data);
-            
+
             updateOldGroup({ id: dialogState.group.id, data })
         }
     }
@@ -318,7 +320,7 @@ const Content = () => {
                                     onSort={handleSort}
                                     onSelectAllOnPage={handleSelectAllOnPage}
                                     onSelectGroup={handleSelectGroup}
-                                    onEditGroup={(group) => setDialogState({ isOpen: true, group, mode: 'edit' })}
+                                    onEditGroup={(group: OldGroup) => setDialogState({ isOpen: true, group, mode: 'edit' })}
                                     onDeleteGroup={handleDeleteGroup}
                                     onPageChange={setCurrentPage}
                                     isLoading={isLoading}

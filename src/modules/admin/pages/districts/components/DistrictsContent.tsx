@@ -121,18 +121,15 @@ export const DistrictsContent = () => {
                 district.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 district.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 district.leader.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                district.code.toLowerCase().includes(searchQuery.toLowerCase())
+                district.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (district.leader_email && district.leader_email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (district.leader_phone && district.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
             )
             const matchesState = stateFilter ? district.state_id?.toString() == stateFilter : true
             const matchesRegion = regionFilter ? district.region_id?.toString() == regionFilter : true
             const matchesOldGroup = oldGroupFilter ? district.old_group_id?.toString() == oldGroupFilter : true
             const matchesGroup = groupFilter ? district.group_id?.toString() == groupFilter : true
 
-            console.log("matchesSearch",matchesSearch)
-            console.log("matchesState",matchesState)
-            console.log("matchesRegion",matchesRegion)
-            console.log("matchesOldGroup",matchesOldGroup)
-            console.log("matchesGroup",matchesGroup)
 
             return matchesSearch && (matchesState && matchesRegion && matchesOldGroup && matchesGroup)  
         })

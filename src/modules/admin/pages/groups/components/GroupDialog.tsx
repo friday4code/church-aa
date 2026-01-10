@@ -21,6 +21,7 @@ import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import { useStates } from "@/modules/admin/hooks/useState"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
+import type { State } from "@/types/states.type"
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -51,6 +52,8 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             region_id: group?.region_id || 0,
             old_group_id: group?.old_group_id || undefined,
             code: group?.code || '',
+            leader_email: group?.leader_email || '',
+            leader_phone: group?.leader_phone || ''
         }
     })
 
@@ -75,7 +78,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             return
         }
 
-        const selectedState = states?.find((state) => state.name === stateName)
+        const selectedState = states?.find((state:State) => state.name === stateName)
         const nextStateId = selectedState?.id ?? 0
 
         setValue('state_id', nextStateId, { shouldValidate: true })
@@ -106,20 +109,25 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                 reset({
                     group_name: group.name,
                     leader: group.leader || '',
+                    leader_email: group.leader_email || '',
+                    leader_phone: group.leader_phone || '',
                     state_id: group.state_id || 0,
                     region_id: group.region_id || 0,
                     old_group_id: group.old_group_id || 0,
                     old_group_name: '',
+                    code: group.code || '',
                 })
             } else {
-                // For new groups, use logged in user's state_id and region_id
                 reset({
                     group_name: '',
                     leader: '',
+                    leader_email: '',
+                    leader_phone: '',
                     state_id: isSuperAdmin ? 0 : userStateId,
                     region_id: isSuperAdmin ? 0 : userRegionId,
                     old_group_id: 0,
                     old_group_name: '',
+                    code: '',
                 })
             }
         }
@@ -131,7 +139,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
         }
 
         if (watchedStateId && states?.length) {
-            const matchedState = states.find((state) => state.id === watchedStateId)
+            const matchedState = states.find((state: State) => state.id === watchedStateId)
             if (matchedState) {
                 setSelectedStateName(matchedState.name)
                 return
@@ -140,7 +148,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
 
         if (group?.state && states?.length) {
             const matchedState = states.find(
-                (state) => state.name.toLowerCase() === group.state.toLowerCase()
+                (state: State) => state.name.toLowerCase() === group.state.toLowerCase()
             )
 
             if (matchedState) {
@@ -192,7 +200,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
 
         if ((!watchedStateId || watchedStateId === 0) && group.state) {
             const matchedState = states.find(
-                (state) => state.name.toLowerCase() === group.state.toLowerCase()
+                (state: State) => state.name.toLowerCase() === group.state.toLowerCase()
             )
 
             if (matchedState) {
@@ -297,6 +305,27 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                             {...register('leader')}
                                         />
                                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root invalid={!!errors.leader_email}>
+                                        <Field.Label>Leader Email</Field.Label>
+                                        <Input
+                                            rounded="lg"
+                                            type="email"
+                                            placeholder="Enter leader email address"
+                                            {...register('leader_email')}
+                                        />
+                                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                    </Field.Root>
+
+                                    <Field.Root invalid={!!errors.leader_phone}>
+                                        <Field.Label>Leader Phone</Field.Label>
+                                        <Input
+                                            rounded="lg"
+                                            placeholder="Enter leader phone number"
+                                            {...register('leader_phone')}
+                                        />
+                                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                                     </Field.Root>
 
                                     {isSuperAdmin && (

@@ -2,6 +2,8 @@ export interface District {
     code: string;
     id: number;
     leader: string;
+    leader_email?: string;
+    leader_phone?: string;
     name: string;
     region: string;
     state: string;

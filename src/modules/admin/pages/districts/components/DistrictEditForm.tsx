@@ -13,10 +13,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { type DistrictFormData } from "../../../schemas/districts.schema"
 import type { District } from "@/types/districts.type"
+import type { State } from "@/types/states.type"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import { useStates } from "@/modules/admin/hooks/useState"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
 import { useEffect } from "react"
 import { z } from "zod"
 
@@ -27,21 +27,22 @@ interface DistrictEditFormProps {
     onCancel: () => void
 }
 
+const districtEditSchema = z.object({
+    state_id: z.number().min(1, 'State is required'),
+    region_id: z.number().min(1, 'Region (LGA) is required'),
+    name: z.string().min(1, 'District name is required'),
+    leader: z.string().min(1, 'District leader is required'),
+    leader_email: z.string().email('Invalid email address').optional().or(z.literal('')),
+    leader_phone: z.string().optional(),
+    code: z.string().min(1, 'District code is required'),
+    state_name: z.string().optional(),
+    region_name: z.string().optional(),
+});
+
+type DistrictEditFormData = z.infer<typeof districtEditSchema>;
+
 const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProps) => {
-    const { states } = useStates()
-    const { regions } = useRegions()
-
-    const districtEditSchema = z.object({
-        state_id: z.number().min(1, 'State is required'),
-        region_id: z.number().min(1, 'Region (LGA) is required'),
-        name: z.string().min(1, 'District name is required'),
-        leader: z.string().min(1, 'District leader is required'),
-        code: z.string().min(1, 'District code is required'),
-        state_name: z.string().optional(),
-        region_name: z.string().optional(),
-    })
-
-    type DistrictEditFormData = z.infer<typeof districtEditSchema>
+    const { states } = useStates();
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<DistrictEditFormData>({
         resolver: zodResolver(districtEditSchema),
@@ -50,58 +51,44 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
             region_id: district.region_id || 0,
             name: district.name,
             leader: district.leader,
+            leader_email: district.leader_email || '',
+            leader_phone: district.leader_phone || '',
             code: district.code || '',
             state_name: district.state || '',
             region_name: district.region || '',
         }
-    })
+    });
 
-    const currentStateName = watch('state_name')
-    const currentRegionName = watch('region_name')
-    const watchedStateId = watch('state_id')
-
-    const filteredRegions = (regions || []).filter((region) => {
-        if (region.state_id != null && watchedStateId) {
-            return Number(region.state_id) === Number(watchedStateId)
-        }
-        if (currentStateName && region.state) {
-            return region.state.toLowerCase() === currentStateName.toLowerCase()
-        }
-        return false
-    })
+    const currentStateName = watch('state_name');
+    const currentRegionId = watch('region_id');
+    const watchedStateId = watch('state_id');
 
     const handleStateChange = (stateName: string) => {
-        const state = states?.find(s => s.name === stateName)
+        const state = states?.find((s: State) => s.name === stateName);
         if (state) {
-            setValue('state_id', state.id, { shouldValidate: true })
-            setValue('state_name', stateName)
-            setValue('region_id', 0, { shouldValidate: true })
-            setValue('region_name', '')
+            setValue('state_id', state.id, { shouldValidate: true });
+            setValue('state_name', stateName);
+            setValue('region_id', 0, { shouldValidate: true });
+            setValue('region_name', '');
         }
-    }
+    };
 
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            setValue('region_name', regionName)
-        }
-    }
-
-    
+    const handleRegionChange = (regionId?: number) => {
+        setValue('region_id', regionId || 0, { shouldValidate: true });
+    };
 
     const generateDistrictCode = (districtName: string): string => {
-        if (!districtName) return ''
-        const cleanName = districtName.replace(/district|area|zone|region/gi, '').trim()
-        return cleanName.substring(0, 4).toUpperCase()
-    }
+        if (!districtName) return '';
+        const cleanName = districtName.replace(/district|area|zone|region/gi, '').trim();
+        return cleanName.substring(0, 4).toUpperCase();
+    };
 
     const handleDistrictNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const districtName = e.target.value
-        setValue('name', districtName)
-        const districtCode = districtName ? generateDistrictCode(districtName) : ''
-        setValue('code', districtCode)
-    }
+        const districtName = e.target.value;
+        setValue('name', districtName);
+        const districtCode = districtName ? generateDistrictCode(districtName) : '';
+        setValue('code', districtCode);
+    };
 
     useEffect(() => {
         reset({
@@ -109,16 +96,18 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
             region_id: district.region_id || 0,
             name: district.name,
             leader: district.leader,
+            leader_email: district.leader_email || '',
+            leader_phone: district.leader_phone || '',
             code: district.code || '',
             state_name: district.state || '',
             region_name: district.region || '',
-        })
-    }, [district, reset])
+        });
+    }, [district, reset]);
 
     const onSubmit = (data: DistrictEditFormData) => {
-        const { state_name, region_name, ...apiData } = data
-        onUpdate(apiData as Partial<DistrictFormData>)
-    }
+        const { state_name, region_name, ...apiData } = data;
+        onUpdate(apiData as Partial<DistrictFormData>);
+    };
 
     return (
         <VStack gap="4" align="stretch">
@@ -139,16 +128,14 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
 
                     <Field.Root required invalid={!!errors.region_id}>
                         <RegionIdCombobox
-                            value={currentRegionName}
+                            value={currentRegionId}
                             onChange={handleRegionChange}
                             invalid={!!errors.region_id}
-                            items={filteredRegions}
-                            disabled={!watchedStateId && !currentStateName}
+                            stateId={watchedStateId}
+                            disabled={!watchedStateId}
                         />
                         <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                     </Field.Root>
-
-                    
 
                     <Field.Root required invalid={!!errors.name}>
                         <Field.Label>District Name
@@ -173,6 +160,27 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                             {...register('leader')}
                         />
                         <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_email}>
+                        <Field.Label>Leader Email</Field.Label>
+                        <Input
+                            rounded="lg"
+                            type="email"
+                            placeholder="Enter leader email address"
+                            {...register('leader_email')}
+                        />
+                        <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                    </Field.Root>
+
+                    <Field.Root invalid={!!errors.leader_phone}>
+                        <Field.Label>Leader Phone</Field.Label>
+                        <Input
+                            rounded="lg"
+                            placeholder="Enter leader phone number"
+                            {...register('leader_phone')}
+                        />
+                        <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
                     </Field.Root>
 
                     <Field.Root required invalid={!!errors.code}>
@@ -207,7 +215,7 @@ const DistrictEditForm = ({ district, onUpdate, onCancel }: DistrictEditFormProp
                 </Button>
             </HStack>
         </VStack>
-    )
-}
+    );
+};
 
 export default DistrictEditForm;

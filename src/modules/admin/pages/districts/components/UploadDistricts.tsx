@@ -1,4 +1,3 @@
-// components/UploadRegions.tsx
 import { useState, useEffect } from "react"
 import { utils, read, writeFile } from "xlsx"
 import {
@@ -20,10 +19,18 @@ import {
 } from "@chakra-ui/react"
 import { DocumentDownload, DocumentUpload, TickCircle, Warning2 } from "iconsax-reactjs"
 
-import type { Region, CreateRegionRequest } from "@/types/regions.type"
+import type { District } from "@/types/districts.type"
+import type { DistrictFormData } from "@/modules/admin/schemas/districts.schema"
 import type { State } from "@/types/states.type"
-import { useRegions } from "@/modules/admin/hooks/useRegion"
+import type { Region } from "@/types/regions.type"
+import type { OldGroup } from "@/types/oldGroups.type"
+import type { Group } from "@/types/groups.type"
+
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 
 interface PortingResult {
     success: boolean
@@ -33,33 +40,42 @@ interface PortingResult {
     totalProcessed: number
 }
 
-interface UploadRegionsFromFileProps {
-    data?: Region[]
+interface UploadDistrictsFromFileProps {
+    data?: District[]
 }
 
-const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
+const UploadDistrictsFromFile = ({ data = [] }: UploadDistrictsFromFileProps) => {
     const { open, onOpen, onClose } = useDisclosure()
     const [isProcessing, setIsProcessing] = useState(false)
     const [portingResult, setPortingResult] = useState<PortingResult | null>(null)
     const [selectedFile, setSelectedFile] = useState<File | null>(null)
-    const [stateMapping, setStateMapping] = useState<Map<string, number>>(new Map())
 
-    const { regions = [], createRegion, updateRegion, isCreating, isUpdating } = useRegions()
+    const { districts = [], createDistrict, updateDistrict } = useDistricts()
     const { states = [] } = useStates()
+    const { regions = [] } = useRegions()
+    const { oldGroups = [] } = useOldGroups()
+    const { groups = [] } = useGroups()
 
-    // Use provided data or fallback to regions from hook
-    const regionsData = data.length > 0 ? data : regions
+    // Use provided data or fallback to hook data
+    const districtsData = data.length > 0 ? data : districts
 
-    // Create state name to ID mapping
-    useEffect(() => {
-        if (states.length > 0) {
-            const mapping = new Map<string, number>()
-            states.forEach((state: State) => {
-                mapping.set(state.name, state.id)
-            })
-            setStateMapping(mapping)
-        }
-    }, [states])
+    const handleAddDistrict = (districtData: DistrictFormData) => {
+        createDistrict({
+            name: districtData.name,
+            code: districtData.code,
+            leader: districtData.leader,
+            leader_email: districtData.leader_email,
+            leader_phone: districtData.leader_phone,
+            state_id: districtData.state_id,
+            region_id: districtData.region_id,
+            old_group_id: districtData.old_group_id,
+            group_id: districtData.group_id
+        } as any)
+    }
+
+    const handleUpdateDistrict = (id: number, districtData: Partial<DistrictFormData>) => {
+        updateDistrict({ id, data: districtData })
+    }
 
     // Download template function
     const calculateColumnWidths = (data: any[]) => {
@@ -78,30 +94,36 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
     }
 
     const downloadTemplate = () => {
-        const templateData = regionsData.map((r: Region) => ({
-            "STATE": r.state || "",
-            "REGION NAME": r.name || "",
-            "REGION CODE": r.code || "",
-            "LEADER": r.leader || "",
-            "LEADER EMAIL": r.leader_email || "",
-            "LEADER PHONE": r.leader_phone || "",
-        }))
-
-        templateData.unshift({
-            "STATE": "LAGOS",
-            "REGION NAME": "IKEJA",
-            "REGION CODE": "IKE",
-            "LEADER": "John Doe",
-            "LEADER EMAIL": "john@example.com",
-            "LEADER PHONE": "08012345678",
-        })
+        const templateData = [
+            { 
+                "NAME": "Example District", 
+                "CODE": "DIST001", 
+                "LEADER": "John Doe",
+                "LEADER EMAIL": "john@example.com",
+                "LEADER PHONE": "08012345678",
+                "STATE": "LAGOS",
+                "REGION": "IKEJA",
+                "OLD GROUP": "Example Old Group",
+                "GROUP": "Example Group"
+            },
+            ...districtsData.map(d => ({ 
+                "NAME": d.name, 
+                "CODE": d.code, 
+                "LEADER": d.leader,
+                "LEADER EMAIL": d.leader_email || "",
+                "LEADER PHONE": d.leader_phone || "",
+                "STATE": d.state,
+                "REGION": d.region,
+                "OLD GROUP": d.old_group || "",
+                "GROUP": d.group || ""
+            }))
+        ]
 
         const worksheet = utils.json_to_sheet(templateData)
         worksheet['!cols'] = calculateColumnWidths(templateData)
-
         const workbook = utils.book_new()
-        utils.book_append_sheet(workbook, worksheet, "Regions Template")
-        writeFile(workbook, "regions_template.xlsx")
+        utils.book_append_sheet(workbook, worksheet, "Districts Template")
+        writeFile(workbook, "districts_template.xlsx")
     }
 
     const processFile = async (files: File[]) => {
@@ -129,79 +151,107 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
 
             const getCell = (row: Record<string, unknown>, variants: string[]) => {
                 for (const key of variants) {
-                    if (row[key] != null) return row[key] as string
+                    if (row[key] != null) return String(row[key]).trim()
                     const lowerKey = key.toLowerCase()
                     const upperKey = key.toUpperCase()
-                    if (row[lowerKey] != null) return row[lowerKey] as string
-                    if (row[upperKey] != null) return row[upperKey] as string
+                    if (row[lowerKey] != null) return String(row[lowerKey]).trim()
+                    if (row[upperKey] != null) return String(row[upperKey]).trim()
                 }
                 return ''
             }
 
-            // Track processed entities to prevent duplicates within the file
-            const processedRegions = new Set<string>();
+            // Mappings
+            const stateMap = new Map<string, number>()
+            states.forEach((s: State) => stateMap.set(s.name.toLowerCase(), s.id))
+
+            const regionMap = new Map<string, number>()
+            regions.forEach((r: Region) => regionMap.set(r.name.toLowerCase(), r.id))
+
+            const oldGroupMap = new Map<string, number>()
+            oldGroups.forEach((g: OldGroup) => oldGroupMap.set(g.name.toLowerCase(), g.id))
+
+            const groupMap = new Map<string, number>()
+            groups.forEach((g: Group) => groupMap.set(g.name.toLowerCase(), g.id))
 
             // Process each row
             for (const [index, row] of jsonData.entries()) {
                 try {
-                    const state = getCell(row, ['STATE', 'State'])
-                    const regionName = getCell(row, ['REGION NAME', 'Region Name', 'name'])
-                    const regionCode = getCell(row, ['REGION CODE', 'Region Code', 'code'])
-                    const leader = getCell(row, ['LEADER', 'Leader'])
-                    const leaderEmail = getCell(row, ['LEADER EMAIL', 'Leader Email', 'leader_email'])
-                    const leaderPhone = getCell(row, ['LEADER PHONE', 'Leader Phone', 'leader_phone'])
+                    const name = getCell(row, ['NAME', 'Name', 'District Name'])
+                    const code = getCell(row, ['CODE', 'Code', 'District Code'])
+                    const leader = getCell(row, ['LEADER', 'Leader', 'District Leader'])
+                    const leaderEmail = getCell(row, ['LEADER EMAIL', 'Leader Email', 'Email'])
+                    const leaderPhone = getCell(row, ['LEADER PHONE', 'Leader Phone', 'Phone'])
+                    const stateName = getCell(row, ['STATE', 'State', 'State Name'])
+                    const regionName = getCell(row, ['REGION', 'Region', 'Region Name'])
+                    const oldGroupName = getCell(row, ['OLD GROUP', 'Old Group', 'Old Group Name'])
+                    const groupName = getCell(row, ['GROUP', 'Group', 'Group Name'])
 
-                    if (!state || !regionName || !regionCode || !leader || !leaderEmail || !leaderPhone) {
-                        result.errors.push(`Row ${index + 1}: Missing state, region name, region code, leader, leader email, or leader phone`)
+                    if (!name || !code || !stateName || !regionName || !oldGroupName || !groupName) {
+                        result.errors.push(`Row ${index + 1}: Missing required fields (Name, Code, State, Region, Old Group, Group)`)
                         continue
                     }
 
-                    // Get state_id from mapping
-                    const stateId = stateMapping.get(state)
+                    const stateId = stateMap.get(stateName.toLowerCase())
                     if (!stateId) {
-                        result.errors.push(`Row ${index + 1}: State "${state}" not found in system`)
+                        result.errors.push(`Row ${index + 1}: State '${stateName}' not found`)
                         continue
                     }
 
-                    const uniqueKey = `${state.toLowerCase()}-${regionName.toLowerCase()}`;
-                    if (processedRegions.has(uniqueKey)) {
-                         result.errors.push(`Row ${index + 1}: Duplicate entry in file for Region ${regionName} in ${state}`)
-                         continue;
-                    }
-                    processedRegions.add(uniqueKey);
+                    // Refine region search
+                    const matchedRegion = regions.find((r: Region) => 
+                        r.name.toLowerCase() === regionName.toLowerCase() && 
+                        (r.state_id === stateId || !r.state_id)
+                    )
+                    const regionId = matchedRegion ? matchedRegion.id : regionMap.get(regionName.toLowerCase())
 
-                    // Check if region already exists (by name and state)
-                    const existingRegion = regionsData.find(
-                        (region: Region) =>
-                            region.state.toLowerCase() === state.toLowerCase() &&
-                            region.name.toLowerCase() === regionName.toLowerCase()
+                    if (!regionId) {
+                        result.errors.push(`Row ${index + 1}: Region '${regionName}' not found`)
+                        continue
+                    }
+
+                    const oldGroupId = oldGroupMap.get(oldGroupName.toLowerCase())
+                    if (!oldGroupId) {
+                        result.errors.push(`Row ${index + 1}: Old Group '${oldGroupName}' not found`)
+                        continue
+                    }
+
+                    const groupId = groupMap.get(groupName.toLowerCase())
+                    if (!groupId) {
+                        result.errors.push(`Row ${index + 1}: Group '${groupName}' not found`)
+                        continue
+                    }
+
+                    // Check for existing district
+                    const existingDistrict = districtsData.find(
+                        d => d.code.toLowerCase() === code.toLowerCase() ||
+                             d.name.toLowerCase() === name.toLowerCase()
                     )
 
-                    if (existingRegion) {
-                        // Update existing region
-                        const updateData: Partial<CreateRegionRequest> = {
-                            name: regionName,
-                            state_id: stateId,
-                            leader: leader || '',
-                            code: regionCode || '',
-                            leader_email: leaderEmail || '',
-                            leader_phone: leaderPhone || ''
-                        }
-                        updateRegion({ id: existingRegion.id, data: updateData })
+                    const districtData: DistrictFormData = {
+                        name,
+                        code,
+                        leader: leader || '',
+                        leader_email: leaderEmail,
+                        leader_phone: leaderPhone,
+                        state_id: stateId,
+                        region_id: regionId,
+                        old_group_id: oldGroupId,
+                        group_id: groupId,
+                        // temporary fields
+                        state_name: stateName,
+                        region_name: regionName,
+                        old_group_name: oldGroupName,
+                        group_name: groupName
+                    }
+
+                    if (existingDistrict) {
+                        handleUpdateDistrict(existingDistrict.id, districtData)
                         result.updated++
                     } else {
-                        // Add new region
-                        const createData: CreateRegionRequest = {
-                            name: regionName,
-                            state_id: stateId,
-                            leader: leader || '',
-                            code: regionCode || '',
-                            leader_email: leaderEmail || '',
-                            leader_phone: leaderPhone || ''
-                        }
-                        createRegion(createData)
+                        handleAddDistrict(districtData)
                         result.added++
                     }
+
                 } catch (error) {
                     result.errors.push(`Row ${index + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`)
                 }
@@ -235,17 +285,14 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
         onClose()
     }
 
-    const isLoading = isProcessing || isCreating || isUpdating
-
     return (
         <>
-            <Button 
-                bg="bg"
+            <Button
+                colorPalette="accent"
                 variant={{ base: "ghost", md: "outline" }}
-                color="bg.inverted"
                 w={{ base: "full", md: "auto" }}
                 justifyContent={{ base: "start", md: "center" }}
-                onClick={onOpen} 
+                onClick={onOpen}
                 rounded="xl"
             >
                 <DocumentUpload />
@@ -255,10 +302,10 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
             <Dialog.Root role="alertdialog" open={open} onOpenChange={(e) => !e.open && handleClose()}>
                 <Portal>
                     <Dialog.Backdrop />
-                    <Dialog.Positioner>
-                        <Dialog.Content rounded="xl" width={{ base: "xs", md: "auto" }} maxWidth={{ base: "xs", md: "full" }}>
+                    <Dialog.Positioner >
+                        <Dialog.Content maxW={{ base: "sm", md: "md", lg: "3xl" }} rounded="xl">
                             <Dialog.Header>
-                                <Dialog.Title>Upload Regions From File</Dialog.Title>
+                                <Dialog.Title>Upload Districts From File</Dialog.Title>
                             </Dialog.Header>
 
                             <Dialog.Body>
@@ -279,7 +326,7 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                                                     </Button>
                                                 </HStack>
                                                 <Text fontSize="sm" color="gray.600">
-                                                    Available states: {Array.from(stateMapping.keys()).join(', ')}
+                                                    Download the Excel template to ensure proper formatting
                                                 </Text>
                                             </VStack>
                                         </Card.Body>
@@ -288,9 +335,10 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                                     <FileUpload.Root
                                         onFileAccept={(fd) => processFile(fd.files)}
                                         accept=".xlsx,.xls,.csv"
-                                        disabled={isLoading}
+                                        disabled={isProcessing}
                                     >
                                         <FileUpload.HiddenInput />
+
                                         <InputGroup
                                             startElement={<DocumentUpload />}
                                             endElement={
@@ -300,6 +348,9 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                                                             me="-1"
                                                             size="xs"
                                                             variant="plain"
+                                                            focusVisibleRing="inside"
+                                                            focusRingWidth="2px"
+                                                            pointerEvents="auto"
                                                             onClick={clearFile}
                                                         />
                                                     </FileUpload.ClearTrigger>
@@ -314,12 +365,13 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                                                 </FileUpload.Trigger>
                                             </Input>
                                         </InputGroup>
+
                                         <FileUpload.Label>
-                                            Upload Excel or CSV file with region data
+                                            Upload Excel or CSV file with district data
                                         </FileUpload.Label>
                                     </FileUpload.Root>
 
-                                    {isLoading && (
+                                    {isProcessing && (
                                         <Alert.Root status="info" rounded="md">
                                             <DocumentUpload />
                                             <Box>
@@ -371,8 +423,8 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
                                 <Button
                                     rounded="xl"
                                     colorPalette="blue"
-                                    loading={isLoading}
-                                    disabled={!selectedFile || isLoading || stateMapping.size === 0}
+                                    loading={isProcessing}
+                                    disabled={!selectedFile || isProcessing}
                                     onClick={() => selectedFile && processFile([selectedFile])}
                                 >
                                     Import Data
@@ -390,4 +442,4 @@ const UploadRegionsFromFile = ({ data = [] }: UploadRegionsFromFileProps) => {
     )
 }
 
-export default UploadRegionsFromFile
+export default UploadDistrictsFromFile

@@ -19,6 +19,7 @@ import { useMe } from "@/hooks/useMe"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
+import type { State } from "@/types/states.type"
 
 interface RegionDialogProps {
     isLoading?: boolean
@@ -44,6 +45,8 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             name: region?.name || '',
             state_id: region?.state_id ?? userStateId,
             leader: region?.leader || '',
+            leader_email: region?.leader_email || '',
+            leader_phone: region?.leader_phone || '',
             code: region?.code || ''
         }
     })
@@ -61,7 +64,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
         const dd = String(d.getDate()).padStart(2, '0')
         const base = `${prefix}_${yy}${mm}${dd}`
         let code = base
-        const existingCodes = (regions || []).map(r => r.code)
+        const existingCodes = (regions || []).map((r: Region) => r.code)
         let suffix = 1
         while (existingCodes.includes(code) || generatedCodesCache.current.has(code)) {
             code = `${base}_${suffix}`
@@ -73,8 +76,8 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     }
 
     const onSubmit = (data: RegionFormData) => {
-        console.log("sdata",data);
-        
+        console.log("sdata", data);
+
         onSave(data)
         reset()
     }
@@ -93,7 +96,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             return
         }
 
-        const selectedState = states?.find((state) => state.name === stateName)
+        const selectedState = states?.find((state: State) => state.name === stateName)
 
         setValue('state_id', selectedState?.id ?? 0, { shouldValidate: true })
     }
@@ -106,6 +109,8 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                 name: region.name,
                 state_id: region.state_id ?? userStateId,
                 leader: region.leader,
+                leader_email: region.leader_email || '',
+                leader_phone: region.leader_phone || '',
                 code: region.code
             })
 
@@ -120,6 +125,8 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             name: '',
             state_id: isSuperAdmin ? 0 : userStateId,
             leader: '',
+            leader_email: '',
+            leader_phone: '',
             code: ''
         })
 
@@ -145,7 +152,7 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
             return
         }
 
-        const matchedState = states?.find((state) => state.id === (region.state_id ?? 0))
+        const matchedState = states?.find((state: State) => state.id === (region.state_id ?? 0))
 
         if (matchedState) {
             setSelectedStateName(matchedState.name)
@@ -236,6 +243,27 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                                             />
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
                                         </Field.Root>
+
+                                        <Field.Root invalid={!!errors.leader_email}>
+                                            <Field.Label>Leader Email</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                type="email"
+                                                placeholder="Enter leader email address"
+                                                {...register('leader_email')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                        </Field.Root>
+
+                                        <Field.Root invalid={!!errors.leader_phone}>
+                                            <Field.Label>Leader Phone</Field.Label>
+                                            <Input
+                                                rounded="lg"
+                                                placeholder="Enter leader phone number"
+                                                {...register('leader_phone')}
+                                            />
+                                            <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
+                                        </Field.Root>
                                     </VStack>
                                 </form>
                             </Dialog.Body>
@@ -264,18 +292,9 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
                         </Dialog.Content>
                     </Dialog.Positioner>
                 </Portal>
-            </Dialog.Root>
+            </Dialog.Root >
         </>
     )
 }
 
 export default RegionDialog;
-
-
-
-
-
-
-
-
-
