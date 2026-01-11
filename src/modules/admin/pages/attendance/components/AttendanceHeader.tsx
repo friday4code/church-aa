@@ -11,7 +11,7 @@ import type { Group } from "@/types/groups.type"
 
 interface AttendanceHeaderProps {
     serviceName: string
-    serviceAttendances: Attendance[]
+    serviceAttendances: any[]
     onAddAttendance: () => void
     onSearch: (value: string) => void
     onNavigateBack?: () => void
@@ -19,6 +19,8 @@ interface AttendanceHeaderProps {
     setYearFilter: (value: string) => void
     monthFilter: string
     setMonthFilter: (value: string) => void
+    weekFilter: string
+    setWeekFilter: (value: string) => void
     groupFilter: string
     setGroupFilter: (value: string) => void
     groups: Group[]
@@ -34,6 +36,8 @@ const AttendanceHeader = ({
     setYearFilter,
     monthFilter,
     setMonthFilter,
+    weekFilter,
+    setWeekFilter,
     groupFilter,
     setGroupFilter,
     groups
@@ -161,6 +165,19 @@ const AttendanceHeader = ({
                                                     >
                                                         {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => (
                                                             <option key={month} value={month}>{month}</option>
+                                                        ))}
+                                                    </NativeSelect.Field>
+                                                    <NativeSelect.Indicator />
+                                                </NativeSelect.Root>
+                                                <NativeSelect.Root size="md">
+                                                    <NativeSelect.Field 
+                                                        placeholder="All Weeks" 
+                                                        value={weekFilter} 
+                                                        onChange={(e) => setWeekFilter(e.target.value)}
+                                                        rounded="xl"
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map((week) => (
+                                                            <option key={week} value={week}>Week {week}</option>
                                                         ))}
                                                     </NativeSelect.Field>
                                                     <NativeSelect.Indicator />
@@ -313,6 +330,20 @@ const AttendanceHeader = ({
                                 >
                                     {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
                                         <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </NativeSelect.Field>
+                            </NativeSelect.Root>
+
+                            <NativeSelect.Root size="md" width={{ base: "full", md: "100px" }}>
+                                <NativeSelect.Field
+                                    placeholder="Week"
+                                    value={weekFilter}
+                                    onChange={(e) => setWeekFilter(e.target.value)}
+                                    rounded="xl"
+                                    bg="bg"
+                                >
+                                    {[1, 2, 3, 4, 5].map(w => (
+                                        <option key={w} value={w}>Week {w}</option>
                                     ))}
                                 </NativeSelect.Field>
                             </NativeSelect.Root>

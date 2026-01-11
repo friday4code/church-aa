@@ -21,6 +21,9 @@ import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
+import type { State } from "@/types/states.type"
+import type { Region } from "@/types/regions.type"
+import type { OldGroup } from "@/types/oldGroups.type"
 
 interface GroupEditFormProps {
     group: Group;
@@ -52,24 +55,18 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     const watchedStateId = watch('state_id');
     const watchedRegionId = watch('region_id');
     const selectedOldGroupName = watch('old_group_name');
-    const [selectedStateName, setSelectedStateName] = ((): [string, (v: string) => void] => {
-        const s = watch('state_id');
-        const match = states?.find(st => st.id === s)?.name || '';
-        const setter = (v: string) => setValue('state_id', (states?.find(st => st.name === v)?.id ?? 0), { shouldValidate: true });
-        return [match, setter];
-    })();
-    const [selectedRegionName, setSelectedRegionName] = ((): [string, (v: string) => void] => {
-        const r = watch('region_id');
-        const match = regions?.find(reg => reg.id === r)?.name || '';
-        const setter = (v: string) => setValue('region_id', (regions?.find(reg => reg.name === v)?.id ?? 0), { shouldValidate: true });
-        return [match, setter];
-    })();
 
-    const filteredRegions = (regions || []).filter((region) => {
+    const selectedStateName = states?.find((st: { id: number }) => st.id === watchedStateId)?.name || '';
+    const setSelectedStateName = (v: string) => setValue('state_id', (states?.find((st: State) => st.name === v)?.id ?? 0), { shouldValidate: true });
+
+    const selectedRegionName = regions?.find((reg: Region) => reg.id === watchedRegionId)?.name || '';
+    const setSelectedRegionName = (v: string) => setValue('region_id', (regions?.find((reg: Region) => reg.name === v)?.id ?? 0), { shouldValidate: true });
+
+    const filteredRegions = (regions || []).filter((region: Region) => {
         if (region.state_id != null && watchedStateId) {
             return Number(region.state_id) === Number(watchedStateId);
         }
-        const stateName = states?.find(s => s.id === watchedStateId)?.name;
+        const stateName = states?.find((st: State) => st.id === watchedStateId)?.name;
         if (stateName && region.state) {
             return region.state.toLowerCase() === stateName.toLowerCase();
         }
@@ -78,7 +75,7 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
 
     const handleOldGroupChange = (oldGroupName: string) => {
         if (oldGroupName) {
-            const oldGroup = oldGroups?.find(og => og.name === oldGroupName);
+            const oldGroup = oldGroups?.find((og: OldGroup) => og.name === oldGroupName);
             if (oldGroup) {
                 setValue('old_group_id', oldGroup.id, { shouldValidate: true });
                 setValue('old_group_name', oldGroupName);
@@ -99,7 +96,7 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
             region_id: group.region_id || 0,
             old_group_id: ((): number | undefined => {
                 if (group.old_group && oldGroups) {
-                    const found = oldGroups.find(og => og.name === group.old_group);
+                    const found = oldGroups.find((og: OldGroup) => og.name === group.old_group);
                     return found?.id;
                 }
                 return undefined;
@@ -182,9 +179,9 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                             <RegionIdCombobox
                                 required
                                 value={selectedRegionName}
-                                onChange={setSelectedRegionName}
+                                onChange={(v?: number) => setSelectedRegionName(v ? v.toString() : "")}
                                 invalid={!!errors.region_id}
-                                items={filteredRegions}
+                                // items={filteredRegions}
                             />
                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                         </Field.Root>
@@ -192,8 +189,8 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
 
                     <Field.Root invalid={!!errors.old_group_id}>
                         <OldGroupIdCombobox
-                            value={selectedOldGroupName}
-                            onChange={handleOldGroupChange}
+                            value={Number(selectedOldGroupName)}
+                            onChange={(v?: number) => handleOldGroupChange(v ? v.toString() : "")}
                             invalid={!!errors.old_group_id}
                         />
                         <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>

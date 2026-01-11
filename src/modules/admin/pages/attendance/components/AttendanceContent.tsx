@@ -17,6 +17,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/api/admin.api"
 import { Toaster, toaster } from "@/components/ui/toaster"
 import { delay } from "@/utils/helpers"
+import { useGroups } from "@/modules/admin/hooks/useGroup"
 
 // Lazy load components
 const AttendanceHeader = lazy(() => import("./AttendanceHeader"))
@@ -59,6 +60,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const [selectedAttendances, setSelectedAttendances] = useState<number[]>([])
     const [yearFilter, setYearFilter] = useState<string>("")
     const [monthFilter, setMonthFilter] = useState<string>("")
+    const [weekFilter, setWeekFilter] = useState<string>("")
     const [groupFilter, setGroupFilter] = useState<string>("")
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -154,10 +156,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     // Get districts for name lookup in search
     const { districts } = useDistricts()
 
-    const { data: groups = [] } = useQuery({
-        queryKey: ['groups'],
-        queryFn: adminApi.getGroups
-    })
+    const { groups = [] } = useGroups()
 
     // Filter and sort attendances
     const filteredAndSortedAttendances = useMemo(() => {
@@ -171,9 +170,10 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
             )
             const matchesYear = yearFilter ? attendance.year.toString() === yearFilter : true
             const matchesMonth = monthFilter ? attendance.month === monthFilter : true
+            const matchesWeek = weekFilter ? attendance.week.toString() === weekFilter : true
             const matchesGroup = groupFilter ? attendance.group_id.toString() === groupFilter : true
 
-            return matchesSearch && matchesYear && matchesMonth && matchesGroup
+            return matchesSearch && matchesYear && matchesMonth && matchesWeek && matchesGroup
         })
 
         // Sorting
@@ -195,10 +195,10 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         })
 
         return filtered
-    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, groupFilter])
+    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, weekFilter, groupFilter])
 
     // Calculate totals
-    const totals = useMemo(() => calculateTotals(filteredAndSortedAttendances), [filteredAndSortedAttendances])
+    const totals = useMemo(() => calculateTotals(filteredAndSortedAttendances as any[]), [filteredAndSortedAttendances])
 
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedAttendances.length / pageSize)
@@ -328,6 +328,8 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         setYearFilter={setYearFilter}
                         monthFilter={monthFilter}
                         setMonthFilter={setMonthFilter}
+                        weekFilter={weekFilter}
+                        setWeekFilter={setWeekFilter}
                         groupFilter={groupFilter}
                         setGroupFilter={setGroupFilter}
                         groups={groups as any}

@@ -19,6 +19,12 @@ import type { Group } from "@/types/groups.type"
 import { useGroups } from "../../hooks/useGroup"
 import { Toaster } from "@/components/ui/toaster"
 import { useAuth } from "@/hooks/useAuth"
+import { useStates } from "../../hooks/useState"
+import { useRegions } from "../../hooks/useRegion"
+import { useOldGroups } from "../../hooks/useOldGroup"
+import type { State } from "@/types/states.type"
+import type { Region } from "@/types/regions.type"
+import type { OldGroup } from "@/types/oldGroups.type"
 
 // Lazy load components with proper loading states
 const GroupsHeader = lazy(() => import("./components/GroupsHeader"))
@@ -93,6 +99,13 @@ const Content = () => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
+    const [stateFilter, setStateFilter] = useState<string>("")
+    const [regionFilter, setRegionFilter] = useState<string>("")
+    const [oldGroupFilter, setOldGroupFilter] = useState<string>("")
+
+    const { states } = useStates()
+    const { regions } = useRegions()
+    const { oldGroups } = useOldGroups()
 
     const {
         groups,
@@ -126,13 +139,34 @@ const Content = () => {
 
     // Filter and sort groups
     const filteredAndSortedGroups = useMemo(() => {
-// components/groups/Groups.tsx
+        // components/groups/Groups.tsx
         let filtered = groups.filter((group: Group) =>
             group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.leader?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             group.old_group?.toLowerCase().includes(searchQuery.toLowerCase())
         )
+
+        if (stateFilter) {
+            const state = states?.find((s: State) => s.id.toString() == stateFilter)
+            if (state) {
+                filtered = filtered.filter((group: Group) => group.state === state.name)
+            }
+        }
+
+        if (regionFilter) {
+            const region = regions?.find((r: Region) => r.id.toString() == regionFilter)
+            if (region) {
+                filtered = filtered.filter((group: Group) => group.region === region.name)
+            }
+        }
+
+        if (oldGroupFilter) {
+            const oldGroup = oldGroups?.find((og: OldGroup) => og.id.toString() == oldGroupFilter)
+            if (oldGroup) {
+                filtered = filtered.filter((group: Group) => group.old_group === oldGroup.name)
+            }
+        }
 
         // Sorting
         filtered.sort((a: Group, b: Group) => {
@@ -152,7 +186,7 @@ const Content = () => {
         })
 
         return filtered
-    }, [groups, searchQuery, sortField, sortOrder])
+    }, [groups, searchQuery, sortField, sortOrder, stateFilter, regionFilter, oldGroupFilter, states, regions, oldGroups])
 
     // Pagination
     const totalGroups = filteredAndSortedGroups.length
@@ -271,9 +305,9 @@ const Content = () => {
         }
 
         if (dialogState.mode === 'add') {
-            createGroup(apiData)
+            createGroup(apiData);
         } else if (dialogState.group) {
-            updateGroup({ id: dialogState.group.id, data: apiData as any })
+            updateGroup({ id: dialogState.group.id, data: apiData })
         }
     }
 
@@ -306,6 +340,15 @@ const Content = () => {
                         groups={paginatedGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
+                        states={states || []}
+                        regions={regions || []}
+                        oldGroups={oldGroups || []}
+                        stateFilter={stateFilter}
+                        setStateFilter={setStateFilter}
+                        regionFilter={regionFilter}
+                        setRegionFilter={setRegionFilter}
+                        oldGroupFilter={oldGroupFilter}
+                        setOldGroupFilter={setOldGroupFilter}
                     />
                 </Suspense>
 

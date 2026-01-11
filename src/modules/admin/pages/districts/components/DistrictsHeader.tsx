@@ -1,7 +1,7 @@
 // components/districts/components/DistrictsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, Select, useListCollection, createListCollection, SimpleGrid } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, Select, useListCollection, createListCollection, SimpleGrid, Stack, Span } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare, CloseCircle } from "iconsax-reactjs"
 import UploadDistrictsFromFile from "./UploadDistricts"
 import DistrictsExport from "./DistrictsExport"
@@ -289,7 +289,10 @@ const DistrictsHeader = ({
                         <Select.HiddenSelect />
                         <Select.Control>
                             <Select.Trigger bg="bg" rounded="lg">
-                                <Select.ValueText placeholder="Select state" />
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">State</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All States" />
+                                </Stack>
                             </Select.Trigger>
                             <Select.IndicatorGroup>
                                 <Select.Indicator />
@@ -309,11 +312,15 @@ const DistrictsHeader = ({
                         </Portal>
                     </Select.Root>
 
-                    <Select.Root onValueChange={(e) => setRegionFilter(e.value[0])} value={[regionFilter]} collection={regionCollection} size="md" width="200px">
+                    {/* Region Select */}
+                    <Select.Root disabled={!stateFilter} onValueChange={(e) => setRegionFilter(e.value[0])} value={[regionFilter]} collection={regionCollection} size="md" width="200px">
                         <Select.HiddenSelect />
                         <Select.Control>
                             <Select.Trigger bg="bg" rounded="lg">
-                                <Select.ValueText placeholder="All Regions" />
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">Region</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All Regions" />
+                                </Stack>
                             </Select.Trigger>
                             <Select.IndicatorGroup>
                                 <Select.Indicator />
@@ -333,11 +340,15 @@ const DistrictsHeader = ({
                         </Portal>
                     </Select.Root>
 
-                    <Select.Root onValueChange={(e) => setOldGroupFilter(e.value[0])} value={[oldGroupFilter]} collection={oldGroupCollection} size="md" width="200px">
+                    {/* Old Group Select */}
+                    <Select.Root disabled={!regionFilter} onValueChange={(e) => setOldGroupFilter(e.value[0])} value={[oldGroupFilter]} collection={oldGroupCollection} size="md" width="200px">
                         <Select.HiddenSelect />
                         <Select.Control>
                             <Select.Trigger bg="bg" rounded="lg">
-                                <Select.ValueText placeholder="All Old Groups" />
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">Old Group</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All Old Groups" />
+                                </Stack>    
                             </Select.Trigger>
                             <Select.IndicatorGroup>
                                 <Select.Indicator />
@@ -357,11 +368,15 @@ const DistrictsHeader = ({
                         </Portal>
                     </Select.Root>
 
-                    <Select.Root onValueChange={(e) => setGroupFilter(e.value[0])} value={[groupFilter]} collection={groupCollection} size="md" width="200px">
+                    {/* Group Select */}
+                    <Select.Root disabled={!oldGroupFilter} onValueChange={(e) => setGroupFilter(e.value[0])} value={[groupFilter]} collection={groupCollection} size="md" width="200px">
                         <Select.HiddenSelect />
                         <Select.Control>
                             <Select.Trigger bg="bg" rounded="lg">
-                                <Select.ValueText placeholder="All Groups" />
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">Group</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All Groups" />
+                                </Stack>
                             </Select.Trigger>
                             <Select.IndicatorGroup>
                                 <Select.Indicator />

@@ -129,15 +129,22 @@ export const GroupAttendanceReport = ({
     }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
-        console.log("submit:start", { year: data.year, month: data.month, group: data.group })
+        console.log("submit:start", { year: data.year, month: data.month, fromMonth: data.fromMonth, toMonth: data.toMonth, group: data.group })
         const yr = parseInt(String(data.year || ""), 10)
         const mn = parseInt(String(data.month || ""), 10)
+        const fromMn = parseInt(String(data.fromMonth || ""), 10)
+        const toMn = parseInt(String(data.toMonth || ""), 10)
+
         if (!yr || Number.isNaN(yr) || yr < 1900 || yr > 2100) {
             toaster.error({ description: "Select a valid year", closable: true })
             return
         }
-        if (!mn || Number.isNaN(mn) || mn < 1 || mn > 12) {
-            toaster.error({ description: "Select a valid month", closable: true })
+
+        const hasValidMonth = !!mn && !Number.isNaN(mn) && mn >= 1 && mn <= 12
+        const hasValidRange = !!fromMn && !!toMn && !Number.isNaN(fromMn) && !Number.isNaN(toMn) && fromMn >= 1 && fromMn <= 12 && toMn >= 1 && toMn <= 12 && fromMn <= toMn
+
+        if (!hasValidMonth && !hasValidRange) {
+            toaster.error({ description: "Select a valid month or month range", closable: true })
             return
         }
         const gid = (user as User | null)?.group_id
@@ -239,7 +246,24 @@ export const GroupAttendanceReport = ({
                                 label="Month"
                                 items={monthsCollection}
                                 placeholder="Type to search month"
-                                required
+                            />
+                        </GridItem>
+                        <GridItem>
+                            <CustomComboboxField
+                                form={form}
+                                name="fromMonth"
+                                label="From Month"
+                                items={monthsCollection}
+                                placeholder="Start month"
+                            />
+                        </GridItem>
+                        <GridItem>
+                            <CustomComboboxField
+                                form={form}
+                                name="toMonth"
+                                label="To Month"
+                                items={monthsCollection}
+                                placeholder="End month"
                             />
                         </GridItem>
                     </Grid>

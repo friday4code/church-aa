@@ -1,23 +1,49 @@
 // components/groups/components/GroupsHeader.tsx
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
-import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, SimpleGrid, createListCollection, Span, Stack } from "@chakra-ui/react"
+import { Add, SearchNormal1, ArrowLeft3, MoreSquare, CloseCircle } from "iconsax-reactjs"
+import { Select } from "@chakra-ui/react"
 import type { Group } from "@/types/groups.type"
 import UploadGroupsFromFile from "./PortingFile"
 import ExportButtons from "./ExportButtons"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router"
+import type { State } from "@/types/states.type"
+import type { Region } from "@/types/regions.type"
+import type { OldGroup } from "@/types/oldGroups.type"
 
 interface GroupsHeaderProps {
     groups: Group[]
     onAddGroup: () => void
     onSearch: (value: string) => void
+    states: State[]
+    regions: Region[]
+    oldGroups: OldGroup[]
+    stateFilter: string
+    setStateFilter: (value: string) => void
+    regionFilter: string
+    setRegionFilter: (value: string) => void
+    oldGroupFilter: string
+    setOldGroupFilter: (value: string) => void
 }
 
 import { useState, useCallback } from "react"
 
-const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
+const GroupsHeader = ({
+    groups,
+    onAddGroup,
+    onSearch,
+    states,
+    regions,
+    oldGroups,
+    stateFilter,
+    setStateFilter,
+    regionFilter,
+    setRegionFilter,
+    oldGroupFilter,
+    setOldGroupFilter
+}: GroupsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -31,6 +57,20 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
         setSearch("")
         onSearch("")
     }, [onSearch])
+
+    const stateCollection = createListCollection({
+        items: [{ label: "All States", value: "" }, ...states.map(state => ({ label: state.name, value: state.id.toString() }))]
+    })
+
+    const filteredRegions = regions.filter(region => !stateFilter || region.state === states.find(state => state.id.toString() === stateFilter)?.name)
+    const regionCollection = createListCollection({
+        items: [{ label: "All Regions", value: "" }, ...filteredRegions.map(region => ({ label: region.name, value: region.id.toString() }))]
+    })
+
+    const filteredOldGroups = oldGroups.filter(og => !regionFilter || og.region === regions.find(region => region.id.toString() === regionFilter)?.name)
+    const oldGroupCollection = createListCollection({
+        items: [{ label: "All Old Groups", value: "" }, ...filteredOldGroups.map(og => ({ label: og.name, value: og.id.toString() }))]
+    })
 
     return (
         <>
@@ -146,11 +186,15 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
 
                 </Flex>
 
-                {/* Second line: Search input (full width) */}
-                <HStack w="full" justify={"space-between"}>
-
+                {/* Second line: Search + Filters + Actions */}
+                <Flex
+                    direction={{ base: "column", md: "row" }}
+                    gap={4}
+                    justify="space-between"
+                    align={{ base: "stretch", md: "center" }}
+                >
                     <InputGroup
-                        maxW="full"
+                        flex="1"
                         colorPalette={"accent"}
                         startElement={<SearchNormal1 />}
                         endElement={search ? <CloseButton size="xs" onClick={clearSearch} /> : undefined}
@@ -167,7 +211,95 @@ const GroupsHeader = ({ groups, onAddGroup, onSearch }: GroupsHeaderProps) => {
                     <Box hideBelow={"md"}>
                         <ExportButtons groups={groups} />
                     </Box>
-                </HStack>
+                </Flex>
+
+                {/* Filters */}
+                <SimpleGrid gap={8} overflowX="auto" pb={{ base: 2, md: 0 }} columns={{ base: 2, md: 5 }}>
+                    <Select.Root size="md" onValueChange={(e) => setStateFilter(e.value[0])} value={[stateFilter]} collection={stateCollection} width="200px">
+                        <Select.HiddenSelect />
+                        <Select.Control>
+                            <Select.Trigger bg="bg" rounded="lg">
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">State</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="Select state" />
+                                </Stack>
+                            </Select.Trigger>
+                            <Select.IndicatorGroup>
+                                <Select.Indicator />
+                            </Select.IndicatorGroup>
+                        </Select.Control>
+                        <Portal>
+                            <Select.Positioner>
+                                <Select.Content>
+                                    {stateCollection.items.map((state) => (
+                                        <Select.Item item={state} key={state.value}>
+                                            {state.label}
+                                            <Select.ItemIndicator />
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Positioner>
+                        </Portal>
+                    </Select.Root>
+
+                    <Select.Root disabled={!stateFilter} onValueChange={(e) => setRegionFilter(e.value[0])} value={[regionFilter]} collection={regionCollection} size="md" width="200px">
+                        <Select.HiddenSelect />
+                        <Select.Control>
+                            <Select.Trigger bg="bg" rounded="lg">
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs">Region</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All Regions" />
+                                </Stack>
+                            </Select.Trigger>
+                            <Select.IndicatorGroup>
+                                <Select.Indicator />
+                            </Select.IndicatorGroup>
+                        </Select.Control>
+                        <Portal>
+                            <Select.Positioner>
+                                <Select.Content>
+                                    {regionCollection.items.map((region) => (
+                                        <Select.Item item={region} key={region.value}>
+                                            {region.label}
+                                            <Select.ItemIndicator />
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Positioner>
+                        </Portal>
+                    </Select.Root>
+
+                    <Select.Root onValueChange={(e) => setOldGroupFilter(e.value[0])} value={[oldGroupFilter]} collection={oldGroupCollection} size="md" width="200px" disabled={!regionFilter}>
+                        <Select.HiddenSelect />
+                        <Select.Control>
+                            <Select.Trigger bg="bg" rounded="lg">
+                                <Stack gapY="0" justify="center" w="full">
+                                    <Span color="fg.subtle" fontSize="xs"> Old Group</Span>
+                                    <Select.ValueText mt="-1.5" placeholder="All Old Groups" />
+                                </Stack>
+                            </Select.Trigger>
+                            <Select.IndicatorGroup>
+                                <Select.Indicator />
+                            </Select.IndicatorGroup>
+                        </Select.Control>
+                        <Portal>
+                            <Select.Positioner>
+                                <Select.Content>
+                                    {oldGroupCollection.items.map((og) => (
+                                        <Select.Item item={og} key={og.value}>
+                                            {og.label}
+                                            <Select.ItemIndicator />
+                                        </Select.Item>
+                                    ))}
+                                </Select.Content>
+                            </Select.Positioner>
+                        </Portal>
+                    </Select.Root>
+
+                    <Button variant="surface" colorPalette={"red"} onClick={() => { setStateFilter(""); setRegionFilter(""); setOldGroupFilter(""); }}>
+                        <CloseCircle />   Reset Filters
+                    </Button>
+                </SimpleGrid>
 
             </VStack>
         </>

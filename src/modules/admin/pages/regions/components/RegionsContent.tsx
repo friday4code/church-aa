@@ -15,6 +15,8 @@ import type { Region } from "@/types/regions.type"
 import RegionsTableLoading from "./RegionsTableLoading"
 import { Toaster } from "@/components/ui/toaster"
 import { useAuth } from "@/hooks/useAuth"
+import { useStates } from "@/modules/admin/hooks/useState"
+import type { State } from "@/types/states.type"
 
 
 // Import lazy loaded components
@@ -59,6 +61,8 @@ const RegionsContent = () => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
+    const [stateFilter, setStateFilter] = useState<string>("")
+    const { states } = useStates()
 
     const {
         regions,
@@ -100,6 +104,13 @@ const RegionsContent = () => {
             (region.leader_phone && region.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
+        if (stateFilter) {
+            const state = states?.find((s: State) => s.id.toString() == stateFilter)
+            if (state) {
+                filtered = filtered.filter((region: Region) => region.state === state.name)
+            }
+        }
+
         // Sorting
         filtered.sort((a: Region, b: Region) => {
             const aValue = a[sortField]
@@ -116,7 +127,7 @@ const RegionsContent = () => {
         })
 
         return filtered
-    }, [regions, searchQuery, sortField, sortOrder])
+    }, [regions, searchQuery, sortField, sortOrder, stateFilter, states])
 
     // Pagination
     const totalRegions = filteredAndSortedRegions.length
@@ -250,6 +261,9 @@ const RegionsContent = () => {
                         regions={paginatedRegions}
                         onAddRegion={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
+                        states={states || []}
+                        stateFilter={stateFilter}
+                        setStateFilter={setStateFilter}
                     />
                 </Suspense>
 

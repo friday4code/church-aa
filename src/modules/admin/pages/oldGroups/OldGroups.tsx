@@ -20,6 +20,10 @@ import { useOldGroups } from "../../hooks/useOldGroup"
 import type { OldGroupFormData } from "../../schemas/oldgroups.schema"
 import type { OldGroup } from "@/types/oldGroups.type"
 import { useAuth } from "@/hooks/useAuth"
+import { useStates } from "../../hooks/useState"
+import { useRegions } from "../../hooks/useRegion"
+import type { State } from "@/types/states.type"
+import type { Region } from "@/types/regions.type"
 
 // Lazy load components
 const OldGroupsHeader = lazy(() => import("./components/OldGroupsHeader"))
@@ -95,6 +99,11 @@ const Content = () => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
+    const [stateFilter, setStateFilter] = useState("")
+    const [regionFilter, setRegionFilter] = useState("")
+
+    const { states } = useStates()
+    const { regions: allRegions } = useRegions()
 
     const {
         oldGroups,
@@ -142,6 +151,20 @@ const Content = () => {
             (group.leader_phone && group.leader_phone.toLowerCase().includes(searchQuery.toLowerCase()))
         )
 
+        if (stateFilter) {
+            const state = states?.find((s: State) => s.id.toString() == stateFilter)
+            if (state) {
+                filtered = filtered.filter((group: OldGroup) => group.state === state.name)
+            }
+        }
+
+        if (regionFilter) {
+            const region = allRegions?.find((r: Region) => r.id.toString() == regionFilter)
+            if (region) {
+                filtered = filtered.filter((group: OldGroup) => group.region === region.name)
+            }
+        }
+
         // Sorting
         filtered.sort((a: OldGroup, b: OldGroup) => {
             const aValue = a[sortField]
@@ -160,7 +183,7 @@ const Content = () => {
         })
 
         return filtered
-    }, [oldGroups, searchQuery, sortField, sortOrder, pageSize])
+    }, [oldGroups, searchQuery, sortField, sortOrder, pageSize, stateFilter, regionFilter, states, allRegions])
 
     // Pagination
     const totalOldGroups = filteredAndSortedGroups.length
@@ -299,6 +322,12 @@ const Content = () => {
                         oldGroups={paginatedOldGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
+                        states={states || []}
+                        regions={allRegions || []}
+                        stateFilter={stateFilter}
+                        setStateFilter={setStateFilter}
+                        regionFilter={regionFilter}
+                        setRegionFilter={setRegionFilter}
                     />
                 </Suspense>
 
