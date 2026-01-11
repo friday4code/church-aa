@@ -11,7 +11,7 @@ interface UseMeReturn {
 
 export const useMe = (): UseMeReturn => {
   const queryClient = useQueryClient();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   
   const query = useQuery({
     queryKey: ["me"],
@@ -42,7 +42,7 @@ export const useMe = (): UseMeReturn => {
   });
 
   return {
-    user: query.data || null,
+    user: user || query.data || null,
     loading: query.isLoading,
     error: query.error,
     refetch: query.refetch,

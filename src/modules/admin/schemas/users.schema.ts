@@ -10,7 +10,7 @@ export const userSchema = (mode: string) => z.object({
     district_id: mode === 'add' ? z.number().min(1, 'District is required') : z.number().optional(),
     group_id: z.number().optional().default(0),
     old_group_id: z.number().optional().default(0),
-    roles: z.array(z.union([z.string(), z.string()])).optional()
+    roles: z.array(z.union([z.string(), z.number()]))
 }).refine((data) => {
     // For add mode, password is required
     if (mode === 'add') {

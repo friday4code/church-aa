@@ -5,7 +5,7 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
@@ -14,6 +14,7 @@ import { useMe } from "@/hooks/useMe"
 import type { User } from "@/types/users.type"
 import { toaster } from "@/components/ui/toaster"
 import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { adminApi } from "@/api/admin.api"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -37,6 +38,7 @@ interface DistrictAttendanceReportProps {
     isLoading?: boolean
     onDownloadNewComers?: (data: ReportFormValues) => void
     onDownloadTitheOffering?: (data: ReportFormValues) => void
+    onDownloadConsolidated?: (data: ReportFormValues) => void
 }
 
 export const DistrictAttendanceReport = ({
@@ -49,6 +51,7 @@ export const DistrictAttendanceReport = ({
     isLoading = false,
     onDownloadNewComers,
     onDownloadTitheOffering,
+    onDownloadConsolidated,
 }: DistrictAttendanceReportProps) => {
     const { user } = useMe()
     const { getRoles } = useAuth()
@@ -71,10 +74,40 @@ export const DistrictAttendanceReport = ({
     const districtsCollection = useMemo(() => {
         const did = (user as User | null)?.district_id
         const data = districts.find(item => Number(item.id) === Number(did));
-        return did ? [{ label: data?.name as string, value: String(did) }] : []
+        return did ? [{ label: data?.name || "", value: String(did) }] : []
     }, [user, districts])
 
-    const { setValue, trigger } = form
+    const { setValue, trigger, watch } = form
+    const [districtItems, setDistrictItems] = useState<Array<{ label: string; value: string }>>([])
+    const [districtsLoading, setDistrictsLoading] = useState(false)
+    const watchedGroup = watch('group')
+
+    useEffect(() => {
+        if (!watchedGroup) {
+            setDistrictItems([])
+            if (roleVisibility.showDistrict) setValue('district', '')
+            return
+        }
+
+        if (!roleVisibility.showDistrict) return
+
+        setDistrictsLoading(true)
+        const groupId = parseInt(watchedGroup, 10)
+        if (isNaN(groupId)) {
+            setDistrictsLoading(false)
+            return
+        }
+
+        adminApi.getDistrictsByGroupId(groupId)
+            .then((list) => {
+                setDistrictItems(list.map(d => ({ label: d.name, value: String(d.id) })))
+            })
+            .catch((err) => {
+                toaster.create({ title: 'Failed to load districts', description: err?.message || 'Please try again', type: 'error' })
+                setDistrictItems([])
+            })
+            .finally(() => setDistrictsLoading(false))
+    }, [watchedGroup, roleVisibility.showDistrict, setValue])
 
     useEffect(() => {
         if (!user) return
@@ -96,7 +129,7 @@ export const DistrictAttendanceReport = ({
 
     const handleSubmit = (data: ReportFormValues) => {
         const did = (user as User | null)?.district_id
-        if (!did || String(data.district) !== String(did)) {
+        if (did && String(data.district) !== String(did)) {
             toaster.error({ description: 'Unauthorized district selection', closable: true })
             return
         }
@@ -136,9 +169,10 @@ export const DistrictAttendanceReport = ({
                                     form={form}
                                     name="district"
                                     label="District"
-                                    items={districtsCollection}
+                                    items={districtItems.length ? districtItems : districtsCollection}
                                     placeholder="Type to search district"
-                                    disabled={!districtsCollection}
+                                    disabled={!watchedGroup || districtsLoading}
+                                    isLoading={districtsLoading}
                                     required
                                 />
                             </GridItem>
@@ -160,6 +194,17 @@ export const DistrictAttendanceReport = ({
                         </Button>
                     </Flex>
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
+                        <Button
+                            type="button"
+                            colorPalette="accent"
+                            variant="surface"
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Consolidated Report
+                        </Button>
                         <Button
                             type="button"
                             colorPalette="accent"

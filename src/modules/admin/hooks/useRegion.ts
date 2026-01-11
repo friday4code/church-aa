@@ -39,18 +39,17 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
     const createRegion = useMutation({
         mutationFn: adminApi.createRegion,
         onSuccess: async () => {
+
+            // Call the lifted callback
+            onCreateSuccess?.();
             toaster.create({
                 description: "Region created successfully",
                 type: "success",
                 closable: true,
             });
 
-            
+            await queryClient.invalidateQueries({ queryKey: ['regions'] });
 
-            queryClient.invalidateQueries({ queryKey: ['regions'] });
-
-            // Call the lifted callback
-            onCreateSuccess?.();
         },
         onError: (error) => {
             toaster.create({
@@ -68,18 +67,18 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
         mutationFn: ({ id, data }: { id: string | number; data: any }) =>
             adminApi.updateRegion(id, data),
         onSuccess: async () => {
+
+
+
+            // Call the lifted callback
+            onUpdateSuccess?.();
             toaster.create({
                 description: "Region updated successfully",
                 type: "success",
                 closable: true,
             });
-
             
-
-            queryClient.invalidateQueries({ queryKey: ['regions'] });
-
-            // Call the lifted callback
-            onUpdateSuccess?.();
+            await queryClient.invalidateQueries({ queryKey: ['regions'] });
         },
         onError: (error) => {
             toaster.create({
@@ -96,18 +95,18 @@ export const useRegions = (options: UseRegionsOptions = {}) => {
     const deleteRegion = useMutation({
         mutationFn: adminApi.deleteRegion,
         onSuccess: async () => {
+
+            // Call the lifted callback
+            onDeleteSuccess?.();
+
             toaster.create({
                 description: "Region deleted successfully",
                 type: "success",
                 closable: true,
             });
 
-            
+                await queryClient.invalidateQueries({ queryKey: ['regions'] });
 
-            queryClient.invalidateQueries({ queryKey: ['regions'] });
-
-            // Call the lifted callback
-            onDeleteSuccess?.();
         },
         onError: (error) => {
             toaster.create({

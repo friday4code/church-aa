@@ -15,6 +15,7 @@ import { adminApi } from "@/api/admin.api"
 import { toaster } from "@/components/ui/toaster"
 import { useStates } from "@/modules/admin/hooks/useState"
 import { resolveStateIdFromValue } from "./regionFilters"
+import type { User } from "@/types/users.type"
 
 /**
  * Resolve a state ID from a combobox value.
@@ -43,6 +44,7 @@ interface RegionAttendanceReportProps {
     isLoading?: boolean
     onDownloadNewComers?: (data: ReportFormValues) => void
     onDownloadTitheOffering?: (data: ReportFormValues) => void
+    onDownloadConsolidated?: (data: ReportFormValues) => void
 }
 
 export const RegionAttendanceReport = ({
@@ -54,6 +56,7 @@ export const RegionAttendanceReport = ({
     isLoading = false,
     onDownloadNewComers,
     onDownloadTitheOffering,
+    onDownloadConsolidated,
 }: RegionAttendanceReportProps) => {
     const { user: authUser } = useAuth()
     const { user } = useMe()
@@ -111,6 +114,11 @@ export const RegionAttendanceReport = ({
     }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
+        const rid = (user as User | null)?.region_id
+        if (rid && String(data.region) !== String(rid)) {
+            toaster.error({ description: 'Unauthorized region selection', closable: true })
+            return
+        }
         onDownload(data)
     }
 
@@ -197,17 +205,28 @@ export const RegionAttendanceReport = ({
                     </Grid>
                     <Flex justify="end">
                         <Button
+                            w={{ base: "100%", md: "auto" }}
                             type="submit"
                             colorPalette="accent"
                             disabled={isLoading}
                             rounded="xl"
-                            w={{ base: "100%", md: "auto" }}
                         >
                             <DocumentDownload size="20" />
                             Download Report
                         </Button>
                     </Flex>
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
+                        <Button
+                            type="button"
+                            colorPalette="accent"
+                            variant="surface"
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Consolidated Report
+                        </Button>
                         <Button
                             type="button"
                             colorPalette="accent"

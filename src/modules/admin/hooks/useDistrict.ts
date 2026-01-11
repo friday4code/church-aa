@@ -2,7 +2,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toaster } from "@/components/ui/toaster";
 import { adminApi } from "@/api/admin.api";
-import { delay } from "@/utils/helpers";
 
 interface UseDistrictsOptions {
     onCreateSuccess?: () => void;
@@ -33,17 +32,14 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
     const createDistrict = useMutation({
         mutationFn: adminApi.createDistrict,
         onSuccess: async () => {
+            onCreateSuccess?.();
             toaster.create({
                 description: "District created successfully",
                 type: "success",
                 closable: true,
             });
-
             
-
-            queryClient.invalidateQueries({ queryKey: ['districts'] });
-
-            onCreateSuccess?.();
+            await queryClient.invalidateQueries({ queryKey: ['districts'] });
         },
         onError: (error) => {
             toaster.create({
@@ -60,17 +56,13 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
         mutationFn: ({ id, data }: { id: string | number; data: any }) =>
             adminApi.updateDistrict(id, data),
         onSuccess: async () => {
+            onUpdateSuccess?.();
             toaster.create({
                 description: "District updated successfully",
                 type: "success",
                 closable: true,
             });
-
-            
-
-            queryClient.invalidateQueries({ queryKey: ['districts'] });
-
-            onUpdateSuccess?.();
+                await queryClient.invalidateQueries({ queryKey: ['districts'] });
         },
         onError: (error) => {
             toaster.create({
@@ -86,17 +78,13 @@ export const useDistricts = (options: UseDistrictsOptions = {}) => {
     const deleteDistrict = useMutation({
         mutationFn: adminApi.deleteDistrict,
         onSuccess: async () => {
+            onDeleteSuccess?.();
             toaster.create({
                 description: "District deleted successfully",
                 type: "success",
                 closable: true,
             });
-
-            
-
-            queryClient.invalidateQueries({ queryKey: ['districts'] });
-
-            onDeleteSuccess?.();
+            await queryClient.invalidateQueries({ queryKey: ['districts'] });
         },
         onError: (error) => {
             toaster.create({

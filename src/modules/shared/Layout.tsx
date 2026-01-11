@@ -153,7 +153,7 @@ const Layout: React.FC<LayoutProps> = ({ sidebar, children }) => {
             <Box display={{ base: "none", md: "block" }} bg="red.300" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" bottom={0} left={20} zIndex={0} />
             <Box display={{ base: "none", md: "block" }} bg="accent.300" filter={"blur(60px)"} rounded="full" boxSize={40} pos="absolute" bottom={"50%"} transform={"translateY(50%)"} left={"50%"} zIndex={0} />
 
-        </Flex >
+        </Flex>
     );
 };
 

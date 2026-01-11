@@ -21,10 +21,10 @@ export const useGroups = (options?: {
 
     const createMutation = useMutation({
         mutationFn: adminApi.createGroup,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['groups'] });
-            toaster.success({ description: "Group created successfully", closable: true });
+        onSuccess: async () => {
             options?.onCreateSuccess?.();
+            toaster.success({ description: "Group created successfully", closable: true });
+            await queryClient.invalidateQueries({ queryKey: ['groups'] });
         },
         onError: (error: any) => {
             toaster.error(error.message || "Failed to create group");
@@ -33,11 +33,11 @@ export const useGroups = (options?: {
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number | string; data: any }) => adminApi.updateGroup(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['groups'] });
-            toaster.success({ description: "Group updated successfully", closable: true });
-
+        onSuccess: async () => {
             options?.onUpdateSuccess?.();
+            toaster.success({ description: "Group updated successfully", closable: true });
+            await queryClient.invalidateQueries({ queryKey: ['groups'] });
+
         },
         onError: (error: any) => {
             toaster.error(error.message || "Failed to update group");
@@ -46,11 +46,11 @@ export const useGroups = (options?: {
 
     const deleteMutation = useMutation({
         mutationFn: adminApi.deleteGroup,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['groups'] });
-            toaster.success({ description:"Group deleted successfully" , closable: true });
-
+        onSuccess: async () => {
             options?.onDeleteSuccess?.();
+            toaster.success({ description:"Group deleted successfully" , closable: true });
+            await queryClient.invalidateQueries({ queryKey: ['groups'] });
+
         },
         onError: (error: any) => {
             toaster.error(error.message || "Failed to delete group");

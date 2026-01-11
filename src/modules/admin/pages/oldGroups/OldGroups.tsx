@@ -116,14 +116,12 @@ const Content = () => {
         isDeleting
     } = useOldGroups({
         async onCreateSuccess() {
-            toaster.success({ description: ` Old group created!` });
-
             setDialogState({ isOpen: false, mode: 'add' })
+            toaster.success({ description: ` Old group created!` });
         },
         async onUpdateSuccess() {
-            toaster.success({ description: `Old group updated!` });
-
             setDialogState({ isOpen: false, mode: 'edit' })
+            toaster.success({ description: `Old group updated!` });
         },
     })
 
@@ -430,7 +428,7 @@ const Content = () => {
                 )}
             </Box>
 
-            <Toaster />
+            
         </>
     )
 }

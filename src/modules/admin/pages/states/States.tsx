@@ -11,7 +11,7 @@ import {
     Center,
     Text,
 } from "@chakra-ui/react"
-import { useQueryErrorResetBoundary } from "@tanstack/react-query"
+import { useQueryClient, useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
@@ -104,11 +104,13 @@ const Content = () => {
         isUpdating,
         isDeleting
     } = useStates({
-        onCreateSuccess() {
+        async onCreateSuccess() {
             setDialogState({ isOpen: false, mode: 'add' })
+            
         },
-        onUpdateSuccess() {
+        async onUpdateSuccess() {
             setDialogState({ isOpen: false, mode: 'edit' })
+           
         },
     })
 
@@ -258,8 +260,8 @@ const Content = () => {
     const handleSaveState = (data: any) => {
         // Transform data to match API structure
         const apiData = {
-            name: data.name,
-            code: data.code,
+            name: data.stateName,
+            code: data.stateCode,
             leader: data.leader,
             leader_email: data.leader_email,
             leader_phone: data.leader_phone
@@ -394,8 +396,6 @@ const Content = () => {
                 )}
             </Box>
 
-
-            <Toaster />
         </>
     )
 }

@@ -8,6 +8,7 @@ import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
 import { useGroups } from "@/modules/admin/hooks/useGroup"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 import { useYouthAttendance } from "@/modules/admin/hooks/useYouthAttendance"
 import ReportsHeader from "./ReportsHeader"
 import StatCard from "./StatCard"
@@ -47,7 +48,7 @@ const MemoYouthAttendanceReport = memo(YouthAttendanceReport)
 // 2. HELPER: Stable Callback Hook
 // ----------------------------------------------------------------------
 // This ensures 'handleDownload' NEVER changes identity, preventing child re-renders.
-function useStableCallback<T extends (...args: unknown[]) => unknown>(callback: T): T {
+function useStableCallback<T extends (...args: any[]) => any>(callback: T): T {
     const callbackRef = useRef(callback)
 
     // Update ref on every render so it always has the latest closure scope
@@ -70,7 +71,7 @@ export const ReportsContent = () => {
     const { regions = [], isLoading: isLoadingRegions } = useRegions()
     const { groups = [], isLoading: isLoadingGroups } = useGroups()
     const { oldGroups = [], isLoading: isLoadingOldGroups } = useOldGroups()
-    // districts not required here; remove to avoid unused var lint
+    const { districts = [] } = useDistricts()
     const { data: weeklyResp, isLoading: isLoadingWeekly } = useYouthAttendance({ attendance_type: 'weekly' })
     const { data: revivalResp, isLoading: isLoadingRevival } = useYouthAttendance({ attendance_type: 'revival' })
     const { user: authUser, hasRole } = useAuth()
@@ -461,6 +462,136 @@ export const ReportsContent = () => {
         } catch (error) {
             console.error(error)
             toaster.error({ description: 'Failed to generate report', closable: true })
+        } finally {
+            setIsReportGenerating(false)
+        }
+    })
+
+    const handleDownloadConsolidatedReport = useStableCallback(async (data: ReportFormValues) => {
+        setIsReportGenerating(true)
+        try {
+            if (!allowedReportTypes.includes(deferredTab)) {
+                toaster.error({ description: 'Permission denied for this report type', closable: true })
+                return
+            }
+
+            // Shared filtering logic
+            let filtered: AttendanceRecord[] = attendances as AttendanceRecord[]
+            const filterCriteria: {
+                stateId?: number
+                regionId?: number
+                districtId?: number
+                groupId?: number
+                oldGroupId?: number
+                year?: number
+                monthRange?: { from: number; to: number }
+            } = {}
+            let stateName = 'AKWA IBOM'
+
+            if (deferredTab === 'region' && !hasRole('Super Admin')) filterCriteria.regionId = authUser?.region_id ?? undefined
+            if (deferredTab === 'group' && !hasRole('Super Admin')) {
+                const u = authUser as User | null
+                filterCriteria.groupId = u?.group_id ?? undefined
+                if (u?.old_group_id != null) filterCriteria.oldGroupId = u.old_group_id
+            }
+
+            if (data.state) {
+                const sObj = Array.from(maps.state.values()).find(s => (s.id || s.stateName) === Number(data.state))
+                if (sObj) { filterCriteria.stateId = sObj.id; stateName = sObj.name || sObj.stateName || stateName }
+            }
+            if (data.region) {
+                const rObj = Array.from(maps.region.values()).find(r => (r.id || r.regionName) === Number(data.region))
+                if (rObj) filterCriteria.regionId = rObj.id
+            }
+            if (data.group) {
+                const gObj = Array.from(maps.group.values()).find(g => (g.id || g.groupName) === Number(data.group))
+                if (gObj) filterCriteria.groupId = gObj.id
+            }
+            if (data.district) {
+                const dId = parseInt(data.district, 10)
+                if (!Number.isNaN(dId)) filterCriteria.districtId = dId
+            }
+            if (data.oldGroup) {
+                const ogObj = oldGroups.find(g => (g.id || g.groupName) === Number(data.oldGroup))
+                if (ogObj) filterCriteria.oldGroupId = ogObj.id
+            }
+            if (data.year) filterCriteria.year = parseInt(data.year, 10)
+            if (data.month) {
+                const mIdx = parseInt(data.month, 10)
+                if (mIdx >= 1) filterCriteria.monthRange = { from: mIdx, to: mIdx }
+            } else if (data.fromMonth && data.toMonth) {
+                const fIdx = parseInt(data.fromMonth, 10)
+                const tIdx = parseInt(data.toMonth, 10)
+                if (fIdx >= 1 && tIdx >= 1) {
+                    filterCriteria.monthRange = { from: fIdx, to: tIdx }
+                }
+            }
+
+            filtered = await filterAttendanceRecords(filtered, filterCriteria)
+
+                const year = filterCriteria.year ?? new Date().getFullYear()
+                const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+
+                if (deferredTab === 'state') {
+                    if (!filterCriteria.stateId) {
+                        toaster.error({ description: 'Select a state', closable: true })
+                        return
+                    }
+                    const stateRegions = getRegionsByStateName(stateName, regions as unknown as Region[])
+                    const title = `Deeper Life Bible Church, ${stateName} (State)`
+                    const sheet = buildConsolidatedReportSheet(filtered, (stateRegions as Region[]).sort((a, b) => a.name.localeCompare(b.name)), title, year, spec, 'Regions', 'region_id')
+                    exportSheet(sheet, getReportFileName('state').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
+                } else if (deferredTab === 'region') {
+                    if (!filterCriteria.regionId) {
+                         toaster.error({ description: 'Select a region', closable: true })
+                         return
+                    }
+                    const rObj = regions.find(r => Number(r.id) === Number(filterCriteria.regionId))
+                    const rName = rObj ? (rObj.name || rObj.regionName) : 'Region'
+                    const regionGroups = groups.filter(g => Number(regions.find(r=> r.name === g.region)?.id) === Number(filterCriteria.regionId)).sort((a, b) => (a.name || a.groupName).localeCompare(b.name || b.groupName))
+                    const title = `Deeper Life Bible Church, ${rName} (Region)`
+                    const sheet = buildConsolidatedReportSheet(filtered, regionGroups.map(g => ({ id: g.id, name: g.name || g.groupName })), title, year, spec, 'Groups', 'group_id')
+                    exportSheet(sheet, getReportFileName('region').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
+                } else if (deferredTab === 'group') {
+                    if (!filterCriteria.groupId) {
+                        toaster.error({ description: 'Select a group', closable: true })
+                        return
+                    }
+                    const gObj = groups.find(g => Number(g.id) === Number(filterCriteria.groupId))
+                    const gName = gObj ? (gObj.name || gObj.groupName) : 'Group'
+                    const groupDistricts = districts.filter(d => Number(groups.find(g => g.name === d.group)?.id) === Number(filterCriteria.groupId)).sort((a, b) => a.name.localeCompare(b.name))
+                    const title = `Deeper Life Bible Church, ${gName} (Group)`
+                    const sheet = buildConsolidatedReportSheet(filtered, groupDistricts.map(d => ({ id: d.id, name: d.name })), title, year, spec, 'Districts', 'district_id')
+                    exportSheet(sheet, getReportFileName('group').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
+                } else if (deferredTab === 'oldGroup') {
+                    if (!filterCriteria.oldGroupId) {
+                        toaster.error({ description: 'Select an old group', closable: true })
+                        return
+                    }
+                    const ogObj = oldGroups.find(og => Number(og.id) === Number(filterCriteria.oldGroupId))
+                    const ogName = ogObj ? (ogObj.name || ogObj.groupName) : 'Old Group'
+                    console.log(groups)
+                    const ogGroups = groups.filter(g => Number(oldGroups.find(og => og.name === g.old_group)?.id) === Number(filterCriteria.oldGroupId)).sort((a, b) => (a.name || a.groupName).localeCompare(b.name || b.groupName))   
+                    const title = `Deeper Life Bible Church, ${ogName} (Old Group)`
+                    const sheet = buildConsolidatedReportSheet(filtered, ogGroups.map(g => ({ id: g.id, name: g.name || g.groupName })), title, year, spec, 'Groups', 'group_id')
+                    exportSheet(sheet, getReportFileName('oldGroup').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
+                } else if (deferredTab === 'district') {
+                    if (!filterCriteria.districtId) {
+                        toaster.error({ description: 'Select a district', closable: true })
+                        return
+                    }
+                    const dObj = districts.find(d => Number(d.id) === Number(filterCriteria.districtId))
+                    const dName = dObj ? dObj.name : 'District'
+                    const title = `Deeper Life Bible Church, ${dName} (District)`
+                    // For district, we list the district itself as the single entity
+                    const entities = dObj ? [{ id: dObj.id, name: dObj.name }] : []
+                    const sheet = buildConsolidatedReportSheet(filtered, entities, title, year, spec, 'District', 'district_id')
+                    exportSheet(sheet, getReportFileName('district').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
+                }
+
+            } catch (error) {
+            console.error(error)
+            toaster.error({ description: 'Failed to generate consolidated report', closable: true })
         } finally {
             setIsReportGenerating(false)
         }
@@ -968,7 +1099,7 @@ export const ReportsContent = () => {
                     statesCollection={scopedCollections.s}
                     onDownloadNewComers={handleDownloadNewComersReport}
                     onDownloadTitheOffering={handleDownloadTitheOfferingReport}
-                    // onDownloadConsolidated={handleDownloadConsolidatedReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "region":
                 return <MemoRegionAttendanceReport
@@ -977,6 +1108,7 @@ export const ReportsContent = () => {
                     regionsCollection={scopedCollections.r}
                     onDownloadNewComers={handleDownloadRegionNewComersReport}
                     onDownloadTitheOffering={handleDownloadRegionTitheOfferingReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "group":
                 return <MemoGroupAttendanceReport
@@ -987,6 +1119,7 @@ export const ReportsContent = () => {
                     oldGroupsCollection={scopedCollections.og}
                     onDownloadNewComers={handleDownloadGroupNewComersReport}
                     onDownloadTitheOffering={handleDownloadGroupTitheOfferingReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "oldGroup":
                 return <MemoOldGroupAttendanceReport
@@ -996,6 +1129,7 @@ export const ReportsContent = () => {
                     oldGroupsCollection={scopedCollections.og}
                     onDownloadNewComers={handleDownloadOldGroupNewComersReport}
                     onDownloadTitheOffering={handleDownloadOldGroupTitheOfferingReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "district":
                 return <MemoDistrictAttendanceReport
@@ -1005,6 +1139,7 @@ export const ReportsContent = () => {
                     groupsCollection={scopedCollections.g}
                     onDownloadNewComers={handleDownloadDistrictNewComersReport}
                     onDownloadTitheOffering={handleDownloadDistrictTitheOfferingReport}
+                    onDownloadConsolidated={handleDownloadConsolidatedReport}
                 />
             case "youth":
                 return <MemoYouthAttendanceReport
@@ -1085,7 +1220,7 @@ export const ReportsContent = () => {
                 </Card.Body>
             </Card.Root>
 
-            <Toaster />
+            
         </VStack>
     )
 }

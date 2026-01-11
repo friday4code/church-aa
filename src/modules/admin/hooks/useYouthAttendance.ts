@@ -27,8 +27,8 @@ export const useCreateYouthAttendance = () => {
     
     return useMutation({
         mutationFn: (data: CreateYouthAttendanceData) => adminApi.createYouthAttendance(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
                 queryKey: YOUTH_ATTENDANCE_QUERY_KEY,
             })
         },
@@ -41,8 +41,8 @@ export const useUpdateYouthAttendance = () => {
     return useMutation({
         mutationFn: ({ yaId, data }: { yaId: string | number; data: UpdateYouthAttendanceData }) =>
             adminApi.updateYouthAttendance(yaId, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
                 queryKey: YOUTH_ATTENDANCE_QUERY_KEY,
             })
         },
@@ -54,8 +54,8 @@ export const useDeleteYouthAttendance = () => {
     
     return useMutation({
         mutationFn: (yaId: string | number) => adminApi.deleteYouthAttendance(yaId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
                 queryKey: YOUTH_ATTENDANCE_QUERY_KEY,
             })
         },
@@ -68,8 +68,8 @@ export const useUploadYouthAttendanceCSV = () => {
     return useMutation({
         mutationFn: ({ fileData, attendanceType }: { fileData: FormData; attendanceType: 'weekly' | 'revival' }) =>
             adminApi.uploadYouthAttendanceCSV(fileData, attendanceType),
-        onSuccess: () => {
-            queryClient.invalidateQueries({
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
                 queryKey: YOUTH_ATTENDANCE_QUERY_KEY,
             })
         },

@@ -6,7 +6,7 @@ import {
     CloseButton,
     Button,
 } from "@chakra-ui/react"
-import type { Attendance } from "../../../stores/attendance.store"
+import type { Attendance } from "@/types/attendance.type"
 
 interface DeleteConfirmationDialogProps {
     isOpen: boolean

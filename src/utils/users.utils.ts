@@ -10,7 +10,7 @@ export const copyUsersToClipboard = async (users: User[]): Promise<void> => {
     const text = users
         .map(
             (user) =>
-                `${user.id}\t${user.firstName} ${user.lastName}\t${user.email}\t${user.phone}`
+                `${user.id}\t${user.name}\t${user.email}\t${user.phone}`
         )
         .join('\n');
 

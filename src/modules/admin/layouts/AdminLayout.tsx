@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 import AdminSidebar from "../components/AdminSidebar";
 import ScrollRest from "@/components/ScrollRest";
 import DismissToasts from "@/components/DismissToasts";
+import { Toaster } from "@/components/ui/toaster";
 // import TitleGuard from "@/modules/shared/TitleGuard";
 
 const AdminLayout: React.FC = () => {
@@ -12,6 +13,7 @@ const AdminLayout: React.FC = () => {
             <Outlet />
             <ScrollRest />
             <DismissToasts />
+            <Toaster />
         </Layout>
     );
 };

@@ -18,9 +18,8 @@ import {
     ScrollArea,
 } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { Toaster, toaster } from "@/components/ui/toaster";
+import { toaster } from "@/components/ui/toaster";
 import { Link, useNavigate } from "react-router";
-import { delay } from "@/utils/helpers";
 import { Sms, ArrowLeft } from "iconsax-reactjs";
 import { authApi } from "@/api/auth.api";
 
@@ -201,7 +200,7 @@ const ForgotPassword = () => {
                             bottom="6"
                             mt="8"
                         />
-                        <Toaster />
+                        
                     </Box>
                 </ScrollArea.Content>
             </ScrollArea.Viewport>

@@ -30,30 +30,34 @@ const reportFiltersSchema = z.object({
 interface GroupAttendanceReportProps {
     statesCollection: Array<{ label: string; value: string }>
     regionsCollection: Array<{ label: string; value: string }>
-    groupsCollection: Array<{ label: string; value: string }>
     oldGroupsCollection: Array<{ label: string; value: string }>
+    groupsCollection: Array<{ label: string; value: string }>
     yearsCollection: Array<{ label: string; value: string }>
     monthsCollection: Array<{ label: string; value: string }>
     onDownload: (data: ReportFormValues) => void
     isLoading?: boolean
     onDownloadNewComers?: (data: ReportFormValues) => void
     onDownloadTitheOffering?: (data: ReportFormValues) => void
+    onDownloadConsolidated?: (data: ReportFormValues) => void
 }
 
 export const GroupAttendanceReport = ({
     statesCollection,
     regionsCollection,
-    groupsCollection,
     oldGroupsCollection,
+    groupsCollection,
     yearsCollection,
     monthsCollection,
     onDownload,
     isLoading = false,
     onDownloadNewComers,
     onDownloadTitheOffering,
+    onDownloadConsolidated,
 }: GroupAttendanceReportProps) => {
     const { user: authUser } = useAuth()
     const { user } = useMe()
+    console.log("user", user);
+    
     const { getRoles } = useAuth()
     const userRoles = getRoles()
     const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
@@ -74,26 +78,29 @@ export const GroupAttendanceReport = ({
     const { setValue, trigger, watch } = form
     const watchedYear = watch('year')
     const watchedMonth = watch('month')
+    const watchedFromMonth = watch('fromMonth')
+    const watchedToMonth = watch('toMonth')
     const isValidYear = useMemo(() => {
         const yr = parseInt(String(watchedYear || ''), 10)
         return !!yr && !Number.isNaN(yr) && yr >= 1900 && yr <= 2100
     }, [watchedYear])
-    const isValidMonth = useMemo(() => {
-        const mn = parseInt(String(watchedMonth || ''), 10)
-        return !!mn && !Number.isNaN(mn) && mn >= 1 && mn <= 12
-    }, [watchedMonth])
-    const isReady = isValidYear && isValidMonth
+    const isValidRange = useMemo(() => {
+        const from = parseInt(String(watchedFromMonth || ''), 10)
+        const to = parseInt(String(watchedToMonth || ''), 10)
+        return !!from && !!to && !Number.isNaN(from) && !Number.isNaN(to) && from >= 1 && from <= 12 && to >= 1 && to <= 12 && from <= to
+    }, [watchedFromMonth, watchedToMonth])
+    const isReady = isValidYear && isValidRange
     const disabledReason = useMemo(() => {
         if (!isValidYear) return "Select a valid year"
-        if (!isValidMonth) return "Select a valid month"
+        if (!isValidRange) return "Select a valid month range"
         return ""
-    }, [isValidYear, isValidMonth])
+    }, [isValidYear, isValidRange])
 
     useEffect(() => {
-        console.log(watchedYear, watchedMonth)
         trigger('year')
-        trigger('month')
-    }, [watchedYear, watchedMonth, trigger])
+        trigger('fromMonth')
+        trigger('toMonth')
+    }, [watchedYear, watchedFromMonth, watchedToMonth, trigger])
 
     // Auto-populate hidden fields with user data
     useEffect(() => {
@@ -107,6 +114,11 @@ export const GroupAttendanceReport = ({
         if (!roleVisibility.showRegion && user.region_id) {
             setValue('region', user.region_id.toString(), { shouldValidate: true })
             trigger('region')
+        }
+
+        if (!roleVisibility.showOldGroup && user.old_group_id) {
+            setValue('oldGroup', user.old_group_id.toString(), { shouldValidate: true })
+            trigger('oldGroup')
         }
 
         if (!roleVisibility.showDistrict && user.district_id) {
@@ -131,7 +143,6 @@ export const GroupAttendanceReport = ({
     const handleSubmit = (data: ReportFormValues) => {
         console.log("submit:start", { year: data.year, month: data.month, fromMonth: data.fromMonth, toMonth: data.toMonth, group: data.group })
         const yr = parseInt(String(data.year || ""), 10)
-        const mn = parseInt(String(data.month || ""), 10)
         const fromMn = parseInt(String(data.fromMonth || ""), 10)
         const toMn = parseInt(String(data.toMonth || ""), 10)
 
@@ -140,15 +151,14 @@ export const GroupAttendanceReport = ({
             return
         }
 
-        const hasValidMonth = !!mn && !Number.isNaN(mn) && mn >= 1 && mn <= 12
         const hasValidRange = !!fromMn && !!toMn && !Number.isNaN(fromMn) && !Number.isNaN(toMn) && fromMn >= 1 && fromMn <= 12 && toMn >= 1 && toMn <= 12 && fromMn <= toMn
 
-        if (!hasValidMonth && !hasValidRange) {
-            toaster.error({ description: "Select a valid month or month range", closable: true })
+        if (!hasValidRange) {
+            toaster.error({ description: "Select a valid month range", closable: true })
             return
         }
         const gid = (user as User | null)?.group_id
-        if (!gid || String(data.group) !== String(gid)) {
+        if (!gid || (String(data.group) !== String(gid) && !user?.roles.includes("Super Admin"))) {
             toaster.error({ description: "Unauthorized group selection", closable: true })
             return
         }
@@ -216,7 +226,20 @@ export const GroupAttendanceReport = ({
                             </GridItem>
                         )}
 
-                        {true && (
+                        {roleVisibility.showOldGroup && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="oldGroup"
+                                    label="Old Group"
+                                    items={oldGroupsCollection}
+                                    placeholder="Type to search old group"
+                                    required
+                                />
+                            </GridItem>
+                        )}
+
+                        {roleVisibility.showGroup && (
                             <GridItem>
                                 <CustomComboboxField
                                     form={form}
@@ -237,15 +260,6 @@ export const GroupAttendanceReport = ({
                                 items={yearsCollection}
                                 placeholder="Type to search year"
                                 required
-                            />
-                        </GridItem>
-                        <GridItem>
-                            <CustomComboboxField
-                                form={form}
-                                name="month"
-                                label="Month"
-                                items={monthsCollection}
-                                placeholder="Type to search month"
                             />
                         </GridItem>
                         <GridItem>
@@ -284,6 +298,17 @@ export const GroupAttendanceReport = ({
                         </Tooltip>
                     </Flex>
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
+                        <Button
+                            type="button"
+                            colorPalette="accent"
+                            variant="surface"
+                            disabled={isLoading || !isReady}
+                            rounded="xl"
+                            onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Consolidated Report
+                        </Button>
                         <Button
                             type="button"
                             colorPalette="accent"

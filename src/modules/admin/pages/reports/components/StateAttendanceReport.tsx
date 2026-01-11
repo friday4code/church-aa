@@ -43,6 +43,7 @@ export const StateAttendanceReport = ({
     isLoading = false,
     onDownloadNewComers,
     onDownloadTitheOffering,
+    onDownloadConsolidated,
 }: StateAttendanceReportProps) => {
     const { user } = useMe()
     const { getRoles } = useAuth()

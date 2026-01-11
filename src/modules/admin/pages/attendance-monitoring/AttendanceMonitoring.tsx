@@ -229,7 +229,7 @@ const Content = () => {
                     </Card.Root>
                 </VStack>
             </VStack>
-            <Toaster />
+            
         </>
     );
 }

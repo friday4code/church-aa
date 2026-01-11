@@ -5,7 +5,7 @@ import { DocumentDownload } from "iconsax-reactjs"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
@@ -13,7 +13,7 @@ import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
 import { toaster } from "@/components/ui/toaster"
 import type { User } from "@/types/users.type"
-import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { adminApi } from "@/api/admin.api"
 
 const reportFiltersSchema = z.object({
     year: z.string().optional(),
@@ -37,24 +37,25 @@ interface OldGroupAttendanceReportProps {
     isLoading?: boolean
     onDownloadNewComers?: (data: ReportFormValues) => void
     onDownloadTitheOffering?: (data: ReportFormValues) => void
+    onDownloadConsolidated?: (data: ReportFormValues) => void
 }
 
 export const OldGroupAttendanceReport = ({
     statesCollection,
     regionsCollection,
-    // oldGroupsCollection,
+    oldGroupsCollection,
     yearsCollection,
     monthsCollection,
     onDownload,
     isLoading = false,
     onDownloadNewComers,
     onDownloadTitheOffering,
+    onDownloadConsolidated,
 }: OldGroupAttendanceReportProps) => {
     const { user: authUser } = useAuth()
     const { user } = useMe()
     const { getRoles } = useAuth()
     const userRoles = getRoles()
-    const { oldGroups = [] } = useOldGroups();
     const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
 
     const form = useForm<ReportFormValues>({
@@ -69,9 +70,42 @@ export const OldGroupAttendanceReport = ({
         },
     })
 
-    const { setValue, trigger } = form
-    const oldGroupId = (user as User | null)?.old_group_id ?? null
-    const oldGroupsCollection = oldGroupId ? [oldGroups.find((og) => String(og.id) === String(oldGroupId))].map((og) => ({ label: og?.name || "", value: String(og?.id || "") })) : []
+    const { setValue, trigger, watch } = form
+    const [oldGroupItems, setOldGroupItems] = useState<Array<{ label: string; value: string }>>([])
+    const [oldGroupsLoading, setOldGroupsLoading] = useState(false)
+    const watchedRegion = watch('region')
+
+    useEffect(() => {
+        if (!watchedRegion) {
+            setOldGroupItems([])
+            if (roleVisibility.showOldGroup) setValue('oldGroup', '')
+            return
+        }
+
+        // Don't fetch if the user is restricted (already has oldGroup set)
+        // But if they are restricted, watchedRegion might be set automatically.
+        // If they are restricted to OldGroup, showOldGroup is false.
+        if (!roleVisibility.showOldGroup) return
+
+        setOldGroupsLoading(true)
+        // Parse region ID - assuming it's a string number
+        const regionId = parseInt(watchedRegion, 10)
+        if (isNaN(regionId)) {
+            setOldGroupsLoading(false)
+            return
+        }
+
+        adminApi.getOldGroupsByRegionId(regionId)
+            .then((list) => {
+                setOldGroupItems(list.map(og => ({ label: og.name, value: String(og.id) })))
+            })
+            .catch((err) => {
+                toaster.create({ title: 'Failed to load old groups', description: err?.message || 'Please try again', type: 'error' })
+                setOldGroupItems([])
+            })
+            .finally(() => setOldGroupsLoading(false))
+    }, [watchedRegion, roleVisibility.showOldGroup, setValue])
+
     useEffect(() => {
         if (!user) return
 
@@ -84,23 +118,17 @@ export const OldGroupAttendanceReport = ({
             setValue('region', user.region_id.toString(), { shouldValidate: true })
             trigger('region')
         }
-        if (!oldGroupId) {
-            toaster.error({ description: 'Old Group not available. Cannot load.', closable: true })
-        } else {
-            setValue('oldGroup', String(oldGroupId), { shouldValidate: true })
-            trigger('oldGroup')
-        }
-
+        
         if (!roleVisibility.showOldGroup && (user as User | null)?.old_group_id) {
             setValue('oldGroup', (user as User).old_group_id?.toString(), { shouldValidate: true })
             trigger('oldGroup')
         }
-    }, [user, roleVisibility, setValue, trigger, oldGroupId])
+    }, [user, roleVisibility, setValue, trigger])
 
     const handleSubmit = (data: ReportFormValues) => {
         try {
             const ogid = (user as User | null)?.old_group_id
-            if (!ogid || String(data.oldGroup) !== String(ogid)) {
+            if (ogid && String(data.oldGroup) !== String(ogid)) {
                 toaster.error({ description: 'Unauthorized old group selection', closable: true })
                 return
             }
@@ -132,7 +160,16 @@ export const OldGroupAttendanceReport = ({
                         )}
                         {roleVisibility.showOldGroup && (
                             <GridItem>
-                                <CustomComboboxField form={form} name="oldGroup" label="Old Group" items={oldGroupsCollection} placeholder="Type to search old group" required disabled={!oldGroupsCollection} />
+                                <CustomComboboxField 
+                                    form={form} 
+                                    name="oldGroup" 
+                                    label="Old Group" 
+                                    items={oldGroupItems.length ? oldGroupItems : oldGroupsCollection} 
+                                    placeholder="Type to search old group" 
+                                    required 
+                                    disabled={!watchedRegion || oldGroupsLoading}
+                                    isLoading={oldGroupsLoading}
+                                />
                             </GridItem>
                         )}
                         <GridItem>
@@ -152,6 +189,17 @@ export const OldGroupAttendanceReport = ({
                         </Button>
                     </Flex>
                     <Flex flexDir={{ base: "column", md: "row" }} justify="end" mt="3" gap="3">
+                        <Button
+                            type="button"
+                            colorPalette="accent"
+                            variant="surface"
+                            disabled={isLoading}
+                            rounded="xl"
+                            onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
+                        >
+                            <DocumentDownload size="20" />
+                            Download Consolidated Report
+                        </Button>
                         <Button
                             type="button"
                             colorPalette="accent"

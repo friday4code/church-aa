@@ -29,7 +29,7 @@ const UserEditForm = ({ user, onUpdate }: UserEditFormProps) => {
     const { user: authUser } = useMe();
 
     const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<UserFormData>({
-        resolver: zodResolver(userSchema("edit")),
+        resolver: zodResolver(userSchema("edit")) as any,
         defaultValues: {
             name: user.name,
             email: user.email,

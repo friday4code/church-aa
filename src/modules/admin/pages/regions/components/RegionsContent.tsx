@@ -365,7 +365,7 @@ const RegionsContent = () => {
                 )}
             </Box>
 
-            <Toaster />
+            
         </>
     )
 }

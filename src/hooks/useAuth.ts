@@ -3,7 +3,7 @@ import { useAuthStore } from "@/store/auth.store";
 
 export const useAuth = () => {
   const { user, loading, error, refetch } = useMe();
-  const { tokens, setAuth, logout, isAuthenticated } = useAuthStore();
+  const { tokens, setAuth, logout, isAuthenticated} = useAuthStore();
 
   const getRoles = () => {
     return user?.roles || [];

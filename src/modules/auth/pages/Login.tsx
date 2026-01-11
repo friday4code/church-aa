@@ -71,13 +71,16 @@ const Login = () => {
             console.log("Login successful:");
 
             // save data
+            console.log("user", response);
+            
             setAuth({ user: response.user, tokens: { refresh_token: response.refresh_token, access_token: response.access_token } });
 
             toaster.success({
                 description: "Login successful!",
             });
 
-            
+            await delay(1000);
+
 
             // Get the appropriate redirect path based on user roles from the response
             const redirectPath = getRedirectPath(response.user?.roles || []);
@@ -244,10 +247,11 @@ const Login = () => {
                             mt="8"
                             display={{ base: "none", md: "block" }}
                         />
+
                         <Toaster />
                     </Box>
                 </ScrollArea.Content>
-                <Toaster />
+
             </ScrollArea.Viewport >
             <ScrollArea.Scrollbar>
                 <ScrollArea.Thumb />

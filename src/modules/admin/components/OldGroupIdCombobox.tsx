@@ -44,6 +44,8 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
                 const data = await adminApi.getOldGroupsByRegionId(regionId)
                 const mapped: OldGroup[] = (data || []).map(g => ({ id: g.id, name: g.name, code: "", leader: "", state: "", region: "", state_id: undefined, region_id: regionId }))
                 setApiOldGroups(mapped)
+                console.log(mapped);
+                
             } finally {
                 setApiLoading(false)
             }

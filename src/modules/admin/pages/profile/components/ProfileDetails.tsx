@@ -88,7 +88,7 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
                             <VStack gap="1" align="start" w="full">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Email Address</Text>
                                 <HStack gap="2" w="full">
-                                    <Sms size="16" flexShrink={0} />
+                                    <Sms size="16" />
                                     <Text fontSize="lg" wordBreak="break-word">{user?.email}</Text>
                                 </HStack>
                             </VStack>
@@ -96,7 +96,7 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
                             <VStack gap="1" align="start" w="full">
                                 <Text fontSize="sm" color="gray.600" fontWeight="medium">Phone Number</Text>
                                 <HStack gap="2" w="full">
-                                    <CallCalling size="16" flexShrink={0} />
+                                    <CallCalling size="16" />
                                     <Text fontSize="lg" wordBreak="break-word">{user?.phone || 'Not provided'}</Text>
                                 </HStack>
                             </VStack>

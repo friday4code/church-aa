@@ -166,7 +166,7 @@ const UploadStatesFromFile = ({ data = [] }: UploadStatesFromFileProps) => {
                             name: stateName,
                             code: stateCode,
                             leader: leader || ''
-                        })
+                        } as any)
                         result.added++
                     }
                 } catch (error) {

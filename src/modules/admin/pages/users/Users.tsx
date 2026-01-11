@@ -14,7 +14,6 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query"
 import { ENV } from "@/config/env"
 import { ErrorBoundary } from "react-error-boundary"
 import ErrorFallback from "@/components/ErrorFallback"
-import { Toaster } from "@/components/ui/toaster"
 import { toaster } from "@/components/ui/toaster"
 import type { UserFormData } from "../../schemas/users.schema"
 import { useUserMutations, useUsers } from "../../hooks/useUser"
@@ -482,7 +481,7 @@ const Content = () => {
                 )}
             </Box>
 
-            <Toaster />
+            
         </>
     )
 }

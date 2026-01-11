@@ -13,23 +13,23 @@ export const useUserMutations = () => {
 
     const createUser = useMutation({
         mutationFn: adminApi.createUser,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 
     const updateUser = useMutation({
         mutationFn: ({ id, data }: { id: number; data: any }) => adminApi.updateUser(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 
     const deleteUser = useMutation({
         // mutationFn: adminApi.deleteUser,
         mutationFn: (id: number) => adminApi.deleteUser(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['users'] });
         },
     });
 

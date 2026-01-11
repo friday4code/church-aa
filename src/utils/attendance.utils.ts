@@ -297,7 +297,7 @@ export const transformApiToStore = (apiRecord: AttendanceRecord): Attendance => 
         updated_at: apiRecord.updated_at,
         new_comers: apiRecord.new_comers ?? 0,
         tithe_offering: apiRecord.tithe_offering ?? 0
-    };
+    } as any
 };
 
 export const transformStoreToApi = (attendance: Partial<Attendance>, mode: 'create' | 'update'): Partial<Attendance> => {

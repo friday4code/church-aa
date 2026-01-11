@@ -283,9 +283,10 @@ const Content: React.FC = () => {
             <Box boxSize="200px" mx="auto">
                 <PieChart>
                     <Tooltip cursor={false} animationDuration={100} />
-                    <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={chartData} dataKey="value" nameKey="name">
-                        <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
-                            const { cx, cy } = viewBox
+                    <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={chartData as any[]} dataKey="value" nameKey="name">
+                        <Label content={(props: any) => {
+                            const { cx, cy } = props.viewBox || {}
+                            if (typeof cx !== 'number' || typeof cy !== 'number') return null
                             return (
                                 <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
                                     <tspan fontSize="18" fontWeight="600">{totalUsersWithRights.toLocaleString()}</tspan>

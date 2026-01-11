@@ -45,28 +45,6 @@ export interface Attendance {
     tithe_offering?: number;
 }
 
-export interface Attendance {
-    id: number;
-    serviceType: string;
-    district: string;
-    month: string;
-    week: number;
-    men: number;
-    women: number;
-    youthBoys: number;
-    youthGirls: number;
-    childrenBoys: number;
-    childrenGirls: number;
-    year: number;
-    state?: string;
-    region?: string;
-    group?: string;
-    oldGroup?: string;
-    createdAt: Date;
-    updatedAt: Date;
-    new_comers?: number;
-    tithe_offering?: number;
-}
 export interface Region {
     code: string;
     id: number;

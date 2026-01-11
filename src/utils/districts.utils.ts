@@ -9,7 +9,7 @@ export const copyDistrictsToClipboard = async (districts: District[]): Promise<v
 
     const text = districts
         .map(
-            (district, index) =>
+            (district) =>
                 `${district.group}\t${district.name}\t${district.leader}`
         )
         .join('\n');
@@ -35,7 +35,7 @@ export const copyDistrictsToClipboard = async (districts: District[]): Promise<v
 export const exportDistrictsToExcel = (districts: District[]): void => {
     try {
         // Prepare data for Excel
-        const excelData = districts.map((district, index) => ({
+        const excelData = districts.map((district) => ({
             'Group Name': district.group,
             'District Name': district.name,
             'District Leader': district.leader,

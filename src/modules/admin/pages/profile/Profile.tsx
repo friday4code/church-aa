@@ -147,7 +147,7 @@ const Content = () => {
                 />
             </VStack>
 
-            <Toaster />
+            
 
             {/* Edit Profile Dialog */}
             <EditProfileDialog

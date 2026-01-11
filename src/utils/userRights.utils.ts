@@ -2,7 +2,7 @@
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { UserRight } from '@/modules/admin/stores/userRights.store';
+import type { UserRight } from '@/types/userRights.type';
 
 export const copyUserRightsToClipboard = async (userRights: UserRight[]): Promise<void> => {
     const header = 'S/N\tFull Name\tAccess Level\tAccess Scope\n';

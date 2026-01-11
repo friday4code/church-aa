@@ -330,7 +330,7 @@ export const exportStateReportToPDF = (attendances: Attendance[], regions: any[]
             fillColor: [22, 54, 94],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
-            textAlign: 'center',
+            halign: 'center',
             minCellHeight: 15,
         },
         alternateRowStyles: {

@@ -1,8 +1,7 @@
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton, VStack, IconButton, Drawer, Portal, Box, NativeSelect } from "@chakra-ui/react"
-import { Add, SearchNormal1, ArrowLeft3, MoreSquare, DocumentDownload } from "iconsax-reactjs"
-import type { Attendance } from "../../../stores/attendance.store"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, CloseButton, VStack, IconButton, Drawer, Portal, Box, NativeSelect, createListCollection, Span, Stack, Select } from "@chakra-ui/react"
+import { Add, SearchNormal1, ArrowLeft3, MoreSquare, DocumentDownload, CloseCircle } from "iconsax-reactjs"
 import { useState, useCallback } from "react"
 import { useNavigate } from "react-router"
 import { exportAttendanceToExcel, exportAttendanceToCSV, exportAttendanceToPDF, copyAttendanceToClipboard } from "@/utils/attendance.utils"
@@ -21,9 +20,9 @@ interface AttendanceHeaderProps {
     setMonthFilter: (value: string) => void
     weekFilter: string
     setWeekFilter: (value: string) => void
-    groupFilter: string
-    setGroupFilter: (value: string) => void
-    groups: Group[]
+    districtFilter: string
+    setDistrictFilter: (value: string) => void
+    districts: any[]
 }
 
 const AttendanceHeader = ({
@@ -38,13 +37,11 @@ const AttendanceHeader = ({
     setMonthFilter,
     weekFilter,
     setWeekFilter,
-    groupFilter,
-    setGroupFilter,
-    groups
+    districtFilter,
+    setDistrictFilter,
+    districts
 }: AttendanceHeaderProps) => {
     const navigate = useNavigate()
-    const { districts = [] } = useDistricts()
-
     const [search, setSearch] = useState("")
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value)
@@ -62,6 +59,23 @@ const AttendanceHeader = ({
             navigate(-1)
         }
     }, [onNavigateBack, navigate])
+
+    const yearCollection = createListCollection({
+        items: Array.from({ length: new Date().getFullYear() - 2000 + 1 }, (_, i) => new Date().getFullYear() - i)
+            .map((year) => ({ label: year.toString(), value: year.toString() })),
+    })
+
+    const monthCollection = createListCollection({
+        items: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => ({ label: month, value: month })),
+    })
+
+    const weekCollection = createListCollection({
+        items: [1, 2, 3, 4, 5].map((week) => ({ label: `Week ${week}`, value: week.toString() })),
+    })
+
+    const districtCollection = createListCollection({
+        items: districts.map((district) => ({ label: district.name, value: district.id.toString() })),
+    })
 
     return (
         <>
@@ -141,61 +155,120 @@ const AttendanceHeader = ({
                                             </Button>
 
                                             {/* Filters in Mobile Drawer */}
-                                            <VStack gap={3} align="stretch">
-                                                <Heading size="sm" color="fg.muted">Filters</Heading>
-                                                <NativeSelect.Root size="md">
-                                                    <NativeSelect.Field 
-                                                        placeholder="All Years" 
-                                                        value={yearFilter} 
-                                                        onChange={(e) => setYearFilter(e.target.value)}
-                                                        rounded="xl"
-                                                    >
-                                                        {[2023, 2024, 2025, 2026].map((year) => (
-                                                            <option key={year} value={year}>{year}</option>
-                                                        ))}
-                                                    </NativeSelect.Field>
-                                                    <NativeSelect.Indicator />
-                                                </NativeSelect.Root>
-                                                <NativeSelect.Root size="md">
-                                                    <NativeSelect.Field 
-                                                        placeholder="All Months" 
-                                                        value={monthFilter} 
-                                                        onChange={(e) => setMonthFilter(e.target.value)}
-                                                        rounded="xl"
-                                                    >
-                                                        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => (
-                                                            <option key={month} value={month}>{month}</option>
-                                                        ))}
-                                                    </NativeSelect.Field>
-                                                    <NativeSelect.Indicator />
-                                                </NativeSelect.Root>
-                                                <NativeSelect.Root size="md">
-                                                    <NativeSelect.Field 
-                                                        placeholder="All Weeks" 
-                                                        value={weekFilter} 
-                                                        onChange={(e) => setWeekFilter(e.target.value)}
-                                                        rounded="xl"
-                                                    >
-                                                        {[1, 2, 3, 4, 5].map((week) => (
-                                                            <option key={week} value={week}>Week {week}</option>
-                                                        ))}
-                                                    </NativeSelect.Field>
-                                                    <NativeSelect.Indicator />
-                                                </NativeSelect.Root>
-                                                <NativeSelect.Root size="md">
-                                                    <NativeSelect.Field 
-                                                        placeholder="All Groups" 
-                                                        value={groupFilter} 
-                                                        onChange={(e) => setGroupFilter(e.target.value)}
-                                                        rounded="xl"
-                                                    >
-                                                        {groups?.map((group) => (
-                                                            <option key={group.id} value={group.id}>{group.name}</option>
-                                                        ))}
-                                                    </NativeSelect.Field>
-                                                    <NativeSelect.Indicator />
-                                                </NativeSelect.Root>
-                                            </VStack>
+                                            <Stack justify="start" w={{ base: "full", md: "full" }} gap={2}>
+                                                <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Year</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Year" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {yearCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "140px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Month</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Month" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {monthCollection.items.map((item) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Week</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Week" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {weekCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={districtCollection} value={[districtFilter]} onValueChange={(e) => setDistrictFilter(e.value[0])}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">District</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="District" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {districtCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Button variant="surface" colorPalette={"red"} onClick={() => { setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter(""); }}>
+                                                    <CloseCircle />   Reset Filters
+                                                </Button>
+
+                                            </Stack>
 
                                             {/* Export Buttons */}
                                             <VStack gap={3} align="stretch">
@@ -305,125 +378,183 @@ const AttendanceHeader = ({
                             />
                         </InputGroup>
 
-                        <HStack w={{ base: "full", md: "auto" }} gap={2}>
-                            <NativeSelect.Root size="md" width={{ base: "full", md: "120px" }}>
-                                <NativeSelect.Field
-                                    placeholder="Year"
-                                    value={yearFilter}
-                                    onChange={(e) => setYearFilter(e.target.value)}
+                        <Box hideBelow={"md"}>
+                            <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
+                                <Button
                                     rounded="xl"
+                                    variant="solid"
                                     bg="bg"
+                                    w={{ base: "full", md: "auto" }}
+                                    justifyContent={{ base: "start", md: "center" }}
+                                    color="accent"
+                                    _hover={{ bg: "bg.muted" }}
+                                    size="sm"
+                                    onClick={async () => await copyAttendanceToClipboard(serviceAttendances, districts)}
                                 >
-                                    <option value="2024">2024</option>
-                                    <option value="2025">2025</option>
-                                    <option value="2026">2026</option>
-                                </NativeSelect.Field>
-                            </NativeSelect.Root>
+                                    <DocumentDownload />
+                                    Copy
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    bg="bg"
+                                    color="accent"
+                                    w={{ base: "full", md: "auto" }}
+                                    justifyContent={{ base: "start", md: "center" }}
+                                    _hover={{ bg: "bg.muted" }}
+                                    size="sm"
+                                    rounded="xl"
+                                    onClick={() => exportAttendanceToExcel(serviceAttendances, districts)}
+                                >
+                                    <DocumentDownload />
+                                    Excel
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    bg="bg"
+                                    color="accent"
+                                    w={{ base: "full", md: "auto" }}
+                                    justifyContent={{ base: "start", md: "center" }}
+                                    _hover={{ bg: "bg.muted" }}
+                                    size="sm"
+                                    rounded="xl"
+                                    onClick={() => exportAttendanceToCSV(serviceAttendances, districts)}
+                                >
+                                    <DocumentDownload />
+                                    CSV
+                                </Button>
+                                <Button
+                                    variant="solid"
+                                    bg="bg"
+                                    color="accent"
+                                    w={{ base: "full", md: "auto" }}
+                                    justifyContent={{ base: "start", md: "center" }}
+                                    _hover={{ bg: "bg.muted" }}
+                                    size="sm"
+                                    rounded="xl"
+                                    onClick={() => exportAttendanceToPDF(serviceAttendances, districts)}
+                                >
+                                    <DocumentDownload />
+                                    PDF
+                                </Button>
+                            </HStack>
+                        </Box>
 
-                            <NativeSelect.Root size="md" width={{ base: "full", md: "140px" }}>
-                                <NativeSelect.Field
-                                    placeholder="Month"
-                                    value={monthFilter}
-                                    onChange={(e) => setMonthFilter(e.target.value)}
-                                    rounded="xl"
-                                    bg="bg"
-                                >
-                                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
-                                        <option key={m} value={m}>{m}</option>
-                                    ))}
-                                </NativeSelect.Field>
-                            </NativeSelect.Root>
-
-                            <NativeSelect.Root size="md" width={{ base: "full", md: "100px" }}>
-                                <NativeSelect.Field
-                                    placeholder="Week"
-                                    value={weekFilter}
-                                    onChange={(e) => setWeekFilter(e.target.value)}
-                                    rounded="xl"
-                                    bg="bg"
-                                >
-                                    {[1, 2, 3, 4, 5].map(w => (
-                                        <option key={w} value={w}>Week {w}</option>
-                                    ))}
-                                </NativeSelect.Field>
-                            </NativeSelect.Root>
-
-                            <NativeSelect.Root size="md" width={{ base: "full", md: "200px" }}>
-                                <NativeSelect.Field
-                                    placeholder="Group"
-                                    value={groupFilter}
-                                    onChange={(e) => setGroupFilter(e.target.value)}
-                                    rounded="xl"
-                                    bg="bg"
-                                >
-                                    {groups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.name}</option>
-                                    ))}
-                                </NativeSelect.Field>
-                            </NativeSelect.Root>
-                        </HStack>
                     </HStack>
 
-                    <Box hideBelow={"md"} w="full">
-                        <HStack w="full" flexDir={{ base: "column", md: "row" }} justify={{ base: "start", md: "center" }}>
-                            <Button
-                                rounded="xl"
-                                variant="solid"
-                                bg="bg"
-                                w={{ base: "full", md: "auto" }}
-                                justifyContent={{ base: "start", md: "center" }}
-                                color="accent"
-                                _hover={{ bg: "bg.muted" }}
-                                size="sm"
-                                onClick={async () => await copyAttendanceToClipboard(serviceAttendances,districts)}
-                            >
-                                <DocumentDownload />
-                                Copy
-                            </Button>
-                            <Button
-                                variant="solid"
-                                bg="bg"
-                                color="accent"
-                                w={{ base: "full", md: "auto" }}
-                                justifyContent={{ base: "start", md: "center" }}
-                                _hover={{ bg: "bg.muted" }}
-                                size="sm"
-                                rounded="xl"
-                                onClick={() => exportAttendanceToExcel(serviceAttendances,districts)}
-                            >
-                                <DocumentDownload />
-                                Excel
-                            </Button>
-                            <Button
-                                variant="solid"
-                                bg="bg"
-                                color="accent"
-                                w={{ base: "full", md: "auto" }}
-                                justifyContent={{ base: "start", md: "center" }}
-                                _hover={{ bg: "bg.muted" }}
-                                size="sm"
-                                rounded="xl"
-                                onClick={() => exportAttendanceToCSV(serviceAttendances,districts)}
-                            >
-                                <DocumentDownload />
-                                CSV
-                            </Button>
-                            <Button
-                                variant="solid"
-                                bg="bg"
-                                color="accent"
-                                w={{ base: "full", md: "auto" }}
-                                justifyContent={{ base: "start", md: "center" }}
-                                _hover={{ bg: "bg.muted" }}
-                                size="sm"
-                                rounded="xl"
-                                onClick={() => exportAttendanceToPDF(serviceAttendances,districts)}
-                            >
-                                <DocumentDownload />
-                                PDF
-                            </Button>
-                        </HStack>
-                    </Box>
+
+                    <HStack justify="start" w={{ base: "full", md: "full" }} gap={2}>
+                        <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Year</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Year" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {yearCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "140px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Month</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Month" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {monthCollection.items.map((item) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Week</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Week" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {weekCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={districtCollection} value={[districtFilter]} onValueChange={(e) => setDistrictFilter(e.value[0])}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">District</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="District" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {districtCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Button variant="surface" colorPalette={"red"} onClick={() => { setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter(""); }}>
+                            <CloseCircle />   Reset Filters
+                        </Button>
+                    </HStack>
                 </VStack>
 
             </VStack>

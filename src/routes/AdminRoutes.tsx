@@ -38,7 +38,6 @@ import Regions from "@/modules/admin/pages/regions/Regions";
 import ReportsDashboard from "@/modules/admin/pages/reports/Reports";
 import States from "@/modules/admin/pages/states/States";
 import Index from "@/modules/admin/pages/users/Index";
-import UserRights from "@/modules/admin/pages/users/UserRights";
 import Users from "@/modules/admin/pages/users/Users";
 import AttendanceMonitoring from "@/modules/admin/pages/attendance-monitoring/AttendanceMonitoring";
 import ProtectedRoute from "@/modules/shared/ProtectedRoute";
@@ -109,7 +108,6 @@ export default function AdminRoutes() {
           <Route path="users">
             <Route element={<Index />} index />
             <Route path="all" element={<Users />} />
-            <Route path="rights" element={<UserRights />} />
           </Route>
 
           {/* Attendance Management System:

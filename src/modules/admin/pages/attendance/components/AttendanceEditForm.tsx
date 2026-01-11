@@ -105,48 +105,17 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
     const currentOldGroupId = watch('old_group_id')
 
     const getSelectedStateName = () => states?.find(s => s.id === currentStateId)?.name || ''
-    const getSelectedRegionName = () => regions?.find(r => r.id === currentRegionId)?.name || ''
-    const getSelectedDistrictName = () => districts?.find(d => d.id === currentDistrictId)?.name || ''
-    const getSelectedGroupName = () => groups?.find(g => g.id === currentGroupId)?.name || ''
-    const getSelectedOldGroupName = () => oldGroups?.find(g => g.id === currentOldGroupId)?.name || ''
 
     const handleStateChange = (stateName: string) => {
         const state = states?.find(s => s.name === stateName)
         if (state) {
             setValue('state_id', state.id, { shouldValidate: true })
             trigger('state_id')
-        }
-    }
-
-    const handleRegionChange = (regionName: string) => {
-        const region = regions?.find(r => r.name === regionName)
-        if (region) {
-            setValue('region_id', region.id, { shouldValidate: true })
-            trigger('region_id')
-        }
-    }
-
-    const handleDistrictChange = (districtName: string) => {
-        const district = districts?.find(d => d.name === districtName)
-        if (district) {
-            setValue('district_id', district.id, { shouldValidate: true })
-            trigger('district_id')
-        }
-    }
-
-    const handleGroupChange = (groupName: string) => {
-        const group = groups?.find(g => g.name === groupName)
-        if (group) {
-            setValue('group_id', group.id, { shouldValidate: true })
-            trigger('group_id')
-        }
-    }
-
-    const handleOldGroupChange = (oldGroupName: string) => {
-        const oldGroup = oldGroups?.find(g => g.name === oldGroupName)
-        if (oldGroup) {
-            setValue('old_group_id', oldGroup.id, { shouldValidate: true })
-            trigger('old_group_id')
+            // Reset children
+            setValue('region_id', 0)
+            setValue('district_id', 0)
+            setValue('group_id', 0)
+            setValue('old_group_id', 0)
         }
     }
 
@@ -157,7 +126,7 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{getSelectedDistrictName()} - {watch('month')} Week {watch('week')}</strong>
+                Editing: <strong>{watch('month')} Week {watch('week')}</strong>
             </Text>
 
             <form onSubmit={handleSubmit(onSubmit)}>
@@ -175,45 +144,69 @@ const AttendanceEditForm = ({ attendance, onUpdate, onCancel }: AttendanceEditFo
 
                         <Field.Root required invalid={!!errors.region_id}>
                             <RegionIdCombobox
-                                value={getSelectedRegionName()}
-                                onChange={handleRegionChange}
+                                value={currentRegionId}
+                                onChange={(v) => {
+                                    setValue('region_id', v || 0, { shouldValidate: true })
+                                    trigger('region_id')
+                                    // Reset children
+                                    setValue('district_id', 0)
+                                    setValue('group_id', 0)
+                                    setValue('old_group_id', 0)
+                                }}
                                 required
                                 invalid={!!errors.region_id}
+                                stateId={currentStateId}
                             />
                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                         </Field.Root>
                     </HStack>
 
                     <HStack gap="4" w="full">
-                        <Field.Root required invalid={!!errors.district_id}>
-                            <DistrictIdCombobox
-                                value={getSelectedDistrictName()}
-                                onChange={handleDistrictChange}
-                                required
-                                invalid={!!errors.district_id}
+                        <Field.Root invalid={!!errors.old_group_id}>
+                            <OldGroupIdCombobox
+                                value={currentOldGroupId || undefined}
+                                onChange={(v) => {
+                                    setValue('old_group_id', v || 0, { shouldValidate: true })
+                                    trigger('old_group_id')
+                                    setValue('group_id', 0)
+                                    setValue('district_id', 0)
+                                }}
+                                invalid={!!errors.old_group_id}
+                                stateId={currentStateId}
+                                regionId={currentRegionId}
                             />
-                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
+                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
                         </Field.Root>
 
                         <Field.Root required invalid={!!errors.group_id}>
                             <GroupIdCombobox
-                                value={getSelectedGroupName()}
-                                onChange={handleGroupChange}
+                                value={currentGroupId}
+                                onChange={(v) => {
+                                    setValue('group_id', v || 0, { shouldValidate: true })
+                                    trigger('group_id')
+                                    setValue('district_id', 0)
+                                }}
                                 required
                                 invalid={!!errors.group_id}
+                                oldGroupId={currentOldGroupId as number}
                             />
                             <Field.ErrorText>{errors.group_id?.message}</Field.ErrorText>
                         </Field.Root>
                     </HStack>
 
                     <HStack gap="4" w="full">
-                        <Field.Root invalid={!!errors.old_group_id}>
-                            <OldGroupIdCombobox
-                                value={getSelectedOldGroupName()}
-                                onChange={handleOldGroupChange}
-                                invalid={!!errors.old_group_id}
+                        <Field.Root required invalid={!!errors.district_id}>
+                            <DistrictIdCombobox
+                                value={currentDistrictId}
+                                onChange={(v) => {
+                                    setValue('district_id', v || 0, { shouldValidate: true })
+                                    trigger('district_id')
+                                }}
+                                required
+                                invalid={!!errors.district_id}
+                                groupId={currentGroupId}
                             />
-                            <Field.ErrorText>{errors.old_group_id?.message}</Field.ErrorText>
+                            <Field.ErrorText>{errors.district_id?.message}</Field.ErrorText>
                         </Field.Root>
 
                         <Field.Root required invalid={!!errors.month}>

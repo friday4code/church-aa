@@ -213,7 +213,7 @@ const AttendanceTable = ({
 
                                 <Show when={isMainServiceType}>
                                     <Table.Cell>{attendance.new_comers}</Table.Cell>
-                                    <Table.Cell>₦<FormatNumber minimumFractionDigits={2} maximumFractionDigits={2} value={attendance.tithe_offering} /></Table.Cell>
+                                    <Table.Cell>₦<FormatNumber minimumFractionDigits={2} maximumFractionDigits={2} value={attendance.tithe_offering ?? 0} /></Table.Cell>
                                 </Show>
 
                                 <Table.Cell textAlign="center">

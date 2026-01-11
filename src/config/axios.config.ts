@@ -267,7 +267,7 @@ axiosClient.interceptors.response.use(
       console.error("🌐 Network error or no response from server:", error);
       toaster.error({
         title: "Network Error",
-        description: error.response?.data?.error || "Please check your internet connection and try again.",
+        description: (error as any).response?.data?.error || "Please check your internet connection and try again.",
         closable: true
       });
     }

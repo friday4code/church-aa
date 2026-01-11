@@ -1,7 +1,6 @@
 import type { LoginFormData } from "@/modules/auth/pages/Login"
 import { axiosClient } from "../config/axios.config"
 import { useAuthStore } from "@/store/auth.store"
-import type { RefereeFormData } from "@/modules/auth/pages/RefereeForm"
 import type { LoginResponse, GetCurrentUserResponse } from "@/types/auth.type"
 
 export const authApi = {
@@ -15,18 +14,13 @@ export const authApi = {
         return data
     },
 
-    sendRefereeReport: async (report: RefereeFormData): Promise<unknown> => {
-        const { data } = await axiosClient.post<unknown>("/users", report)
-        return data
-    },
-
     logout: async (): Promise<void> => {
         await axiosClient.post("/auth/logout")
     },
 
-    refreshToken: async (): Promise<{ accessToken: string }> => {
+    refreshToken: async (): Promise<{ access_token: string }> => {
         const refreshToken = useAuthStore.getState().tokens?.refresh_token;
-        const { data } = await axiosClient.post("/auth/refresh-token", { refreshToken })
+        const { data } = await axiosClient.post<{ access_token: string }>("/auth/refresh-token", { refresh_token: refreshToken })
         return data
     },
 
@@ -42,7 +36,7 @@ export const authApi = {
         return data;
     },
 
-    updateProfile: async (payload: Record<string, string>): Promise<{ status: boolean; message?: string }> => {
+    updateProfile: async (payload: Record<string, any>): Promise<{ status: boolean; message?: string }> => {
         const { data } = await axiosClient.put<{ status: boolean; message?: string }>("/profile", payload)
         return data
     },

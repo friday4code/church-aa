@@ -295,6 +295,8 @@ const Content = () => {
         const apiData: any = {
             group_name: data.group_name,
             leader: data.leader,
+            leader_phone: data.leader_phone,
+            leader_email: data.leader_email,
             state_id: data.state_id,
             region_id: data.region_id,
         }
@@ -449,7 +451,7 @@ const Content = () => {
                 )}
             </Box>
 
-            <Toaster />
+            
         </>
     )
 }

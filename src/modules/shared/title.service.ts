@@ -4,7 +4,6 @@ type TitleDefaults = Record<string, string>
 
 class TitleManager {
   private defaults: TitleDefaults = {}
-  private current: string = ''
 
   setDefaults(map: TitleDefaults) {
     this.defaults = { ...this.defaults, ...map }
@@ -33,7 +32,7 @@ class TitleManager {
     if (typeof document !== 'undefined' && document.title !== next) {
       document.title = next
     }
-    this.current = next
+    // this.current = next
   }
 
   setTitleForPath(pathname: string) {

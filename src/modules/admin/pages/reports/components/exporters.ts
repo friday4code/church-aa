@@ -215,101 +215,96 @@ export const buildStateReportSheet = (
 
 const buildConsolidatedHeaderBlock = (title: string, subtitle: string, firstLabel: string): (string | number)[][] => {
   return [
-    [title, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-    [subtitle, '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-    ['', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-    ['', '', 'Adults', '', '', 'Youths', '', '', 'Total', 'Children', '', '', 'Grand', '', ''],
-    ['', '', '', '', '', '', '', '', 'Adults', '', '', '', 'Total', '', ''],
-    [firstLabel, 'Month', '(i)', '(ii)', '(iii)', '(iv)', '(v)', '(vi)', '(vii)', '(viii)', '(ix)', '(x)', '(vii)&(x)', 'New', 'Tithe &'],
-    ['', '', 'Men', 'Women', 'Total', 'Boys', 'Girls', 'Total', '(iii)&(vi)', 'Boys', 'Girls', 'Total', '', 'Comers', 'Offering']
+    [title, '', '', '', '', '', '', '', '', '', '', '', '', ''],
+    [subtitle, '', '', '', '', '', '', '', '', '', '', '', '', ''],
+    ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+    ['', 'Adults', '', '', 'Youths', '', '', 'Total', 'Children', '', '', 'Grand', '', ''],
+    ['', '', '', '', '', '', '', 'Adults', '', '', '', 'Total', '', ''],
+    [firstLabel, '(i)', '(ii)', '(iii)', '(iv)', '(v)', '(vi)', '(vii)', '(viii)', '(ix)', '(x)', '(vii)&(x)', 'New', 'Tithe &'],
+    ['', 'Men', 'Women', 'Total', 'Boys', 'Girls', 'Total', '(iii)&(vi)', 'Boys', 'Girls', 'Total', '', 'Comers', 'Offering']
   ]
 }
 
 export const buildConsolidatedReportSheet = (
   data: AttendanceRecord[],
-  regions: { id: number; name: string }[],
-  stateName: string,
+  entities: { id: number; name: string }[],
+  title: string,
   year: number,
-  spec: MonthSpec
+  spec: MonthSpec,
+  entityLabel: string,
+  groupByKey: keyof AttendanceRecord
 ) => {
   const baseMonths = monthsToUse(spec)
-  const title = `Deeper Life Bible Church, ${stateName} (State)`
   const subtitle = buildSubtitle(spec, year)
-  const header = buildConsolidatedHeaderBlock(title, subtitle, 'Regions')
+  const header = buildConsolidatedHeaderBlock(title, subtitle, entityLabel)
   const rows: (string | number)[][] = [...header]
   const months = baseMonths.length ? sortMonths(baseMonths) : sortMonths(data.filter(d => d.year === year).map(d => d.month))
 
-  for (const m of months) {
-    for (const r of regions) {
-      const items = data.filter(x => x.region_id === r.id && x.year === year && x.month === m)
-      const s = sumFor(items)
-      const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
-      const tithe = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
-      
-      validateLabelAndMonth(r.name, m)
-      rows.push([
-        r.name,
-        m,
-        s.men,
-        s.women,
-        s.adultsTotal,
-        s.yb,
-        s.yg,
-        s.youthsTotal,
-        s.totalAdults,
-        s.cb,
-        s.cg,
-        s.childrenTotal,
-        s.grandTotal,
-        newcomers,
-        formatNaira(tithe)
-      ])
-    }
-    const items = data.filter(x => x.year === year && x.month === m)
-    const monthSubtotal = sumFor(items)
-    const subtotalNewcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
-    const subtotalTithe = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
-
+  for (const entity of entities) {
+    const items = data.filter(x => x[groupByKey] === entity.id && x.year === year && months.includes(x.month))
+    const s = sumFor(items)
+    const newcomers = items.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+    const tithe = items.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+    
     rows.push([
-      'SubTotal',
-      '',
-      monthSubtotal.men,
-      monthSubtotal.women,
-      monthSubtotal.adultsTotal,
-      monthSubtotal.yb,
-      monthSubtotal.yg,
-      monthSubtotal.youthsTotal,
-      monthSubtotal.totalAdults,
-      monthSubtotal.cb,
-      monthSubtotal.cg,
-      monthSubtotal.childrenTotal,
-      monthSubtotal.grandTotal,
-      subtotalNewcomers,
-      formatNaira(subtotalTithe)
+      entity.name,
+      s.men,
+      s.women,
+      s.adultsTotal,
+      s.yb,
+      s.yg,
+      s.youthsTotal,
+      s.totalAdults,
+      s.cb,
+      s.cg,
+      s.childrenTotal,
+      s.grandTotal,
+      newcomers,
+      formatNaira(tithe)
     ])
-    rows.push(new Array(15).fill(''))
   }
+
+  const allItems = data.filter(x => x.year === year && months.includes(x.month))
+  const totalS = sumFor(allItems)
+  const totalNewcomers = allItems.reduce((sum, it) => sum + (it.new_comers || 0), 0)
+  const totalTithe = allItems.reduce((sum, it) => sum + (it.tithe_offering || 0), 0)
+
+  rows.push([
+    'Total',
+    totalS.men,
+    totalS.women,
+    totalS.adultsTotal,
+    totalS.yb,
+    totalS.yg,
+    totalS.youthsTotal,
+    totalS.totalAdults,
+    totalS.cb,
+    totalS.cg,
+    totalS.childrenTotal,
+    totalS.grandTotal,
+    totalNewcomers,
+    formatNaira(totalTithe)
+  ])
 
   const ws = XLSX.utils.aoa_to_sheet(rows)
 
   // Column widths
   ws['!cols'] = [
-    { wch: 25 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }
+    { wch: 25 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }
   ]
 
   // Merges
   if (!ws['!merges']) ws['!merges'] = []
   ws['!merges'].push(
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 14 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 14 } },
-    { s: { r: 3, c: 2 }, e: { r: 3, c: 4 } },
-    { s: { r: 3, c: 5 }, e: { r: 3, c: 7 } },
-    { s: { r: 3, c: 8 }, e: { r: 3, c: 8 } },
-    { s: { r: 3, c: 9 }, e: { r: 3, c: 11 } },
-    { s: { r: 3, c: 12 }, e: { r: 3, c: 12 } },
-    { s: { r: 4, c: 8 }, e: { r: 4, c: 8 } },
-    { s: { r: 4, c: 12 }, e: { r: 4, c: 12 } },
-    // New headers don't have merges in row 3/4 except spanning single cells effectively or not merged
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 13 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 13 } },
+    { s: { r: 3, c: 1 }, e: { r: 3, c: 3 } }, // Adults
+    { s: { r: 3, c: 4 }, e: { r: 3, c: 6 } }, // Youths
+    { s: { r: 3, c: 7 }, e: { r: 3, c: 7 } }, // Total Adults
+    { s: { r: 3, c: 8 }, e: { r: 3, c: 10 } }, // Children
+    { s: { r: 3, c: 11 }, e: { r: 3, c: 11 } }, // Grand Total
+    { s: { r: 4, c: 7 }, e: { r: 4, c: 7 } },
+    { s: { r: 4, c: 11 }, e: { r: 4, c: 11 } }
   )
 
   // Styles
@@ -318,7 +313,7 @@ export const buildConsolidatedReportSheet = (
     const cell = ws[addr] as unknown as { s?: Style }
     if (cell) cell.s = style
   }
-  const totalColumns = 15
+  const totalColumns = 14
   for (let c = 0; c < totalColumns; c++) {
     setCellStyle(0, c, TITLE_STYLE)
     setCellStyle(1, c, TITLE_STYLE)
@@ -327,13 +322,10 @@ export const buildConsolidatedReportSheet = (
   headerRowsIdx.forEach(r => {
     for (let c = 0; c < totalColumns; c++) setCellStyle(r, c, HEADER_STYLE)
   })
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i] && rows[i][0] === 'SubTotal') {
-      setCellStyle(i, 0, SUBTOTAL_LABEL_STYLE)
-      setCellStyle(i, 1, SUBTOTAL_STYLE)
-      for (let c = 2; c < totalColumns; c++) setCellStyle(i, c, SUBTOTAL_NUM_STYLE)
-    }
-  }
+  // Style for the Total row (last row)
+  const lastRowIdx = rows.length - 1
+  setCellStyle(lastRowIdx, 0, SUBTOTAL_LABEL_STYLE)
+  for (let c = 1; c < totalColumns; c++) setCellStyle(lastRowIdx, c, SUBTOTAL_NUM_STYLE)
 
   return ws
 }

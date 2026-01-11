@@ -95,9 +95,9 @@ export const exportYouthWeeklyToCSV = (attendances: YouthWeeklyAttendance[]): vo
             attendance.visitorsBoys.toString(),
             attendance.membersGirls.toString(),
             attendance.visitorsGirls.toString(),
-            `"${attendance.year.replace(/"/g, '""')}"`,
-            `"${attendance.month.replace(/"/g, '""')}"`,
-            `"${attendance.week.replace(/"/g, '""')}"`,
+            `"${attendance.year}"`,
+            `"${attendance.month}"`,
+            `"${attendance.week}"`,
             attendance.createdAt.toLocaleDateString(),
             attendance.updatedAt.toLocaleDateString()
         ]);

@@ -61,7 +61,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const [yearFilter, setYearFilter] = useState<string>("")
     const [monthFilter, setMonthFilter] = useState<string>("")
     const [weekFilter, setWeekFilter] = useState<string>("")
-    const [groupFilter, setGroupFilter] = useState<string>("")
+    const [districtFilter, setDistrictFilter] = useState<string>("")
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
@@ -102,9 +102,9 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const createMutation = useMutation({
         mutationFn: (data: any) => adminApi.createAttendance(data),
         onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['attendance'] })
             toaster.create({ title: 'Attendance created successfully' })
             
-            queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDialogState({ isOpen: false, mode: "add" })
         },
         onError: () => {
@@ -115,9 +115,9 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: number; data: any }) => adminApi.updateAttendance(id, data),
         onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['attendance'] })
             toaster.create({ title: 'Attendance updated successfully' });
             
-            queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDialogState({ isOpen: false, mode: "edit" })
         },
         onError: () => {
@@ -128,11 +128,11 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const deleteMutation = useMutation({
         mutationFn: (id: number) => adminApi.deleteAttendance(id),
         onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['attendance'] })
             toaster.create({ title: 'Attendance deleted successfully' })
 
             
 
-            queryClient.invalidateQueries({ queryKey: ['attendance'] })
             setDeleteDialogState({ isOpen: false })
         },
         onError: () => {
@@ -156,7 +156,6 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     // Get districts for name lookup in search
     const { districts } = useDistricts()
 
-    const { groups = [] } = useGroups()
 
     // Filter and sort attendances
     const filteredAndSortedAttendances = useMemo(() => {
@@ -171,9 +170,9 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
             const matchesYear = yearFilter ? attendance.year.toString() === yearFilter : true
             const matchesMonth = monthFilter ? attendance.month === monthFilter : true
             const matchesWeek = weekFilter ? attendance.week.toString() === weekFilter : true
-            const matchesGroup = groupFilter ? attendance.group_id.toString() === groupFilter : true
+            const matchesDistrict = districtFilter ? attendance.district_id.toString() === districtFilter : true
 
-            return matchesSearch && matchesYear && matchesMonth && matchesWeek && matchesGroup
+            return matchesSearch && matchesYear && matchesMonth && matchesWeek && matchesDistrict
         })
 
         // Sorting
@@ -195,7 +194,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         })
 
         return filtered
-    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, weekFilter, groupFilter])
+    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, weekFilter, districtFilter])
 
     // Calculate totals
     const totals = useMemo(() => calculateTotals(filteredAndSortedAttendances as any[]), [filteredAndSortedAttendances])
@@ -330,9 +329,9 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         setMonthFilter={setMonthFilter}
                         weekFilter={weekFilter}
                         setWeekFilter={setWeekFilter}
-                        groupFilter={groupFilter}
-                        setGroupFilter={setGroupFilter}
-                        groups={groups as any}
+                        districtFilter={districtFilter}
+                        setDistrictFilter={setDistrictFilter}
+                        districts={districts as any}
                     />
                 </Suspense>
 
@@ -446,7 +445,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
             </Box>
 
 
-            <Toaster />
+            
         </>
     )
 }

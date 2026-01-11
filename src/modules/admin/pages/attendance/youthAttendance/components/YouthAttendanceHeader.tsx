@@ -7,15 +7,14 @@ import { useNavigate } from "react-router"
 import { useState, useCallback } from "react"
 import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
 
-import type { YouthAttendance as YA } from "@/types/youthAttendance.type"
-import type { YouthAttendance } from "@/modules/admin/stores/youthMinistry/youthAttendance.store"
+import type { YouthAttendance as YA, YouthAttendance } from "@/types/youthAttendance.type"
 
 interface YouthAttendanceHeaderProps {
     onAddClick: () => void
     onExportClick: () => void
     attendanceType: 'weekly' | 'revival'
     showBackButton?: boolean
-    attendanceData?: YA & YouthAttendance[]
+    attendanceData?: any[]
 }
 
 export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceType, showBackButton, attendanceData = [] }: YouthAttendanceHeaderProps) => {

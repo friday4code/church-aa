@@ -20,7 +20,6 @@ interface UseStatesOptions {
 
 export const useStates = (options: UseStatesOptions = {}) => {
     const queryClient = useQueryClient();
-
     const {
         onCreateSuccess,
         onUpdateSuccess,
@@ -38,17 +37,16 @@ export const useStates = (options: UseStatesOptions = {}) => {
     const createState = useMutation({
         mutationFn: adminApi.createState,
         onSuccess: async () => {
-            queryClient.invalidateQueries({ queryKey: ['states'] });
-           
+            // Call the lifted callback
+            onCreateSuccess?.();
             toaster.create({
                 description: "State created successfully",
                 type: "success",
                 closable: true,
             });
 
+            await queryClient.invalidateQueries({ queryKey: ['states'] });
 
-            // Call the lifted callback
-            onCreateSuccess?.();
         },
         onError: (error) => {
             toaster.create({
@@ -66,25 +64,27 @@ export const useStates = (options: UseStatesOptions = {}) => {
         mutationFn: ({ id, data }: { id: string | number; data: any }) =>
             adminApi.updateState(id, data),
         onSuccess: async () => {
-            queryClient.invalidateQueries({ queryKey: ['states'] });
+            onUpdateSuccess?.();
             toaster.create({
                 description: "State updated successfully",
                 type: "success",
                 closable: true,
             });
 
+            await queryClient.invalidateQueries({ queryKey: ['states'] });
             // Call the lifted callback
-            onUpdateSuccess?.();
         },
         onError: (error) => {
+            // Call the lifted error callback
+            onUpdateError?.(error);
+
             toaster.create({
                 description: "Failed to update state",
                 type: "error",
                 closable: true,
             });
 
-            // Call the lifted error callback
-            onUpdateError?.(error);
+
         }
     });
 
@@ -97,9 +97,8 @@ export const useStates = (options: UseStatesOptions = {}) => {
                 closable: true,
             });
 
-            
 
-            queryClient.invalidateQueries({ queryKey: ['states'] });
+
 
             // Call the lifted callback
             onDeleteSuccess?.();

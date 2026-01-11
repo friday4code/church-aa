@@ -1,5 +1,5 @@
 import { useParams } from "react-router"
-import type { ServiceType } from "../stores/attendance.store";
+import type { ServiceType } from "@/types/attendance.type";
 import AttendancePage from "../pages/attendance/Attendance";
 
 const AttendanceType = () => {

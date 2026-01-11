@@ -17,24 +17,24 @@ export const useUserRightMutations = () => {
     const createUserRight = useMutation({
         // mutationFn: adminApi.createUserRight,
         mutationFn: () => Promise.resolve("added"),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user-rights'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['user-rights'] });
         },
     });
 
     const updateUserRight = useMutation({
         // mutationFn: ({ id, data }: { id: number; data: any }) => adminApi.updateUserRight(id, data),
         mutationFn: ({ id, data }: { id: number; data: any }) => Promise.resolve(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user-rights'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['user-rights'] });
         },
     });
 
     const deleteUserRight = useMutation({
         // mutationFn: adminApi.deleteUserRight,
         mutationFn: () => Promise.resolve("deleted"),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['user-rights'] });
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['user-rights'] });
         },
     });
 

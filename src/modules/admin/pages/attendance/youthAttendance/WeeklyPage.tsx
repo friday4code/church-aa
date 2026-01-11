@@ -45,11 +45,11 @@ const WeeklyPage: React.FC = () => {
     return (
         <Box>
             <VStack align="stretch" gap="6">
-                <YouthAttendanceHeader onAddClick={handleAddClick} onExportClick={handleExportClick} attendanceType="weekly" showBackButton attendanceData={attendanceData?.data || []} />
+                <YouthAttendanceHeader onAddClick={handleAddClick} onExportClick={handleExportClick} attendanceType="weekly" showBackButton attendanceData={attendanceData?.data as any || []} />
                 <FilterComponent onFilter={setFilters} attendanceType="weekly" />
                 <YouthAttendanceTable data={attendanceData?.data || []} isLoading={isLoading} onDelete={handleDelete} />
             </VStack>
-            <Toaster />
+            
             <YouthAttendanceDialog isOpen={open} isLoading={createMutation.isPending} mode={dialogMode} attendanceType="weekly" onClose={onClose} onSave={handleSave} />
         </Box>
     )

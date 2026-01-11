@@ -14,7 +14,7 @@ import {
     Select,
     createListCollection,
 } from "@chakra-ui/react"
-import { useForm } from "react-hook-form"
+import { useForm, type SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { Eye, EyeSlash } from "iconsax-reactjs"
@@ -63,7 +63,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     const canSubmit = !!effectiveStateId && !!effectiveRegionId && !!effectiveDistrictId
 
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<UserFormData>({
-        resolver: zodResolver(userSchema(mode)),
+        resolver: zodResolver(userSchema(mode) as any),
         defaultValues: {
             name: user?.name || '',
             email: user?.email || '',

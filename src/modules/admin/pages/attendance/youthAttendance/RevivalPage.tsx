@@ -49,7 +49,7 @@ const RevivalPage: React.FC = () => {
                 <FilterComponent onFilter={setFilters} attendanceType="revival" />
                 <YouthAttendanceTable data={attendanceData?.data || []} isLoading={isLoading} onDelete={handleDelete} />
             </VStack>
-            <Toaster />
+            
             <YouthAttendanceDialog isOpen={open} isLoading={createMutation.isPending} mode={dialogMode} attendanceType="revival" onClose={onClose} onSave={handleSave} />
         </Box>
     )

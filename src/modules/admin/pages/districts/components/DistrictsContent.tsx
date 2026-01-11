@@ -254,12 +254,8 @@ export const DistrictsContent = () => {
     }
 
     const handleSaveDistrict = (data: DistrictFormData) => {
-        console.log("handleSaveDistrict called with data:", data);
-        console.log("dialogState:", dialogState);
-
         // Remove temporary UI fields that are not part of the API payload
         const { old_group_name, group_name, ...apiData } = data
-        console.log("Filtered API data:", apiData);
 
         if (dialogState.mode === 'add') {
             console.log("Creating district with data:", apiData);
@@ -411,7 +407,7 @@ export const DistrictsContent = () => {
                 )}
             </Box>
 
-            <Toaster />
+            
         </>
     )
 }

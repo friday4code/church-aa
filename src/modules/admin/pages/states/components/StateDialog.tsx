@@ -16,6 +16,7 @@ import type { State } from "@/types/states.type"
 import { useEffect, useRef } from "react"
 import { useStates } from "@/modules/admin/hooks/useState"
 import StateCombobox from "@/modules/admin/components/StateCombobox"
+import { Toaster } from "@/components/ui/toaster"
 
 interface StateDialogProps {
     isLoading?: boolean
@@ -42,8 +43,8 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
     })
 
     const currentStateName = watch('stateName')
-    console.log("current state name",currentStateName);
-    
+    console.log("current state name", currentStateName);
+
     const currentStateCode = watch('stateCode')
 
     const handleStateChange = (value: string) => {
@@ -69,8 +70,9 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
     }
 
     const onSubmit = (data: StateFormData) => {
+        console.log("submitted data", data)
         onSave(data)
-        reset()
+        // reset()
     }
 
     const handleClose = () => {
@@ -151,26 +153,26 @@ const StateDialog = ({ isLoading, isOpen, state, mode, onClose, onSave }: StateD
                                                 {...register('leader')}
                                             />
                                             <Field.ErrorText>{errors.leader?.message}</Field.ErrorText>
-                                                                                <Field.Root invalid={!!errors.leader_email}>
-                                            <Field.Label>Leader Email</Field.Label>
-                                            <Input
-                                                rounded="lg"
-                                                type="email"
-                                                placeholder="Enter leader email address"
-                                                {...register('leader_email')}
-                                            />
-                                            <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
-                                        </Field.Root>
+                                            <Field.Root invalid={!!errors.leader_email}>
+                                                <Field.Label>Leader Email</Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    type="email"
+                                                    placeholder="Enter leader email address"
+                                                    {...register('leader_email')}
+                                                />
+                                                <Field.ErrorText>{errors.leader_email?.message}</Field.ErrorText>
+                                            </Field.Root>
 
-                                        <Field.Root invalid={!!errors.leader_phone}>
-                                            <Field.Label>Leader Phone</Field.Label>
-                                            <Input
-                                                rounded="lg"
-                                                placeholder="+234908877664"
-                                                {...register('leader_phone')}
-                                            />
-                                            <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
-                                        </Field.Root>
+                                            <Field.Root invalid={!!errors.leader_phone}>
+                                                <Field.Label>Leader Phone</Field.Label>
+                                                <Input
+                                                    rounded="lg"
+                                                    placeholder="+234908877664"
+                                                    {...register('leader_phone')}
+                                                />
+                                                <Field.ErrorText>{errors.leader_phone?.message}</Field.ErrorText>
+                                            </Field.Root>
                                         </Field.Root>
                                     </VStack>
                                 </form>

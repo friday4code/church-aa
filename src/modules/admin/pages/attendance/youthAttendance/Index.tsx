@@ -393,12 +393,13 @@ const Content = () => {
 
         return (
             <Box boxSize="200px" mx="auto">
-                <ResponsiveContainer width="200px" height="200px">
+                <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Tooltip cursor={false} animationDuration={100} />
                         <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={serviceDistribution} dataKey="value" nameKey="name">
-                            <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
-                                const { cx, cy } = viewBox
+                            <Label content={(props: any) => {
+                                const { viewBox } = props;
+                                const { cx, cy } = viewBox;
                                 return (
                                     <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
                                         <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>

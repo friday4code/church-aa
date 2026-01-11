@@ -20,8 +20,17 @@ export interface YouthAttendance {
     solutions?: string
     testimony?: string
     remarks?: string
+    yhsfMale?: number
+    yhsfFemale?: number
     createdAt?: Date
     updatedAt?: Date
+
+    // Joined fields
+    stateName?: string
+    regionName?: string
+    districtName?: string
+    groupName?: string
+    oldGroupName?: string
 }
 
 export type YouthAttendances = YouthAttendance[]

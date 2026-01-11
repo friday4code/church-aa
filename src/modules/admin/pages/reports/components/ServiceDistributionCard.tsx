@@ -40,12 +40,13 @@ export const ServiceDistributionCard = ({ data }: ServiceDistributionChartProps)
 
             <Card.Body pt="0">
                 <Box display="flex" justifyContent="center" alignItems="center" width="100%" height="220px">
-                    <ResponsiveContainer width="200px" height="200px">
+                    <ResponsiveContainer width={200} height={200}>
                         <PieChart>
                             <Tooltip cursor={false} animationDuration={100} />
                             <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={data} dataKey="value" nameKey="name">
-                                <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
-                                    const { cx, cy } = viewBox
+                                <Label content={(props: any) => {
+                                    const { cx, cy } = props.viewBox || {}
+                                    if (typeof cx !== 'number' || typeof cy !== 'number') return null
                                     return (
                                         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
                                             <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>

@@ -45,6 +45,10 @@ import { YouthAttendanceDialog } from "./components/YouthAttendanceDialog"
 import { copyYouthAttendanceToClipboard, exportYouthAttendanceToExcel, exportYouthAttendanceToCSV, exportYouthAttendanceToPDF } from "@/utils/youthMinistry/youthAttendance.utils"
 import type { YouthAttendance } from "@/types/youthAttendance.type"
 import { Toaster } from "@/components/ui/toaster"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
 
 // UUID generator function
 const uuid = () => {
@@ -360,17 +364,17 @@ const BulkEditDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose, 
                 return {
                     id: uuid(),
                     attendance: attendance!,
-                    title: attendance?.groupName || 'Attendance'
+                    title: attendance?.group_id || 'Attendance'
                 }
             })
-            setTabs(initialTabs)
+            setTabs(initialTabs as any)
             setSelectedTab(initialTabs[0]?.id || null)
         }
     }, [isOpen, selectedAttendance, youthAttendance])
 
     const removeTab = (id: string) => {
         if (tabs.length > 1) {
-            const newTabs = tabs.filter(tab => tab.id !== id)
+            const newTabs = tabs.filter(tab => tab.id !== id) as any
             setTabs(newTabs)
 
             if (selectedTab === id) {
@@ -466,7 +470,7 @@ interface BulkDeleteDialogProps {
 const BulkDeleteDialog = ({ isOpen, selectedAttendance, youthAttendance, onClose, onConfirm }: BulkDeleteDialogProps) => {
     const selectedAttendanceNames = youthAttendance
         .filter(attendance => selectedAttendance.includes(attendance.id))
-        .map(attendance => `${attendance.groupName} - ${attendance.month} ${attendance.year}`)
+        .map(attendance => `${attendance.group_id} - ${attendance.month} ${attendance.year}`)
 
     const handleConfirm = () => {
         onConfirm(selectedAttendance)
@@ -537,17 +541,30 @@ interface YouthAttendanceEditFormProps {
 }
 
 const YouthAttendanceEditForm = ({ attendance, onUpdate, onCancel }: YouthAttendanceEditFormProps) => {
+    const { states } = useStates();
+    const { regions } = useRegions();
+    const { oldGroups } = useOldGroups()
+    const { groups } = useGroups()
+    const { districts } = useDistricts();
+
+    const stateName = states.find(s => s.id == attendance.state_id)?.name || ""
+    const regionName = regions.find(r => r.id == attendance.region_id)?.name || ""
+    const districtName = districts.find(d => d.id == attendance.district_id)?.name || ""
+    const oldGroupName = oldGroups.find(g => g.id == attendance.old_group_id)?.name || ""
+    const groupName = groups.find(g => g.id == attendance.group_id)?.name || ""
+
+
     const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<YouthAttendanceLocalFormData>({
         resolver: zodResolver(youthAttendanceLocalSchema),
         defaultValues: {
-            stateName: attendance.stateName,
-            regionName: attendance.regionName,
-            oldGroupName: attendance.oldGroupName,
-            groupName: attendance.groupName,
-            month: attendance.month,
-            year: attendance.year,
-            yhsfMale: attendance.yhsfMale,
-            yhsfFemale: attendance.yhsfFemale
+            stateName: stateName,
+            regionName: regionName,
+            oldGroupName: oldGroupName,
+            groupName: groupName,
+            month: attendance.month.toString(),
+            year: attendance.year.toString(),
+            yhsfMale: attendance.member_boys,
+            yhsfFemale: attendance.member_girls
         }
     })
 
@@ -578,7 +595,7 @@ const YouthAttendanceEditForm = ({ attendance, onUpdate, onCancel }: YouthAttend
     return (
         <VStack gap="4" align="stretch">
             <Text fontSize="sm" color="gray.600" mb="2">
-                Editing: <strong>{attendance.groupName} - {attendance.month} {attendance.year}</strong>
+                Editing: <strong>{groupName} - {attendance.month} {attendance.year}</strong>
             </Text>
 
             <form id={`attendance-form-${attendance.id}`} onSubmit={handleSubmit(onSubmit)}>
@@ -780,6 +797,8 @@ const Content = () => {
         return [...weeklyRows, ...revivalRows]
     }, [weekly, revival, groups])
 
+    const allAttendance = useMemo(() => [...weekly, ...revival], [weekly, revival])
+
     const { mutate: createYA } = useCreateYouthAttendance()
     const { mutate: updateYA } = useUpdateYouthAttendance()
     const { mutate: deleteYA } = useDeleteYouthAttendance()
@@ -800,7 +819,6 @@ const Content = () => {
     const filteredAndSortedAttendance = useMemo(() => {
         let filtered = normalizedAttendance.filter(attendance =>
             attendance.groupName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            attendance.oldGroupName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             attendance.month.toLowerCase().includes(searchQuery.toLowerCase()) ||
             attendance.yhsfMale.toString().includes(searchQuery.toLowerCase()) ||
             attendance.yhsfFemale.toString().includes(searchQuery.toLowerCase())
@@ -826,6 +844,11 @@ const Content = () => {
 
         return filtered
     }, [normalizedAttendance, searchQuery, sortField, sortOrder])
+
+    const filteredFullAttendance = useMemo(() => {
+        const visibleIds = new Set(filteredAndSortedAttendance.map(a => a.id))
+        return allAttendance.filter(a => visibleIds.has(a.id))
+    }, [allAttendance, filteredAndSortedAttendance])
 
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedAttendance.length / pageSize)
@@ -883,7 +906,10 @@ const Content = () => {
     }
 
     const handleDeleteAttendance = (attendance: DisplayAttendance) => {
-        setDeleteDialogState({ isOpen: true, attendance })
+        const fullAttendance = allAttendance.find(a => a.id === attendance.id)
+        if (fullAttendance) {
+            setDeleteDialogState({ isOpen: true, attendance: fullAttendance })
+        }
     }
 
     const confirmDelete = () => {
@@ -999,7 +1025,7 @@ const Content = () => {
                                                     color="accent"
                                                     _hover={{ bg: "bg.muted" }}
                                                     size="sm"
-                                                    onClick={async () => await copyYouthAttendanceToClipboard(attendanceData)}
+                                                    onClick={async () => await copyYouthAttendanceToClipboard(filteredFullAttendance as any[])}
                                                 >
                                                     <DocumentDownload />
                                                     Copy
@@ -1013,7 +1039,7 @@ const Content = () => {
                                                     _hover={{ bg: "bg.muted" }}
                                                     size="sm"
                                                     rounded="xl"
-                                                    onClick={() => exportYouthAttendanceToExcel(attendanceData)}
+                                                    onClick={() => exportYouthAttendanceToExcel(filteredFullAttendance as any[])}
                                                 >
                                                     <DocumentDownload />
                                                     Excel
@@ -1027,7 +1053,7 @@ const Content = () => {
                                                     _hover={{ bg: "bg.muted" }}
                                                     size="sm"
                                                     rounded="xl"
-                                                    onClick={() => exportYouthAttendanceToCSV(attendanceData)}
+                                                    onClick={() => exportYouthAttendanceToCSV(filteredFullAttendance as any[])}
                                                 >
                                                     <DocumentDownload />
                                                     CSV
@@ -1041,7 +1067,7 @@ const Content = () => {
                                                     _hover={{ bg: "bg.muted" }}
                                                     size="sm"
                                                     rounded="xl"
-                                                    onClick={() => exportYouthAttendanceToPDF(attendanceData)}
+                                                    onClick={() => exportYouthAttendanceToPDF(filteredFullAttendance as any[])}
                                                 >
                                                     <DocumentDownload />
                                                     PDF
@@ -1075,7 +1101,7 @@ const Content = () => {
                             bg="bg"
                             color="accent"
                             size="sm"
-                            onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance)}
+                            onClick={async () => await copyYouthAttendanceToClipboard(normalizedAttendance as any[])}
                         >
                             <Copy />
                             Copy
@@ -1086,7 +1112,7 @@ const Content = () => {
                             color="accent"
                             size="sm"
                             rounded="xl"
-                            onClick={() => exportYouthAttendanceToExcel(normalizedAttendance)}
+                            onClick={() => exportYouthAttendanceToExcel(normalizedAttendance as any[])}
                         >
                             <DocumentDownload />
                             Excel
@@ -1097,7 +1123,7 @@ const Content = () => {
                             color="accent"
                             size="sm"
                             rounded="xl"
-                            onClick={() => exportYouthAttendanceToCSV(normalizedAttendance)}
+                            onClick={() => exportYouthAttendanceToCSV(normalizedAttendance as any[])}
                         >
                             <DocumentText />
                             CSV
@@ -1108,7 +1134,7 @@ const Content = () => {
                             color="accent"
                             size="sm"
                             rounded="xl"
-                            onClick={() => exportYouthAttendanceToPDF(normalizedAttendance)}
+                            onClick={() => exportYouthAttendanceToPDF(normalizedAttendance as any[])}
                         >
                             <ReceiptText />
                             PDF
@@ -1205,7 +1231,7 @@ const Content = () => {
                                                             value="edit"
                                                             onClick={() => setDialogState({
                                                                 isOpen: true,
-                                                                attendance,
+                                                                attendance: attendance as any,
                                                                 mode: 'edit'
                                                             })}
                                                         >
@@ -1344,7 +1370,7 @@ const Content = () => {
                 <BulkDeleteDialog
                     isOpen={isBulkDeleteOpen}
                     selectedAttendance={selectedAttendance}
-                    youthAttendance={filteredAndSortedAttendance}
+                    youthAttendance={allAttendance}
                     onClose={() => setIsBulkDeleteOpen(false)}
                     onConfirm={confirmBulkDelete}
                 />
@@ -1353,12 +1379,13 @@ const Content = () => {
                 <BulkEditDialog
                     isOpen={isBulkEditOpen}
                     selectedAttendance={selectedAttendance}
-                    youthAttendance={filteredAndSortedAttendance}
+                    youthAttendance={allAttendance}
                     onClose={() => setIsBulkEditOpen(false)}
+                    onUpdate={() => null}
                 // onConfirm={confirmBulkEdit}
                 />
 
-                <Toaster />
+
 
             </Box >
         </>

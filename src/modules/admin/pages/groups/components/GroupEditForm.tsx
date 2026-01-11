@@ -59,20 +59,6 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     const selectedStateName = states?.find((st: { id: number }) => st.id === watchedStateId)?.name || '';
     const setSelectedStateName = (v: string) => setValue('state_id', (states?.find((st: State) => st.name === v)?.id ?? 0), { shouldValidate: true });
 
-    const selectedRegionName = regions?.find((reg: Region) => reg.id === watchedRegionId)?.name || '';
-    const setSelectedRegionName = (v: string) => setValue('region_id', (regions?.find((reg: Region) => reg.name === v)?.id ?? 0), { shouldValidate: true });
-
-    const filteredRegions = (regions || []).filter((region: Region) => {
-        if (region.state_id != null && watchedStateId) {
-            return Number(region.state_id) === Number(watchedStateId);
-        }
-        const stateName = states?.find((st: State) => st.id === watchedStateId)?.name;
-        if (stateName && region.state) {
-            return region.state.toLowerCase() === stateName.toLowerCase();
-        }
-        return false;
-    });
-
     const handleOldGroupChange = (oldGroupName: string) => {
         if (oldGroupName) {
             const oldGroup = oldGroups?.find((og: OldGroup) => og.name === oldGroupName);
@@ -178,10 +164,10 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
                         <Field.Root required invalid={!!errors.region_id}>
                             <RegionIdCombobox
                                 required
-                                value={selectedRegionName}
-                                onChange={(v?: number) => setSelectedRegionName(v ? v.toString() : "")}
+                                value={watchedRegionId}
+                                onChange={(v?: number) => setValue('region_id', v || 0, { shouldValidate: true })}
                                 invalid={!!errors.region_id}
-                                // items={filteredRegions}
+                                stateId={watchedStateId}
                             />
                             <Field.ErrorText>{errors.region_id?.message}</Field.ErrorText>
                         </Field.Root>

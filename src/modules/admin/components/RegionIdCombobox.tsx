@@ -95,7 +95,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             closeOnSelect={true}
             openOnClick
         >
-            <Combobox.Label>Region Name
+            <Combobox.Label>Region Name 
                 <Field.RequiredIndicator />
             </Combobox.Label>
             <Combobox.Control>

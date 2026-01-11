@@ -2,31 +2,31 @@
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import type { YouthAttendance } from '@/modules/admin/stores/youthMinistry/youthAttendance.store';
-import type { Attendance } from '@/modules/admin/stores/attendance.store';
+import type { YouthAttendance } from '@/types/youthAttendance.type';
+import type { Attendance } from '@/types/attendance.type';
 
 export const calculateYouthTotals = (attendances: Attendance[]) => {
     const totals = {
         men: 0,
         women: 0,
-        youthBoys: 0,
-        youthGirls: 0,
-        childrenBoys: 0,
-        childrenGirls: 0,
+        youth_boys: 0,
+        youth_girls: 0,
+        children_boys: 0,
+        children_girls: 0,
         total: 0
     }
 
     attendances.forEach(attendance => {
         totals.men += attendance.men || 0
         totals.women += attendance.women || 0
-        totals.youthBoys += attendance.youthBoys || 0
-        totals.youthGirls += attendance.youthGirls || 0
-        totals.childrenBoys += attendance.childrenBoys || 0
-        totals.childrenGirls += attendance.childrenGirls || 0
+        totals.youth_boys += attendance.youth_boys || 0
+        totals.youth_girls += attendance.youth_girls || 0
+        totals.children_boys += attendance.children_boys || 0
+        totals.children_girls += attendance.children_girls || 0
     })
 
-    totals.total = totals.men + totals.women + totals.youthBoys + totals.youthGirls +
-        totals.childrenBoys + totals.childrenGirls
+    totals.total = totals.men + totals.women + totals.youth_boys + totals.youth_girls +
+        totals.children_boys + totals.children_girls
 
     return totals
 }
@@ -37,7 +37,7 @@ export const copyYouthAttendanceToClipboard = async (youthAttendance: YouthAtten
     const text = youthAttendance
         .map(
             (attendance) =>
-                `${attendance.id}\t${attendance.groupName}\t${attendance.month}\t${attendance.yhsfMale}\t${attendance.yhsfFemale}\t${attendance.year}`
+                `${attendance.id}\t${attendance.groupName || ''}\t${attendance.month}\t${attendance.yhsfMale || 0}\t${attendance.yhsfFemale || 0}\t${attendance.year}`
         )
         .join('\n');
 
@@ -64,16 +64,16 @@ export const exportYouthAttendanceToExcel = (youthAttendance: YouthAttendance[])
         // Prepare data for Excel
         const excelData = youthAttendance.map(attendance => ({
             'S/N': attendance.id,
-            'Group': attendance.groupName,
+            'Group': attendance.groupName || '',
             'Old Group': attendance.oldGroupName || '',
             'Month': attendance.month,
-            'YHSF Male': attendance.yhsfMale,
-            'YHSF Female': attendance.yhsfFemale,
+            'YHSF Male': attendance.yhsfMale || 0,
+            'YHSF Female': attendance.yhsfFemale || 0,
             'Year': attendance.year,
-            'Region (LGA)': attendance.regionName,
-            'State': attendance.stateName,
-            'Created Date': attendance.createdAt.toLocaleDateString(),
-            'Updated Date': attendance.updatedAt.toLocaleDateString()
+            'Region (LGA)': attendance.regionName || '',
+            'State': attendance.stateName || '',
+            'Created Date': attendance.createdAt?.toLocaleDateString() || '',
+            'Updated Date': attendance.updatedAt?.toLocaleDateString() || ''
         }));
 
         // Create worksheet
@@ -114,16 +114,16 @@ export const exportYouthAttendanceToCSV = (youthAttendance: YouthAttendance[]): 
         // CSV data rows
         const csvRows = youthAttendance.map(attendance => [
             attendance.id.toString(),
-            `"${attendance.groupName.replace(/"/g, '""')}"`,
+            `"${(attendance.groupName || '').replace(/"/g, '""')}"`,
             `"${(attendance.oldGroupName || '').replace(/"/g, '""')}"`,
             `"${attendance.month.replace(/"/g, '""')}"`,
-            attendance.yhsfMale.toString(),
-            attendance.yhsfFemale.toString(),
+            (attendance.yhsfMale || 0).toString(),
+            (attendance.yhsfFemale || 0).toString(),
             attendance.year,
-            `"${attendance.regionName.replace(/"/g, '""')}"`,
-            `"${attendance.stateName.replace(/"/g, '""')}"`,
-            attendance.createdAt.toLocaleDateString(),
-            attendance.updatedAt.toLocaleDateString()
+            `"${(attendance.regionName || '').replace(/"/g, '""')}"`,
+            `"${(attendance.stateName || '').replace(/"/g, '""')}"`,
+            attendance.createdAt?.toLocaleDateString() || '',
+            attendance.updatedAt?.toLocaleDateString() || ''
         ]);
 
         // Combine headers and rows
@@ -174,8 +174,8 @@ export const exportYouthAttendanceToPDF = (youthAttendance: YouthAttendance[]): 
             attendance.id.toString(),
             attendance.groupName,
             attendance.month,
-            attendance.yhsfMale.toString(),
-            attendance.yhsfFemale.toString(),
+            (attendance.yhsfMale || 0).toString(),
+            (attendance.yhsfFemale || 0).toString(),
             attendance.year
         ]);
 
