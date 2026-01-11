@@ -72,12 +72,20 @@ const Login = () => {
 
             // save data
             console.log("user", response);
-            
+
             setAuth({ user: response.user, tokens: { refresh_token: response.refresh_token, access_token: response.access_token } });
 
-            toaster.success({
-                description: "Login successful!",
-            });
+            if (response.user && response.access_token && response.refresh_token) {
+                toaster.success({
+                    description: "Login successful!",
+                });
+            } else {
+                toaster.error({
+                    title: "Login failed!",
+                    description: "Invalid response from server"
+                });
+                return;
+            }
 
             await delay(1000);
 
