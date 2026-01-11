@@ -356,6 +356,7 @@ export const ReportsContent = () => {
             }
 
             filtered = await filterAttendanceRecords(filtered, filterCriteria)
+            console.log(filtered);
 
             if (deferredTab === 'state') {
                 if (!filterCriteria.stateId) {
@@ -434,6 +435,8 @@ export const ReportsContent = () => {
                 const dObj = dObjs.find(g => g.id === Number(selectedDistrictId))
                 const dName = dObj?.name || `District ${selectedDistrictId}`
                 const spec = data.month ? { single: collections.months[parseInt(data.month, 10) - 1].label } : (data.fromMonth && data.toMonth ? { range: { from: parseInt(data.fromMonth, 10), to: parseInt(data.toMonth, 10) } } : { months: [] })
+                console.log(filtered, filterCriteria, selectedDistrictId);
+                
                 const hasData = filtered.some(x => x.group_id === Number(filterCriteria.groupId) && x.district_id === selectedDistrictId)
                 if (!hasData) {
                     toaster.error({ description: 'No attendance data for selected district/group', closable: true })
@@ -548,9 +551,9 @@ export const ReportsContent = () => {
                     }
                     const rObj = regions.find(r => Number(r.id) === Number(filterCriteria.regionId))
                     const rName = rObj ? (rObj.name || rObj.regionName) : 'Region'
-                    const regionGroups = groups.filter(g => Number(regions.find(r=> r.name === g.region)?.id) === Number(filterCriteria.regionId)).sort((a, b) => (a.name || a.groupName).localeCompare(b.name || b.groupName))
+                    const regionOldGroups = oldGroups.filter(og => Number(regions.find(r=> r.name === og.region)?.id) === Number(filterCriteria.regionId)).sort((a, b) => (a.name || a.groupName).localeCompare(b.name || b.groupName))
                     const title = `Deeper Life Bible Church, ${rName} (Region)`
-                    const sheet = buildConsolidatedReportSheet(filtered, regionGroups.map(g => ({ id: g.id, name: g.name || g.groupName })), title, year, spec, 'Groups', 'group_id')
+                    const sheet = buildConsolidatedReportSheet(filtered, regionOldGroups.map(g => ({ id: g.id, name: g.name || g.groupName })), title, year, spec, 'Old Groups', 'old_group_id')
                     exportSheet(sheet, getReportFileName('region').replace('.xlsx', '_Consolidated.xlsx'), 'Consolidated Report')
                 } else if (deferredTab === 'group') {
                     if (!filterCriteria.groupId) {
@@ -1136,6 +1139,7 @@ export const ReportsContent = () => {
                     {...commonProps}
                     statesCollection={scopedCollections.s}
                     regionsCollection={scopedCollections.r}
+                    oldGroupsCollection={scopedCollections.og}
                     groupsCollection={scopedCollections.g}
                     onDownloadNewComers={handleDownloadDistrictNewComersReport}
                     onDownloadTitheOffering={handleDownloadDistrictTitheOfferingReport}

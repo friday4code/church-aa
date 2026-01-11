@@ -31,6 +31,7 @@ const reportFiltersSchema = z.object({
 interface DistrictAttendanceReportProps {
     statesCollection: Array<{ label: string; value: string }>
     regionsCollection: Array<{ label: string; value: string }>
+    oldGroupsCollection: Array<{ label: string; value: string }>
     groupsCollection: Array<{ label: string; value: string }>
     yearsCollection: Array<{ label: string; value: string }>
     monthsCollection: Array<{ label: string; value: string }>
@@ -44,6 +45,7 @@ interface DistrictAttendanceReportProps {
 export const DistrictAttendanceReport = ({
     statesCollection,
     regionsCollection,
+    oldGroupsCollection,
     groupsCollection,
     yearsCollection,
     monthsCollection,
@@ -154,6 +156,18 @@ export const DistrictAttendanceReport = ({
                         {roleVisibility.showRegion && (
                             <GridItem>
                                 <CustomComboboxField form={form} name="region" label="Region" items={regionsCollection} placeholder="Type to search region" required />
+                            </GridItem>
+                        )}
+                        {roleVisibility.showOldGroup && (
+                            <GridItem>
+                                <CustomComboboxField
+                                    form={form}
+                                    name="oldGroup"
+                                    label="Old Group"
+                                    items={oldGroupsCollection}
+                                    placeholder="Type to search old group"
+                                    required
+                                />
                             </GridItem>
                         )}
 
