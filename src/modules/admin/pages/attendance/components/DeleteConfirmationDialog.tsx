@@ -7,6 +7,7 @@ import {
     Button,
 } from "@chakra-ui/react"
 import type { Attendance } from "@/types/attendance.type"
+import { useDistricts } from "@/modules/admin/hooks/useDistrict"
 
 interface DeleteConfirmationDialogProps {
     isOpen: boolean
@@ -17,6 +18,8 @@ interface DeleteConfirmationDialogProps {
 }
 
 const DeleteConfirmationDialog = ({ isOpen, attendance, onClose, onConfirm, serviceName }: DeleteConfirmationDialogProps) => {
+    const {districts} = useDistricts();
+    const district = districts.find(x => x.id === attendance?.district_id);
     return (
         <Dialog.Root open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
             <Portal>
@@ -28,7 +31,7 @@ const DeleteConfirmationDialog = ({ isOpen, attendance, onClose, onConfirm, serv
                         </Dialog.Header>
                         <Dialog.Body>
                             <p>
-                                Are you sure you want to delete the attendance record for <strong>{attendance?.district} - {attendance?.month} Week {attendance?.week}</strong>?
+                                Are you sure you want to delete the attendance record for <strong>{district?.name} - {attendance?.month} Week {attendance?.week}</strong>?
                                 This action cannot be undone.
                             </p>
                         </Dialog.Body>

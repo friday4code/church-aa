@@ -403,8 +403,10 @@ const Content = () => {
                     <PieChart>
                         <Tooltip cursor={false} animationDuration={100} />
                         <Pie innerRadius={60} outerRadius={80} isAnimationActive={true} animationDuration={500} data={serviceDistribution} dataKey="value" nameKey="name">
-                            <Label content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
-                                const { cx = 0, cy = 0 } = viewBox ?? { cx: 0, cy: 0 }
+                            <Label content={(props: any) => {
+                                const { viewBox } = props;
+                                const cx = viewBox?.cx ?? 0;
+                                const cy = viewBox?.cy ?? 0;
                                 return (
                                     <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#4A5568">
                                         <tspan fontSize="18" fontWeight="600">{totalRecords.toLocaleString()}</tspan>
