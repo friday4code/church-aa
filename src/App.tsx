@@ -6,7 +6,7 @@ export default function App() {
     // Enable session timeout for authenticated users
     useSessionTimeout({
         timeoutMinutes: 30, // 30 minutes of inactivity
-        warningMinutes: 5,  // Show warning 5 minutes before timeout
+        warningMinutes: 5,  // Show warning 5 minutes before timeout 
         enabled: true
     });
 
