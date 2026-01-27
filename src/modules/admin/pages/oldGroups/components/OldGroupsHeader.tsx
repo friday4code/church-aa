@@ -73,8 +73,10 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, sta
     return (
         <>
             <VStack
-                bg={"accent.50"}
-                rounded="md"
+                bg={"bg"}
+                border="xs"
+                borderColor={"border"}
+                rounded="xl"
                 p="4"
                 align="stretch"
                 gap={{ base: 4, md: 6 }}

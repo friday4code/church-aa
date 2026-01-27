@@ -31,6 +31,11 @@ export const YouthAttendanceHeader = ({ onAddClick, onExportClick, attendanceTyp
 
     return (
         <VStack
+            bg={"bg"}
+            border="xs"
+            borderColor={"border"}
+            rounded="xl"
+            p="4"
             align="stretch"
             gap={{ base: 4, md: 6 }}
             // pos="sticky"

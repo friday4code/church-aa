@@ -140,8 +140,10 @@ const DistrictsHeader = ({
     return (
         <>
             <VStack
-                bg={"accent.50"}
-                rounded="md"
+                bg={"bg"}
+                border="xs"
+                borderColor={"border"}
+                rounded="xl"
                 p="4"
                 align="stretch"
                 gap={{ base: 4, md: 6 }}
@@ -351,7 +353,7 @@ const DistrictsHeader = ({
                                 <Stack gapY="0" justify="center" w="full">
                                     <Span color="fg.subtle" fontSize="xs">Old Group</Span>
                                     <Select.ValueText mt="-1.5" placeholder="All Old Groups" />
-                                </Stack>    
+                                </Stack>
                             </Select.Trigger>
                             <Select.IndicatorGroup>
                                 <Select.Indicator />
