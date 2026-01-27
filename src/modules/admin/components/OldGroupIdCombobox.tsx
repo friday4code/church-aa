@@ -114,7 +114,7 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
     }, [onChange])
 
     const selectedLabel = useMemo(() => {
-        if (typeof value === 'number' && value > 0) {
+        if (typeof value === 'number') {
             return oldGroups.find(g => g.id === value)?.name || ""
         }
         return ""
@@ -130,6 +130,8 @@ const OldGroupIdCombobox = ({ required, value, onChange, invalid = false, disabl
             collection={collection}
             value={typeof value === 'number' && value > 0 ? [String(value)] : []}
             inputValue={selectedLabel || inputValue}
+            defaultInputValue={selectedLabel}
+            defaultHighlightedValue={selectedLabel}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}

@@ -89,6 +89,7 @@ const RegionIdCombobox = ({ required, value, onChange, invalid = false, disabled
             collection={collection}
             value={typeof value === 'number' && value > 0 ? [String(value)] : []}
             defaultInputValue={selectedLabel}
+            defaultHighlightedValue={selectedLabel}
             onValueChange={handleValueChange}
             onInputValueChange={useCallback((e: { inputValue: string }) => setInputValue(e.inputValue), [])}
             invalid={invalid}

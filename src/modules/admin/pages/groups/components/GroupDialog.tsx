@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { groupSchema, type GroupFormData } from "../../../schemas/group.schema"
 import type { Group } from "@/types/groups.type"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMe } from "@/hooks/useMe"
 import { adminApi } from "@/api/admin.api"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
@@ -22,6 +22,7 @@ import { useStates } from "@/modules/admin/hooks/useState"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import type { State } from "@/types/states.type"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -36,6 +37,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
     const { user } = useMe()
     const { states, isLoading: isStatesLoading } = useStates()
     const [selectedStateName, setSelectedStateName] = useState('')
+    const { oldGroups, isLoading: isOldGroupsLoading } = useOldGroups()
     const isRegionAdmin = user?.roles?.some((role) => role.toLowerCase() === 'region admin') ?? false
     const [apiGroups, setApiGroups] = useState<Array<{ id: number; name: string; code?: string }>>([])
     const generatedCodesCache = useRef<Set<string>>(new Set())
@@ -43,6 +45,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
     const userRegionId = user?.region_id ?? 0
     const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
 
+    // fetch oldgeroups
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({
         resolver: zodResolver(groupSchema),
         defaultValues: {
@@ -50,14 +53,21 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
             leader: group?.leader || '',
             state_id: group?.state_id || 0,
             region_id: group?.region_id || 0,
-            old_group_id: group?.old_group_id || undefined,
+            old_group_id: group?.old_group_id || 0,
             code: group?.code || '',
             leader_email: group?.leader_email || '',
             leader_phone: group?.leader_phone || ''
         }
     })
 
-    const currentOldGroupId = watch('old_group_id')
+    const oldGroupId = useMemo(() => {
+        if (group) {
+            return oldGroups?.find((oldGroup) => oldGroup.name === group?.old_group)?.id
+        }
+        return 0
+    }, [group, oldGroups]);
+    
+    const currentOldGroupId = watch('old_group_id') || oldGroupId
     const currentGroupName = watch('group_name')
     const watchedStateId = watch('state_id')
     const watchedRegionId = watch('region_id')
@@ -170,6 +180,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
         const fetchGroups = async () => {
             try {
                 const data = await adminApi.getGroupsByOldGroupId(ogId)
+                console.log("data", data)
                 const source = Array.isArray(data) ? data : []
                 setApiGroups(source)
             } catch {
@@ -358,7 +369,7 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
                                     {/* Old Group Selection */}
                                     <Field.Root invalid={!!errors.old_group_id}>
                                         <OldGroupIdCombobox
-                                            value={currentOldGroupId as number}
+                                            value={currentOldGroupId}
                                             onChange={handleOldGroupChange}
                                             invalid={!!errors.old_group_id}
                                             stateId={watchedStateId}

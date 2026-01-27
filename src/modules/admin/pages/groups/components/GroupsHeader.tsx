@@ -75,10 +75,13 @@ const GroupsHeader = ({
     return (
         <>
             <VStack
+                bg={"accent.50"}
+                rounded="md"
+                p="4"
                 align="stretch"
                 gap={{ base: 4, md: 6 }}
                 pos="sticky"
-                top={6}
+                top={0}
                 zIndex={"sticky"}
             >
                 {/* First line: Go back button + title on left, drawer on right */}
@@ -214,7 +217,7 @@ const GroupsHeader = ({
                 </Flex>
 
                 {/* Filters */}
-                <SimpleGrid gap={8} overflowX="auto" pb={{ base: 2, md: 0 }} columns={{ base: 2, md: 5 }}>
+                <SimpleGrid gap={20} overflowX="auto" pb={{ base: 2, md: 0 }} columns={{ base: 2, md: 5 }}>
                     <Select.Root size="md" onValueChange={(e) => setStateFilter(e.value[0])} value={[stateFilter]} collection={stateCollection} width="200px">
                         <Select.HiddenSelect />
                         <Select.Control>

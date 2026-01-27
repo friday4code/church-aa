@@ -33,7 +33,7 @@ export const adminApi = {
     }> => {
         const { data } = await axiosClient.post<{
             "sent_to": string[]
-        }>(`/attendance-monitor/monitor/remind/${entityType}`);
+        }>(`/attendance-monitor/monitor/remind/${entityType}`, { to: entityType });
         return data;
     },
 

@@ -34,10 +34,13 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
     return (
         <>
             <VStack
+                bg={"accent.50"}
+                rounded="md"
+                p="4"
                 align="stretch"
                 gap={{ base: 4, md: 6 }}
                 pos="sticky"
-                top={6}
+                top={0}
                 zIndex={"sticky"}
             >
                 {/* First line: Go back button + title on left */}

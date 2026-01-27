@@ -2,15 +2,9 @@ import { adminApi } from "@/api/admin.api";
 import { toaster } from "@/components/ui/toaster";
 import { useMutation } from "@tanstack/react-query";
 
-export const useAttendanceReminder = (options?: {
-    onCreateSuccess?: (result: { sent_to: string[] }) => void;
-}) => {
+export const useAttendanceReminder = () => {
     const createMutation = useMutation({
-        mutationFn: (entityType: string) => adminApi.sendAttendanceReminder(entityType),
-        onSuccess: (result) => {
-            toaster.create({ description: `Reminder sent successfully to ${result.sent_to.join(", ")}`, type: "success", closable: true, duration: 5000 });
-            options?.onCreateSuccess?.(result);
-        }
+        mutationFn: (entityType: string) => adminApi.sendAttendanceReminder(entityType)
     });
 
     return {

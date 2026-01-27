@@ -3,7 +3,7 @@
 import { Card, Heading, Text, Button, SimpleGrid, VStack, HStack, Spinner } from "@chakra-ui/react"
 import { useAttendanceReminder } from "@/modules/admin/hooks/useReminder"
 import { useAuth } from "@/hooks/useAuth"
-import { toaster } from "@/components/ui/toaster"
+import { Toaster, toaster } from "@/components/ui/toaster"
 
 const Reminder = () => {
     const state = useAttendanceReminder()
@@ -29,6 +29,7 @@ const Reminder = () => {
             return
         }
         send()
+        toaster.create({ description: `Reminder sent successfully to ${entityType}`, type: 'success', closable: true })
     }
 
     const Item = ({ title, helper, onSend, isLoading, disabled }: { title: string; helper: string; onSend: () => void; isLoading: boolean; disabled: boolean }) => (
@@ -50,23 +51,26 @@ const Reminder = () => {
     )
 
     return (
-        <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 0, md: 4 }}>
-            {isAllowed('state') && (
-                <Item title="State" helper="Notify state admins" onSend={() => guardedSend('state', () => state.createReminder("state"))} isLoading={state.isCreating} disabled={!isAllowed('state')} />
-            )}
-            {isAllowed('region') && (
-                <Item title="Region" helper="Notify region admins" onSend={() => guardedSend('region', () => region.createReminder("region"))} isLoading={region.isCreating} disabled={!isAllowed('region')} />
-            )}
-            {isAllowed('district') && (
-                <Item title="District" helper="Notify district admins" onSend={() => guardedSend('district', () => district.createReminder("district"))} isLoading={district.isCreating} disabled={!isAllowed('district')} />
-            )}
-            {isAllowed('group') && (
-                <Item title="Group" helper="Notify group admins" onSend={() => guardedSend('group', () => group.createReminder("group"))} isLoading={group.isCreating} disabled={!isAllowed('group')} />
-            )}
-            {isAllowed('old_group') && (
-                <Item title="Old Group" helper="Notify old group admins" onSend={() => guardedSend('old_group', () => oldGroup.createReminder("old_group"))} isLoading={oldGroup.isCreating} disabled={!isAllowed('old_group')} />
-            )}
-        </SimpleGrid>
+        <>
+            <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 5 }} gap={{ base: 0, md: 4 }}>
+                {isAllowed('state') && (
+                    <Item title="State" helper="Notify state admins" onSend={() => guardedSend('state', () => state.createReminder("state"))} isLoading={state.isCreating} disabled={!isAllowed('state')} />
+                )}
+                {isAllowed('region') && (
+                    <Item title="Region" helper="Notify region admins" onSend={() => guardedSend('region', () => region.createReminder("region"))} isLoading={region.isCreating} disabled={!isAllowed('region')} />
+                )}
+                {isAllowed('district') && (
+                    <Item title="District" helper="Notify district admins" onSend={() => guardedSend('district', () => district.createReminder("district"))} isLoading={district.isCreating} disabled={!isAllowed('district')} />
+                )}
+                {isAllowed('group') && (
+                    <Item title="Group" helper="Notify group admins" onSend={() => guardedSend('group', () => group.createReminder("group"))} isLoading={group.isCreating} disabled={!isAllowed('group')} />
+                )}
+                {isAllowed('old_group') && (
+                    <Item title="Old Group" helper="Notify old group admins" onSend={() => guardedSend('old_group', () => oldGroup.createReminder("old_group"))} isLoading={oldGroup.isCreating} disabled={!isAllowed('old_group')} />
+                )}
+            </SimpleGrid>
+            {/* <Toaster /> */}
+        </>
     )
 }
 
