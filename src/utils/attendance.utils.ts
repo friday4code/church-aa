@@ -202,7 +202,7 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
         return district?.name || `District ${districtId}`;
     };
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'landscape' });
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Title
@@ -260,6 +260,21 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
         },
         alternateRowStyles: {
             fillColor: [245, 245, 245],
+        },
+        columnStyles: {
+            0: { cellWidth: 30 }, // District
+            1: { cellWidth: 20 }, // Month
+            2: { cellWidth: 15 }, // Week
+            3: { cellWidth: 15 }, // Year
+            4: { cellWidth: 15 }, // Men
+            5: { cellWidth: 15 }, // Women
+            6: { cellWidth: 20 }, // Youth Boys
+            7: { cellWidth: 20 }, // Youth Girls
+            8: { cellWidth: 20 }, // Children Boys
+            9: { cellWidth: 20 }, // Children Girls
+            10: { cellWidth: 20 }, // New Comers
+            11: { cellWidth: 25 }, // Tithe & Offering
+            12: { cellWidth: 20 }, // Total
         },
         margin: { top: 28, right: 10, bottom: 10, left: 10 },
     });

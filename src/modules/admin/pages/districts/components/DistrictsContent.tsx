@@ -283,7 +283,7 @@ export const DistrictsContent = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <DistrictsHeader
-                        districts={paginatedDistricts}
+                        districts={filteredAndSortedDistricts}
                         onAddDistrict={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         states={states || []}

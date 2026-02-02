@@ -50,6 +50,27 @@ export const exportToPDF = (data: OldGroup[], filename: string = 'oldgroups') =>
         head: [['S/N', 'Old Group Name', 'Old Group Code', 'Old Group Leader', 'Leader Email', 'Leader Phone' ,'State','Region'  ]],
         body: data.map((item, i) => [i + 1, item.name, item.code, item.leader, item.leader_email ?? '', item.leader_phone ?? '',item.state || "",item.region || ""]),
         startY: 20,
+        styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            overflow: 'linebreak'
+        },
+        headStyles: {
+            fillColor: [66, 135, 245],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 10 }, // S/N
+            1: { cellWidth: 30 }, // Old Group Name
+            2: { cellWidth: 20 }, // Old Group Code
+            3: { cellWidth: 30 }, // Old Group Leader
+            4: { cellWidth: 35 }, // Leader Email
+            5: { cellWidth: 25 }, // Leader Phone
+            6: { cellWidth: 20 }, // State
+            7: { cellWidth: 20 }  // Region
+        },
+        margin: { top: 20 }
     })
 
     doc.save(`${filename}_${new Date().toISOString().replaceAll("/", "_")}.pdf`)

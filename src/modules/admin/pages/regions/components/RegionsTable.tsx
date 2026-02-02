@@ -98,8 +98,8 @@ const RegionsTable = ({
     ), [paginatedRegions, selectedRegions, handleSelect, handleEdit, handleDelete])
     return (
         <>
-            <Table.ScrollArea borderWidth="1px" maxW="calc(100vw - 18rem)" w="full" rounded="xl">
-                <Table.Root size="sm">
+            <Table.ScrollArea borderWidth="1px" maxW="calc(100vw - 18rem)" h="calc(100vh - 5rem)" w="full" rounded="xl">
+                <Table.Root size="sm" stickyHeader>
                     <Table.Header>
                         <Table.Row fontSize={"md"}>
                             {isSuperAdmin && (

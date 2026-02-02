@@ -1,7 +1,7 @@
 // utils/districts.utils.ts
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import type { District } from '@/types/districts.type';
 
 export const copyDistrictsToClipboard = async (districts: District[]): Promise<void> => {
@@ -119,21 +119,23 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
         doc.text(`Total Districts: ${districts.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = districts.map((district) => [
-            district.group,
-            district.name,
-            district.leader,
+        const tableData = districts.map((district, index) => [
+            (index + 1).toString(),
+            district.group || '',
+            district.name || '',
+            district.leader || '',
         ]);
 
         // Define table columns
         const tableColumns = [
+            'S/N',
             'Group Name',
             'District Name',
             'District Leader'
         ];
 
         // Add table to PDF
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [tableColumns],
             body: tableData,
             startY: 35,
@@ -152,9 +154,10 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
                 fillColor: [245, 245, 245]
             },
             columnStyles: {
-                0: { cellWidth: 25 }, // Group Name
-                1: { cellWidth: 25 }, // District Name
-                2: { cellWidth: 25 }, // District Leader
+                0: { cellWidth: 15 }, // S/N
+                1: { cellWidth: 55 }, // Group Name
+                2: { cellWidth: 55 }, // District Name
+                3: { cellWidth: 55 }, // District Leader
             },
             margin: { top: 35 }
         });

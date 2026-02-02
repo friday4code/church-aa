@@ -317,7 +317,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <OldGroupsHeader
-                        oldGroups={paginatedOldGroups}
+                        oldGroups={filteredAndSortedGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         states={states || []}

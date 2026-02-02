@@ -319,7 +319,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                 <Suspense fallback={<HeaderLoading />}>
                     <AttendanceHeader
                         serviceName={serviceName}
-                        serviceAttendances={serviceAttendances as any}
+                        serviceAttendances={filteredAndSortedAttendances as any}
                         onAddAttendance={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         onNavigateBack={() => navigate("/admin/attendance")}

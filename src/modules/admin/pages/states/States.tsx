@@ -291,7 +291,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <StatesHeader
-                        states={paginatedStates}
+                        states={filteredAndSortedStates}
                         onAddState={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         pageSize={pageSize}

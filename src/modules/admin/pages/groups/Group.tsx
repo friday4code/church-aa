@@ -339,7 +339,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <GroupsHeader
-                        groups={paginatedGroups}
+                        groups={filteredAndSortedGroups}
                         onAddGroup={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         states={states || []}

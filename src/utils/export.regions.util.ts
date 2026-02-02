@@ -70,8 +70,9 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
 
     autoTable(doc, {
-        head: [['State', 'Region Name', 'Region Code', 'Region Leader', 'Leader Email', 'Leader Phone']],
-        body: data.map(item => [
+        head: [['S/N', 'State', 'Region Name', 'Region Code', 'Region Leader', 'Leader Email', 'Leader Phone']],
+        body: data.map((item, index) => [
+            (index + 1).toString(),
             item.state ?? '',
             item.name ?? '',
             item.code ?? '',
@@ -83,14 +84,15 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
         styles: { fontSize: 10 },
         headStyles: { fillColor: [66, 135, 245] }, // Blue header
         columnStyles: {
-            0: { cellWidth: 'auto' }, // State
-            1: { cellWidth: 'auto' }, // Region Name
-            2: { cellWidth: 'auto' }, // Region Code
-            3: { cellWidth: 'auto' },  // Region Leader
-            4: { cellWidth: 'auto' },  // Leader Email
-            5: { cellWidth: 'auto' }   // Leader Phone
+            0: { cellWidth: 15 }, // S/N
+            1: { cellWidth: 30 }, // State
+            2: { cellWidth: 35 }, // Region Name
+            3: { cellWidth: 25 }, // Region Code
+            4: { cellWidth: 35 },  // Region Leader
+            5: { cellWidth: 40 },  // Leader Email
+            6: { cellWidth: 25 }   // Leader Phone
         },
-        tableWidth: 'wrap'
+        tableWidth: 'auto'
     })
 
     // Footer with page numbers

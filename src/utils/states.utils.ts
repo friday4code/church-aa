@@ -1,7 +1,7 @@
 // utils/states.utils.ts
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import type { State } from '@/types/states.type';
 
 export const copyStatesToClipboard = async (states: State[]): Promise<void> => {
@@ -137,6 +137,7 @@ export const exportStatesToPDF = (states: State[]): void => {
 
         // Define table columns
         const tableColumns = [
+            'S/N',
             'State Name',
             'State Code',
             'State Leader',
@@ -145,7 +146,7 @@ export const exportStatesToPDF = (states: State[]): void => {
         ];
 
         // Add table to PDF
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [tableColumns],
             body: tableData,
             startY: 35,
@@ -164,11 +165,12 @@ export const exportStatesToPDF = (states: State[]): void => {
                 fillColor: [245, 245, 245]
             },
             columnStyles: {
-                1: { cellWidth: 30 }, // State Name
-                2: { cellWidth: 20 }, // State Code
-                3: { cellWidth: 30 }, // State Leader
-                4: { cellWidth: 30 }, // Leader Email
-                5: { cellWidth: 20 }, // Leader Phone
+                0: { cellWidth: 15 }, // S/N
+                1: { cellWidth: 40 }, // State Name
+                2: { cellWidth: 25 }, // State Code
+                3: { cellWidth: 40 }, // State Leader
+                4: { cellWidth: 45 }, // Leader Email
+                5: { cellWidth: 25 }, // Leader Phone
             },
             margin: { top: 35 }
         });

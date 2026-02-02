@@ -57,8 +57,8 @@ const StatesTable = ({
     return (
         <>
             {/* Table */}
-            <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
-                <Table.Root size="sm">
+            <Table.ScrollArea borderWidth="1px" maxW="calc(100vw - 18rem)" h="calc(100vh - 5rem)" w="full" rounded="xl">
+                <Table.Root size="sm" stickyHeader>
                     <Table.Header>
                         <Table.Row fontSize={"md"}>
                             {isSuperAdmin && (

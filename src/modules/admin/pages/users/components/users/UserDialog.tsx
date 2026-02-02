@@ -60,7 +60,7 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     // If any of these are missing, Zod validation (which requires min(1)) will fail silently
     // when submitting hidden fields. Disable submit and show a helpful message instead.
     const isSuperAdmin = (authUser?.roles || []).some((r) => String(r).toLowerCase() === 'super admin')
-    const canSubmit = !!effectiveStateId && !!effectiveRegionId && !!effectiveDistrictId
+    const canSubmit = !!effectiveStateId && !!effectiveRegionId
 
     const { register, handleSubmit, formState: { errors }, reset, setValue, watch, trigger } = useForm<UserFormData>({
         resolver: zodResolver(userSchema(mode) as any),
@@ -97,10 +97,15 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
     })
 
     const onSubmit = (data: UserFormData) => {
-        console.log("payload", data);
+        const payload = { ...data }
 
-        onSave(data)
-        // reset()
+        // Remove district_id if it's 0 or empty (not selected)
+        if (!payload.district_id || payload.district_id === 0) {
+            delete payload.district_id
+        }
+
+        console.log("payload", payload);
+        onSave(payload)
     }
 
     const onInvalid = () => {
@@ -492,14 +497,13 @@ const UserDialog = ({ isLoading, isOpen, user, mode, onClose, onSave }: UserDial
                                                 />
                                             </Field.Root>
 
-                                            <Field.Root required invalid={!!errors.district_id}>
+                                            <Field.Root invalid={!!errors.district_id}>
                                                 <DistrictIdCombobox
                                                     value={watchedDistrictId}
                                                     onChange={(id) => {
                                                         const name = districts.find(d => d.id === (id || 0))?.name || ''
                                                         onDistrictChange(name)
                                                     }}
-                                                    required
                                                     invalid={!!errors.district_id}
                                                     disabled={!watchedGroupId}
                                                     stateId={effectiveStateId as number}

@@ -375,7 +375,7 @@ const Content = ({ role }: { role?: string }) => {
                 <Suspense fallback={<HeaderLoading />}>
                     <UsersHeader
                         totalUsers={users.length}
-                        users={paginatedUsers}
+                        users={filteredAndSortedUsers}
                         onAddUser={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         pageSize={pageSize}

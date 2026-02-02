@@ -258,7 +258,7 @@ const RegionsContent = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <RegionsHeader
-                        regions={paginatedRegions}
+                        regions={filteredAndSortedRegions}
                         onAddRegion={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
                         states={states || []}

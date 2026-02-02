@@ -1,7 +1,7 @@
 // utils/users.utils.ts
 import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import type { User } from '@/types/users.type';
 
 export const copyUsersToClipboard = async (users: User[]): Promise<void> => {
@@ -132,8 +132,8 @@ export const exportUsersToPDF = (users: User[]): void => {
         doc.text(`Total Users: ${users.length}`, 14, 28);
 
         // Prepare table data
-        const tableData = users.map(user => [
-            user.id.toString(),
+        const tableData = users.map((user, index) => [
+            (index + 1).toString(),
             `${user.name}`,
             user.email,
             user.phone
@@ -148,7 +148,7 @@ export const exportUsersToPDF = (users: User[]): void => {
         ];
 
         // Add table to PDF
-        (doc as any).autoTable({
+        autoTable(doc, {
             head: [tableColumns],
             body: tableData,
             startY: 35,
@@ -168,9 +168,9 @@ export const exportUsersToPDF = (users: User[]): void => {
             },
             columnStyles: {
                 0: { cellWidth: 15 }, // S/N
-                1: { cellWidth: 35 }, // Full Name
-                2: { cellWidth: 45 }, // Email
-                3: { cellWidth: 30 }  // Phone
+                1: { cellWidth: 55 }, // Full Name
+                2: { cellWidth: 65 }, // Email
+                3: { cellWidth: 45 }  // Phone
             },
             margin: { top: 35 }
         });

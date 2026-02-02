@@ -62,8 +62,8 @@ const AttendanceTable = ({
         <>
 
             {/* Table */}
-            <Table.ScrollArea _scrollbar={{ h: 1 }} _scrollbarThumb={{ bg: "bg.inverted/20", rounded: "full" }} borderWidth="1px" maxW={{ md: "62em", "2xl": "full" }} w={{ md: "62em", "2xl": "full" }} rounded="xl" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
-                <Table.Root size="sm">
+            <Table.ScrollArea _scrollbar={{ h: 1 }} _scrollbarThumb={{ bg: "bg.inverted/20", rounded: "full" }} borderWidth="1px" maxW="calc(100vw - 18rem)" h="calc(100vh - 5rem)" w="full" rounded="xl" borderColor={{ base: "gray.200", _dark: "gray.700" }}>
+                <Table.Root size="sm" stickyHeader>
                     <Table.Header bg={{ base: "gray.50", _dark: "gray.900" }}>
                         <Table.Row fontSize={"md"}>
                             <Table.ColumnHeader w="50px">

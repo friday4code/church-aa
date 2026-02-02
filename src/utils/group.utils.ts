@@ -49,6 +49,28 @@ export const exportGroupsToPDF = (data: Group[], filename: string = 'groups') =>
         head: [['S/N', 'Group Name', 'Group Code', 'Group Leader', 'Leader Email', 'Leader Phone' ,'State','Region', 'Old Group']],
         body: data.map((item, i) => [i + 1, item.name, item.code, item.leader || '', item.leader_email ?? '', item.leader_phone ?? '',item.state || "",item.region || "", item.old_group || ""]),
         startY: 20,
+        styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            overflow: 'linebreak'
+        },
+        headStyles: {
+            fillColor: [66, 135, 245],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        columnStyles: {
+            0: { cellWidth: 10 }, // S/N
+            1: { cellWidth: 25 }, // Group Name
+            2: { cellWidth: 20 }, // Group Code
+            3: { cellWidth: 25 }, // Group Leader
+            4: { cellWidth: 30 }, // Leader Email
+            5: { cellWidth: 20 }, // Leader Phone
+            6: { cellWidth: 20 }, // State
+            7: { cellWidth: 20 }, // Region
+            8: { cellWidth: 20 }  // Old Group
+        },
+        margin: { top: 20 }
     })
 
     doc.save(`${filename}_${new Date().toISOString().replaceAll("/", "_")}.pdf`)
