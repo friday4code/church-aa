@@ -21,9 +21,21 @@ interface AttendanceHeaderProps {
     setMonthFilter: (value: string) => void
     weekFilter: string
     setWeekFilter: (value: string) => void
+    stateFilter: string
+    setStateFilter: (value: string) => void
+    regionFilter: string
+    setRegionFilter: (value: string) => void
+    oldGroupFilter: string
+    setOldGroupFilter: (value: string) => void
+    groupFilter: string
+    setGroupFilter: (value: string) => void
     districtFilter: string
     setDistrictFilter: (value: string) => void
-    districts: any[];
+    states: any[]
+    regions: any[]
+    oldGroups: any[]
+    groups: any[]
+    districts: any[]
     pageSize: number;
     setPageSize: (size: number) => void;
 }
@@ -53,8 +65,20 @@ const AttendanceHeader = ({
     setMonthFilter,
     weekFilter,
     setWeekFilter,
+    stateFilter,
+    setStateFilter,
+    regionFilter,
+    setRegionFilter,
+    oldGroupFilter,
+    setOldGroupFilter,
+    groupFilter,
+    setGroupFilter,
     districtFilter,
     setDistrictFilter,
+    states,
+    regions,
+    oldGroups,
+    groups,
     districts,
     pageSize,
     setPageSize,
@@ -92,8 +116,51 @@ const AttendanceHeader = ({
         items: [1, 2, 3, 4, 5].map((week) => ({ label: `Week ${week}`, value: week.toString() })),
     })
 
+    const stateCollection = createListCollection({
+        items: states.map((s) => ({ label: s.name, value: s.id.toString() })),
+    })
+
+    const regionCollection = createListCollection({
+        items: regions
+            .filter((r) => !stateFilter || r.state_id?.toString() === stateFilter)
+            .map((r) => ({ label: r.name, value: r.id.toString() })),
+    })
+
+    const oldGroupCollection = createListCollection({
+        items: oldGroups
+            .filter((og) => !regionFilter || og.region_id?.toString() === regionFilter)
+            .map((og) => ({ label: og.name, value: og.id.toString() })),
+    })
+
+    const groupCollection = createListCollection({
+        items: groups
+            .filter((g) => {
+                if (oldGroupFilter) return g.old_group_id?.toString() === oldGroupFilter
+                if (regionFilter) return g.region_id?.toString() === regionFilter
+                if (stateFilter) return g.state_id?.toString() === stateFilter
+                return true
+            })
+            .map((g) => ({ label: g.name, value: g.id.toString() })),
+    })
+
     const districtCollection = createListCollection({
-        items: districts.map((district) => ({ label: district.name, value: district.id.toString() })),
+        items: districts
+            .filter((d) => {
+                // If group is selected, filter by group (assuming district belongs to group logic not typically direct, but let's check hierarchy)
+                // Actually hierarchy is usually State -> Region -> District. Or State -> Region -> Group -> District.
+                // Based on UserDialog logic: District depends on Group.
+                // Let's filter district by group if group is selected.
+                if (groupFilter) return d.group_id?.toString() === groupFilter
+                if (oldGroupFilter) return d.old_group_id?.toString() === oldGroupFilter // unlikely direct link but possible
+                if (regionFilter) {
+                    // Districts might have region_id or just region name string. Checking useDistricts hook/types would confirm but assuming standard id.
+                    // The previous implementation used name matching in content.
+                    return d.region_id?.toString() === regionFilter
+                }
+                if (stateFilter) return d.state_id?.toString() === stateFilter
+                return true
+            })
+            .map((district) => ({ label: district.name, value: district.id.toString() })),
     })
 
     return (
@@ -180,7 +247,7 @@ const AttendanceHeader = ({
 
                                             {/* Filters in Mobile Drawer */}
                                             <Stack justify="start" w={{ base: "full", md: "full" }} gap={2}>
-                                                <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
+                                                <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
                                                     <Select.HiddenSelect />
                                                     <Select.Control>
                                                         <Select.Trigger bg="bg" rounded="xl">
@@ -207,7 +274,7 @@ const AttendanceHeader = ({
                                                     </Portal>
                                                 </Select.Root>
 
-                                                <Select.Root size="md" width={{ base: "full", md: "140px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
+                                                <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
                                                     <Select.HiddenSelect />
                                                     <Select.Control>
                                                         <Select.Trigger bg="bg" rounded="xl">
@@ -234,7 +301,7 @@ const AttendanceHeader = ({
                                                     </Portal>
                                                 </Select.Root>
 
-                                                <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
+                                                <Select.Root size="md" width={{ base: "full", md: "90px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
                                                     <Select.HiddenSelect />
                                                     <Select.Control>
                                                         <Select.Trigger bg="bg" rounded="xl">
@@ -251,6 +318,122 @@ const AttendanceHeader = ({
                                                         <Select.Positioner>
                                                             <Select.Content>
                                                                 {weekCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={stateCollection} value={[stateFilter]} onValueChange={(e) => {
+                                                    setStateFilter(e.value[0]); setRegionFilter(""); setOldGroupFilter(""); setGroupFilter(""); setDistrictFilter("");
+                                                }}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">State</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="State" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {stateCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={regionCollection} value={[regionFilter]} onValueChange={(e) => {
+                                                    setRegionFilter(e.value[0]); setOldGroupFilter(""); setGroupFilter(""); setDistrictFilter("");
+                                                }}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Region</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Region" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {regionCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={oldGroupCollection} value={[oldGroupFilter]} onValueChange={(e) => {
+                                                    setOldGroupFilter(e.value[0]); setGroupFilter(""); setDistrictFilter("");
+                                                }}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Old Group</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Old Group" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {oldGroupCollection.items.map((item: any) => (
+                                                                    <Select.Item item={item} key={item.value}>
+                                                                        {item.label}
+                                                                        <Select.ItemIndicator />
+                                                                    </Select.Item>
+                                                                ))}
+                                                            </Select.Content>
+                                                        </Select.Positioner>
+                                                    </Portal>
+                                                </Select.Root>
+
+                                                <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={groupCollection} value={[groupFilter]} onValueChange={(e) => {
+                                                    setGroupFilter(e.value[0]); setDistrictFilter("");
+                                                }}>
+                                                    <Select.HiddenSelect />
+                                                    <Select.Control>
+                                                        <Select.Trigger bg="bg" rounded="xl">
+                                                            <Stack gapY="0" justify="center" w="full">
+                                                                <Span color="fg.subtle" fontSize="xs">Group</Span>
+                                                                <Select.ValueText mt="-1.5" placeholder="Group" />
+                                                            </Stack>
+                                                        </Select.Trigger>
+                                                        <Select.IndicatorGroup>
+                                                            <Select.Indicator />
+                                                        </Select.IndicatorGroup>
+                                                    </Select.Control>
+                                                    <Portal>
+                                                        <Select.Positioner>
+                                                            <Select.Content>
+                                                                {groupCollection.items.map((item: any) => (
                                                                     <Select.Item item={item} key={item.value}>
                                                                         {item.label}
                                                                         <Select.ItemIndicator />
@@ -288,7 +471,10 @@ const AttendanceHeader = ({
                                                     </Portal>
                                                 </Select.Root>
 
-                                                <Button variant="surface" colorPalette={"red"} onClick={() => { setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter(""); }}>
+                                                <Button variant="surface" colorPalette={"red"} onClick={() => {
+                                                    setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter("");
+                                                    setStateFilter(""); setRegionFilter(""); setOldGroupFilter(""); setGroupFilter("");
+                                                }}>
                                                     <CloseCircle />   Reset Filters
                                                 </Button>
 
@@ -499,7 +685,7 @@ const AttendanceHeader = ({
 
 
                     <HStack justify="start" w={{ base: "full", md: "full" }} gap={2}>
-                        <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
+                        <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={yearCollection} value={[yearFilter]} onValueChange={(e) => setYearFilter(e.value[0])}>
                             <Select.HiddenSelect />
                             <Select.Control>
                                 <Select.Trigger bg="bg" rounded="xl">
@@ -526,7 +712,7 @@ const AttendanceHeader = ({
                             </Portal>
                         </Select.Root>
 
-                        <Select.Root size="md" width={{ base: "full", md: "140px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
+                        <Select.Root size="md" width={{ base: "full", md: "120px" }} collection={monthCollection} value={[monthFilter]} onValueChange={(e) => setMonthFilter(e.value[0])}>
                             <Select.HiddenSelect />
                             <Select.Control>
                                 <Select.Trigger bg="bg" rounded="xl">
@@ -553,7 +739,7 @@ const AttendanceHeader = ({
                             </Portal>
                         </Select.Root>
 
-                        <Select.Root size="md" width={{ base: "full", md: "100px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
+                        <Select.Root size="md" width={{ base: "full", md: "90px" }} collection={weekCollection} value={[weekFilter]} onValueChange={(e) => setWeekFilter(e.value[0])}>
                             <Select.HiddenSelect />
                             <Select.Control>
                                 <Select.Trigger bg="bg" rounded="xl">
@@ -579,8 +765,126 @@ const AttendanceHeader = ({
                                 </Select.Positioner>
                             </Portal>
                         </Select.Root>
+                    </HStack>
 
-                        <Select.Root size="md" width={{ base: "full", md: "200px" }} collection={districtCollection} value={[districtFilter]} onValueChange={(e) => setDistrictFilter(e.value[0])}>
+                    <HStack justify="start" w={{ base: "full", md: "full" }} gap={2}>
+                        <Select.Root size="md" width={{ base: "full", md: "150px" }} collection={stateCollection} value={[stateFilter]} onValueChange={(e) => {
+                            setStateFilter(e.value[0]); setRegionFilter(""); setOldGroupFilter(""); setGroupFilter(""); setDistrictFilter("");
+                        }}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">State</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="State" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {stateCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "150px" }} collection={regionCollection} value={[regionFilter]} onValueChange={(e) => {
+                            setRegionFilter(e.value[0]); setOldGroupFilter(""); setGroupFilter(""); setDistrictFilter("");
+                        }}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Region</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Region" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {regionCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "150px" }} collection={oldGroupCollection} value={[oldGroupFilter]} onValueChange={(e) => {
+                            setOldGroupFilter(e.value[0]); setGroupFilter(""); setDistrictFilter("");
+                        }}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Old Group</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Old Group" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {oldGroupCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "150px" }} collection={groupCollection} value={[groupFilter]} onValueChange={(e) => {
+                            setGroupFilter(e.value[0]); setDistrictFilter("");
+                        }}>
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger bg="bg" rounded="xl">
+                                    <Stack gapY="0" justify="center" w="full">
+                                        <Span color="fg.subtle" fontSize="xs">Group</Span>
+                                        <Select.ValueText mt="-1.5" placeholder="Group" />
+                                    </Stack>
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {groupCollection.items.map((item: any) => (
+                                            <Select.Item item={item} key={item.value}>
+                                                {item.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+
+                        <Select.Root size="md" width={{ base: "full", md: "150px" }} collection={districtCollection} value={[districtFilter]} onValueChange={(e) => setDistrictFilter(e.value[0])}>
                             <Select.HiddenSelect />
                             <Select.Control>
                                 <Select.Trigger bg="bg" rounded="xl">
@@ -607,8 +911,11 @@ const AttendanceHeader = ({
                             </Portal>
                         </Select.Root>
 
-                        <Button variant="surface" colorPalette={"red"} onClick={() => { setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter(""); }}>
-                            <CloseCircle />   Reset Filters
+                        <Button variant="surface" colorPalette={"red"} onClick={() => {
+                            setDistrictFilter(""); setWeekFilter(""); setMonthFilter(""); setYearFilter("");
+                            setStateFilter(""); setRegionFilter(""); setOldGroupFilter(""); setGroupFilter("");
+                        }}>
+                            <CloseCircle />   Reset
                         </Button>
                     </HStack>
                 </VStack>

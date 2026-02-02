@@ -18,6 +18,9 @@ import { adminApi } from "@/api/admin.api"
 import { Toaster, toaster } from "@/components/ui/toaster"
 import { delay } from "@/utils/helpers"
 import { useGroups } from "@/modules/admin/hooks/useGroup"
+import { useStates } from "@/modules/admin/hooks/useState"
+import { useRegions } from "@/modules/admin/hooks/useRegion"
+import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
 
 // Lazy load components
 const AttendanceHeader = lazy(() => import("./AttendanceHeader"))
@@ -61,6 +64,10 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const [yearFilter, setYearFilter] = useState<string>("")
     const [monthFilter, setMonthFilter] = useState<string>("")
     const [weekFilter, setWeekFilter] = useState<string>("")
+    const [stateFilter, setStateFilter] = useState<string>("")
+    const [regionFilter, setRegionFilter] = useState<string>("")
+    const [oldGroupFilter, setOldGroupFilter] = useState<string>("")
+    const [groupFilter, setGroupFilter] = useState<string>("")
     const [districtFilter, setDistrictFilter] = useState<string>("")
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -70,6 +77,11 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
 
     // Filter attendances by service type
     const { data: allAttendances = [] } = useAttendance();
+    const { states = [] } = useStates()
+    const { regions = [] } = useRegions()
+    const { oldGroups = [] } = useOldGroups()
+    const { groups = [] } = useGroups()
+
     const searchQuery = searchParams.get('search') || ''
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean
@@ -85,16 +97,6 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     // Filter attendances by service type
     const serviceAttendances = useMemo(() => {
         const base = allAttendances.filter(attendance => attendance.service_type === SERVICE_TYPES[serviceType].apiValue)
-        // const isSuperAdmin = hasRole('Super Admin')
-        // const isStateAdmin = hasRole('State Admin')
-        // const isRegionAdmin = hasRole('Region Admin')
-        // const isDistrictAdmin = hasRole('District Admin')
-        // const isGroupAdmin = hasRole('Group Admin')
-        // if (isSuperAdmin) return base
-        // if (isStateAdmin) return base.filter(a => a.state_id === (authUser?.state_id ?? 0))
-        // if (isRegionAdmin) return base.filter(a => a.region_id === (authUser?.region_id ?? 0))
-        // if (isDistrictAdmin) return base.filter(a => a.district_id === (authUser?.district_id ?? 0))
-        // if (isGroupAdmin) return base.filter(a => a.group_id === (authUser?.group_id ?? 0))
         return base
     }, [allAttendances, serviceType])
 
@@ -170,9 +172,13 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
             const matchesYear = yearFilter ? attendance.year.toString() === yearFilter : true
             const matchesMonth = monthFilter ? attendance.month === monthFilter : true
             const matchesWeek = weekFilter ? attendance.week.toString() === weekFilter : true
+            const matchesState = stateFilter ? attendance.state_id?.toString() === stateFilter : true
+            const matchesRegion = regionFilter ? attendance.region_id?.toString() === regionFilter : true
+            const matchesOldGroup = oldGroupFilter ? attendance.old_group_id?.toString() === oldGroupFilter : true
+            const matchesGroup = groupFilter ? attendance.group_id?.toString() === groupFilter : true
             const matchesDistrict = districtFilter ? attendance.district_id.toString() === districtFilter : true
 
-            return matchesSearch && matchesYear && matchesMonth && matchesWeek && matchesDistrict
+            return matchesSearch && matchesYear && matchesMonth && matchesWeek && matchesState && matchesRegion && matchesOldGroup && matchesGroup && matchesDistrict
         })
 
         // Sorting
@@ -194,7 +200,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
         })
 
         return filtered
-    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, weekFilter, districtFilter])
+    }, [serviceAttendances, searchQuery, sortField, sortOrder, districts, yearFilter, monthFilter, weekFilter, stateFilter, regionFilter, oldGroupFilter, groupFilter, districtFilter])
 
     // Calculate totals
     const totals = useMemo(() => calculateTotals(filteredAndSortedAttendances as any[]), [filteredAndSortedAttendances])
@@ -317,6 +323,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
             <VStack gap="6" align="stretch">
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
+                    <Suspense fallback={<HeaderLoading />}>
                     <AttendanceHeader
                         serviceName={serviceName}
                         serviceAttendances={filteredAndSortedAttendances as any}
@@ -329,13 +336,26 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         setMonthFilter={setMonthFilter}
                         weekFilter={weekFilter}
                         setWeekFilter={setWeekFilter}
+                            stateFilter={stateFilter}
+                            setStateFilter={setStateFilter}
+                            regionFilter={regionFilter}
+                            setRegionFilter={setRegionFilter}
+                            oldGroupFilter={oldGroupFilter}
+                            setOldGroupFilter={setOldGroupFilter}
+                            groupFilter={groupFilter}
+                            setGroupFilter={setGroupFilter}
                         districtFilter={districtFilter}
                         setDistrictFilter={setDistrictFilter}
+                            states={states}
+                            regions={regions}
+                            oldGroups={oldGroups}
+                            groups={groups}
                         districts={districts as any}
                         pageSize={pageSize}
                         setPageSize={setPageSize}
                         totalCount={filteredAndSortedAttendances.length}
                     />
+                </Suspense>
                 </Suspense>
 
                 {/* Totals Summary */}
