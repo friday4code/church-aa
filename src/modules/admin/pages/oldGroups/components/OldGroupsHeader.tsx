@@ -21,10 +21,25 @@ interface OldGroupsHeaderProps {
     stateFilter: string
     setStateFilter: (value: string) => void
     regionFilter: string
-    setRegionFilter: (value: string) => void
+    setRegionFilter: (value: string) => void;
+    pageSize: number;
+    setPageSize: (size: number) => void;
 }
 
-const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, stateFilter, setStateFilter, regionFilter, setRegionFilter }: OldGroupsHeaderProps) => {
+const pageSizes = createListCollection({
+    items: [
+        { label: "10 rows", value: 10 },
+        { label: "30 rows", value: 30 },
+        { label: "50 rows", value: 50 },
+        { label: "70 rows", value: 70 },
+        { label: "100 rows", value: 100 },
+        { label: "150 rows", value: 150 },
+        { label: "200 rows", value: 200 },
+        { label: "250 rows", value: 250 },
+    ],
+})
+
+const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, stateFilter, setStateFilter, regionFilter, setRegionFilter, pageSize, setPageSize }: OldGroupsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -196,6 +211,39 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, sta
                     justify="space-between"
                     align={{ base: "stretch", md: "center" }}
                 >
+
+                    {/* Page Size Selector */}
+                    <Box width="150px" hideBelow="md">
+                        <Select.Root
+                            collection={pageSizes}
+                            size="sm"
+                            value={[pageSize.toString()]}
+                            onValueChange={(e) => setPageSize(Number(e.value[0]))}
+                        >
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger>
+                                    <Select.ValueText placeholder={`${pageSize} rows`} />
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {pageSizes.items.map((size) => (
+                                            <Select.Item item={size} key={size.value}>
+                                                {size.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+                    </Box>
+
                     <InputGroup
                         flex="1"
                         colorPalette={"accent"}

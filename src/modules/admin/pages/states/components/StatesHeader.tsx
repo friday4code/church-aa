@@ -1,6 +1,6 @@
 "use client"
 
-import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box } from "@chakra-ui/react"
+import { Heading, HStack, Button, Badge, Flex, InputGroup, Input, IconButton, CloseButton, VStack, Drawer, Portal, Box, createListCollection, Select } from "@chakra-ui/react"
 import { Add, SearchNormal1, ArrowLeft3, MoreSquare } from "iconsax-reactjs"
 import UploadStatesFromFile from "../../../components/PortingFile"
 import ExportButtons from "./ExportButtons"
@@ -11,12 +11,27 @@ import { useNavigate } from "react-router"
 interface StatesHeaderProps {
     states: State[]
     onAddState: () => void
-    onSearch: (value: string) => void
+    onSearch: (value: string) => void;
+    pageSize: number;
+    setPageSize: (size: number) => void;
 }
+
+const pageSizes = createListCollection({
+    items: [
+        { label: "10 rows", value: 10 },
+        { label: "30 rows", value: 30 },
+        { label: "50 rows", value: 50 },
+        { label: "70 rows", value: 70 },
+        { label: "100 rows", value: 100 },
+        { label: "150 rows", value: 150 },
+        { label: "200 rows", value: 200 },
+        { label: "250 rows", value: 250 },
+    ],
+})
 
 import { useState, useCallback } from "react"
 
-const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
+const StatesHeader = ({ states, onAddState, onSearch, pageSize, setPageSize }: StatesHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -152,6 +167,38 @@ const StatesHeader = ({ states, onAddState, onSearch }: StatesHeaderProps) => {
 
                 {/* Second line: Search input (full width) */}
                 <HStack w="full" justify={"space-between"}>
+
+                    {/* Page Size Selector */}
+                    <Box width="150px" hideBelow="md">
+                        <Select.Root
+                            collection={pageSizes}
+                            size="sm"
+                            value={[pageSize.toString()]}
+                            onValueChange={(e) => setPageSize(Number(e.value[0]))}
+                        >
+                            <Select.HiddenSelect />
+                            <Select.Control>
+                                <Select.Trigger w="28">
+                                    <Select.ValueText placeholder={`${pageSize} rows`} />
+                                </Select.Trigger>
+                                <Select.IndicatorGroup>
+                                    <Select.Indicator />
+                                </Select.IndicatorGroup>
+                            </Select.Control>
+                            <Portal>
+                                <Select.Positioner>
+                                    <Select.Content>
+                                        {pageSizes.items.map((size) => (
+                                            <Select.Item item={size} key={size.value}>
+                                                {size.label}
+                                                <Select.ItemIndicator />
+                                            </Select.Item>
+                                        ))}
+                                    </Select.Content>
+                                </Select.Positioner>
+                            </Portal>
+                        </Select.Root>
+                    </Box>
 
                     <InputGroup
                         maxW="full"

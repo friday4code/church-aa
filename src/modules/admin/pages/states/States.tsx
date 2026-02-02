@@ -88,7 +88,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof State>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 50
+    const [pageSize, setPageSize] = useState(50)
     const [selectedStates, setSelectedStates] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -294,6 +294,8 @@ const Content = () => {
                         states={paginatedStates}
                         onAddState={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
+                        pageSize={pageSize}
+                        setPageSize={setPageSize}
                     />
                 </Suspense>
 

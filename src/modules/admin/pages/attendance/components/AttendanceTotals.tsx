@@ -6,6 +6,7 @@ import {
     HStack,
     VStack,
     Text,
+    Span,
 } from "@chakra-ui/react"
 
 interface AttendanceTotalsProps {
@@ -32,6 +33,14 @@ const AttendanceTotals = ({ totals }: AttendanceTotalsProps) => {
                     <VStack>
                         <Text fontWeight="bold" color={{ base: "accent.700", _dark: "accent.200" }}>Children</Text>
                         <Text fontSize="xl" fontWeight="bold" color={{ base: "gray.800", _dark: "white" }}>{totals.children_boys + totals.children_girls}</Text>
+                    </VStack>
+                    <VStack>
+                        <Text fontWeight="bold" color={{ base: "accent.700", _dark: "accent.200" }}>New Comers</Text>
+                        <Text fontSize="xl" fontWeight="bold" color={{ base: "gray.800", _dark: "white" }}>{totals.new_comers}</Text>
+                    </VStack>
+                    <VStack>
+                        <Text fontWeight="bold" color={{ base: "accent.700", _dark: "accent.200" }}>Tithe &amp; Offering</Text>
+                        <Text fontSize="xl" fontWeight="bold" color={{ base: "gray.800", _dark: "white" }}><Span fontWeight={"normal"}>₦</Span>{totals.tithe_offering.toLocaleString()}</Text>
                     </VStack>
                     <VStack>
                         <Text fontWeight="bold" color={{ base: "accent.700", _dark: "accent.200" }}>Total</Text>

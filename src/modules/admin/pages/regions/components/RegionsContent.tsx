@@ -56,7 +56,7 @@ const RegionsContent = () => {
     const [sortField, setSortField] = useState<keyof Region>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 50
+    const [pageSize, setPageSize] = useState(50)
     const [selectedRegions, setSelectedRegions] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -264,6 +264,8 @@ const RegionsContent = () => {
                         states={states || []}
                         stateFilter={stateFilter}
                         setStateFilter={setStateFilter}
+                        pageSize={pageSize}
+                        setPageSize={setPageSize}
                     />
                 </Suspense>
 

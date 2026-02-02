@@ -56,7 +56,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
     const [sortField, setSortField] = useState<keyof AttendanceRecord>('year')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 10
+    const [pageSize, setPageSize] = useState(10)
     const [selectedAttendances, setSelectedAttendances] = useState<number[]>([])
     const [yearFilter, setYearFilter] = useState<string>("")
     const [monthFilter, setMonthFilter] = useState<string>("")
@@ -332,6 +332,8 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         districtFilter={districtFilter}
                         setDistrictFilter={setDistrictFilter}
                         districts={districts as any}
+                        pageSize={pageSize}
+                        setPageSize={setPageSize}
                     />
                 </Suspense>
 

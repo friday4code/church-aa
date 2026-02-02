@@ -17,6 +17,8 @@ export interface AttendanceTotals {
     youth_girls: number;
     children_boys: number;
     children_girls: number;
+    tithe_offering: number;
+    new_comers: number;
 }
 
 export const calculateTotals = (attendances: Attendance[]): AttendanceTotals => {
@@ -35,6 +37,8 @@ export const calculateTotals = (attendances: Attendance[]): AttendanceTotals => 
             youth_girls: totals.youth_girls + attendance.youth_girls,
             children_boys: totals.children_boys + attendance.children_boys,
             children_girls: totals.children_girls + attendance.children_girls,
+            tithe_offering: totals.tithe_offering + (attendance.tithe_offering || 0),
+            new_comers: totals.new_comers + (attendance.new_comers || 0),
         }),
         {
             total: 0,
@@ -44,6 +48,8 @@ export const calculateTotals = (attendances: Attendance[]): AttendanceTotals => 
             youth_girls: 0,
             children_boys: 0,
             children_girls: 0,
+            tithe_offering: 0,
+            new_comers: 0,
         }
     );
 };

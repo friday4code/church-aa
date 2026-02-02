@@ -70,7 +70,7 @@ export const DistrictsContent = () => {
     const [oldGroupFilter, setOldGroupFilter] = useState("")
     const [groupFilter, setGroupFilter] = useState("")
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 50
+    const [pageSize, setPageSize] = useState(50)
     const [selectedDistricts, setSelectedDistricts] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -298,6 +298,8 @@ export const DistrictsContent = () => {
                         setOldGroupFilter={setOldGroupFilter}
                         groupFilter={groupFilter}
                         setGroupFilter={setGroupFilter} 
+                        pageSize={pageSize}
+                        setPageSize={setPageSize}
                     />
                 </Suspense>
 
