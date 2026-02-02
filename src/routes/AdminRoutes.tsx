@@ -108,6 +108,7 @@ export default function AdminRoutes() {
           <Route path="users">
             <Route element={<Index />} index />
             <Route path="all" element={<Users />} />
+            <Route path="super-admin" element={<Users role="Super Admin" />} />
           </Route>
 
           {/* Attendance Management System:

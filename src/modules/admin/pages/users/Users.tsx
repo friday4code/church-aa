@@ -58,7 +58,8 @@ const ActionBarLoading = () => (
     </Center>
 )
 
-export const Users: React.FC = () => {
+export const Users: React.FC<{ role?: string }> = ({ role }) => {
+    
     const { reset } = useQueryErrorResetBoundary();
 
     return (
@@ -74,7 +75,7 @@ export const Users: React.FC = () => {
                     <ErrorFallback {...{ resetErrorBoundary, error }} />
                 )}
             >
-                <Content />
+                <Content role={role} />
             </ErrorBoundary>
         </>
     );
@@ -82,7 +83,7 @@ export const Users: React.FC = () => {
 
 export default Users;
 
-const Content = () => {
+const Content = ({ role }: { role?: string }) => {
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof User>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -94,7 +95,18 @@ const Content = () => {
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
 
     const { data, isLoading } = useUsers();
-    const users = data?.users || [];
+    const allUsers = data?.users || [];
+    const superAdminUsers = useMemo(() => {
+        if (!role) return allUsers
+        return allUsers.filter((user: any) => user.roles?.includes("Super Admin"))
+    }, [allUsers, role]);
+
+    const users = useMemo(() => {
+        if (!role) return allUsers
+        if (role === "Super Admin") return superAdminUsers
+        return allUsers
+    }, [allUsers, role]);
+
     const { createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUserMutations()
     const { user: authUser, hasRole } = useAuth()
 
@@ -117,7 +129,7 @@ const Content = () => {
         const isRegionAdmin = hasRole('Region Admin')
         const isDistrictAdmin = hasRole('District Admin')
 
-        const byHierarchy = users.filter((u: any) => {
+        const byHierarchy = (!!role && role === "Super Admin") ? superAdminUsers : users.filter((u: any) => {
             if (isSuperAdmin) return true
             if (isStateAdmin) {
                 return u.state_id === authUser?.state_id && !(u.roles || []).includes('Super Admin')

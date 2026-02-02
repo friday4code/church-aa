@@ -20,6 +20,7 @@ interface DistrictsHeaderProps {
     districts: District[]
     onAddDistrict: () => void
     onSearch: (value: string) => void
+    totalCount: number;
     states: State[]
     regions: Region[]
     oldGroups: OldGroup[]
@@ -67,7 +68,8 @@ const DistrictsHeader = ({
     groupFilter,
     setGroupFilter,
     pageSize,
-    setPageSize
+    setPageSize,
+    totalCount
 }: DistrictsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
@@ -184,7 +186,7 @@ const DistrictsHeader = ({
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>Districts Data</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{districts?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 

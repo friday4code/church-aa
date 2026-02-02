@@ -12,6 +12,7 @@ interface StatesHeaderProps {
     states: State[]
     onAddState: () => void
     onSearch: (value: string) => void;
+    totalCount: number;
     pageSize: number;
     setPageSize: (size: number) => void;
 }
@@ -31,7 +32,7 @@ const pageSizes = createListCollection({
 
 import { useState, useCallback } from "react"
 
-const StatesHeader = ({ states, onAddState, onSearch, pageSize, setPageSize }: StatesHeaderProps) => {
+const StatesHeader = ({ states, onAddState, onSearch, pageSize, setPageSize, totalCount }: StatesHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -76,7 +77,7 @@ const StatesHeader = ({ states, onAddState, onSearch, pageSize, setPageSize }: S
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>All States</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{states?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 

@@ -30,11 +30,11 @@ import type { Attendance } from "@/types/attendance.type"
 export type ServiceType = 'sunday-worship' | 'house-caring' | 'search-scriptures' | 'thursday-revival' | 'monday-bible'
 
 export const SERVICE_TYPES: Record<ServiceType, { name: string; apiValue: string }> = {
-    'sunday-worship': { name: 'Sunday Worship', apiValue: 'Sunday Service' },
-    'house-caring': { name: 'House Caring', apiValue: 'House Caring' },
-    'search-scriptures': { name: 'Search Scriptures', apiValue: 'Search Scriptures' },
-    'thursday-revival': { name: 'Thursday Revival', apiValue: 'Thursday Revival' },
-    'monday-bible': { name: 'Monday Bible', apiValue: 'Monday Bible' }
+    'sunday-worship': { name: 'Sunday Worship Service', apiValue: 'Sunday Service' },
+    'house-caring': { name: 'House Caring Fellowship', apiValue: 'House Caring' },
+    'search-scriptures': { name: 'Search The Scriptures', apiValue: 'Search Scriptures' },
+    'thursday-revival': { name: 'Thursday Revival Service', apiValue: 'Thursday Revival' },
+    'monday-bible': { name: 'Monday Bible Study', apiValue: 'Monday Bible Study' }
 }
 
 export const AttendanceDashboard: React.FC = () => {

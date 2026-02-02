@@ -16,6 +16,7 @@ interface OldGroupsHeaderProps {
     oldGroups: OldGroup[]
     onAddGroup: () => void
     onSearch: (value: string) => void
+    totalCount: number;
     states: State[]
     regions: Region[]
     stateFilter: string
@@ -39,7 +40,7 @@ const pageSizes = createListCollection({
     ],
 })
 
-const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, stateFilter, setStateFilter, regionFilter, setRegionFilter, pageSize, setPageSize }: OldGroupsHeaderProps) => {
+const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, stateFilter, setStateFilter, regionFilter, setRegionFilter, pageSize, setPageSize, totalCount }: OldGroupsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -115,7 +116,7 @@ const OldGroupsHeader = ({ oldGroups, onAddGroup, onSearch, states, regions, sta
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>All Old Groups</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{oldGroups?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 

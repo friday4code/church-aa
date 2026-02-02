@@ -441,7 +441,7 @@ const Content: React.FC = () => {
                     value={stats.superAdmins}
                     icon={<Shield variant="Bulk" size="24" />}
                     color="purple"
-                    link="/admin/users/rights"
+                    link="/admin/users/super-admin"
                     description="Full system access"
                 />
 

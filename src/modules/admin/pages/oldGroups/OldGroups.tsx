@@ -328,6 +328,7 @@ const Content = () => {
                         setRegionFilter={setRegionFilter}
                         pageSize={pageSize}
                         setPageSize={setPageSize}
+                        totalCount={totalOldGroups}
                     />
                 </Suspense>
 

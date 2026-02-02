@@ -300,6 +300,7 @@ export const DistrictsContent = () => {
                         setGroupFilter={setGroupFilter} 
                         pageSize={pageSize}
                         setPageSize={setPageSize}
+                        totalCount={totalDistricts}
                     />
                 </Suspense>
 

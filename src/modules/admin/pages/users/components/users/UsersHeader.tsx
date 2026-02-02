@@ -189,7 +189,7 @@ const UsersHeader = ({ totalUsers, users, onAddUser, onSearch, pageSize, setPage
                         >
                             <Select.HiddenSelect />
                             <Select.Control>
-                                <Select.Trigger>
+                                <Select.Trigger width="28">
                                     <Select.ValueText placeholder={`${pageSize} rows`} />
                                 </Select.Trigger>
                                 <Select.IndicatorGroup>

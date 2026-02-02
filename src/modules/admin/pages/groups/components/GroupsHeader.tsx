@@ -17,6 +17,7 @@ interface GroupsHeaderProps {
     groups: Group[]
     onAddGroup: () => void
     onSearch: (value: string) => void
+    totalCount: number;
     states: State[]
     regions: Region[]
     oldGroups: OldGroup[]
@@ -59,7 +60,8 @@ const GroupsHeader = ({
     oldGroupFilter,
     setOldGroupFilter,
     pageSize,
-    setPageSize
+    setPageSize,
+    totalCount
 }: GroupsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
@@ -119,7 +121,7 @@ const GroupsHeader = ({
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>All Groups</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{groups?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 

@@ -334,6 +334,7 @@ const AttendanceContent = ({ serviceType, serviceName }: ContentProps) => {
                         districts={districts as any}
                         pageSize={pageSize}
                         setPageSize={setPageSize}
+                        totalCount={filteredAndSortedAttendances.length}
                     />
                 </Suspense>
 

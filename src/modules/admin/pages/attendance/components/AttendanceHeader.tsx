@@ -11,6 +11,7 @@ import type { Group } from "@/types/groups.type"
 interface AttendanceHeaderProps {
     serviceName: string
     serviceAttendances: any[]
+    totalCount: number;
     onAddAttendance: () => void
     onSearch: (value: string) => void
     onNavigateBack?: () => void
@@ -56,7 +57,8 @@ const AttendanceHeader = ({
     setDistrictFilter,
     districts,
     pageSize,
-    setPageSize
+    setPageSize,
+    totalCount
 }: AttendanceHeaderProps) => {
     const navigate = useNavigate()
     const [search, setSearch] = useState("")
@@ -125,7 +127,7 @@ const AttendanceHeader = ({
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>{serviceName}</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{serviceAttendances.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 

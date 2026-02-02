@@ -328,7 +328,7 @@ const Content = () => {
             path: "/admin/districts"
         },
         {
-            label: "Total Youth Attendance",
+            label: "Total Attendance",
             value: attendance?.length || 0,
             icon: <Profile2User variant="Bulk" size="24" />,
             color: "teal",

@@ -296,6 +296,7 @@ const Content = () => {
                         onSearch={handleSearch}
                         pageSize={pageSize}
                         setPageSize={setPageSize}
+                        totalCount={totalStates}
                     />
                 </Suspense>
 

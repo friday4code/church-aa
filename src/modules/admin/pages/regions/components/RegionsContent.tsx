@@ -266,6 +266,7 @@ const RegionsContent = () => {
                         setStateFilter={setStateFilter}
                         pageSize={pageSize}
                         setPageSize={setPageSize}
+                        totalCount={totalRegions}
                     />
                 </Suspense>
 

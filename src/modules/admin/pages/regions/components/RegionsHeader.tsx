@@ -15,6 +15,7 @@ interface RegionsHeaderProps {
     onAddRegion: () => void
     onSearch: (value: string) => void
     states: State[]
+    totalCount: number;
     stateFilter: string
 
     setStateFilter: (value: string) => void;
@@ -38,7 +39,7 @@ const pageSizes = createListCollection({
 import { useState, useCallback } from "react"
 import { useAuth } from "@/hooks/useAuth"
 
-const RegionsHeader = ({ regions, onAddRegion, onSearch, states, stateFilter, setStateFilter, pageSize, setPageSize }: RegionsHeaderProps) => {
+const RegionsHeader = ({ regions, onAddRegion, onSearch, states, stateFilter, setStateFilter, pageSize, setPageSize, totalCount }: RegionsHeaderProps) => {
     const { hasRole } = useAuth()
     const navigate = useNavigate()
     const isSuperAdmin = hasRole('Super Admin')
@@ -87,7 +88,7 @@ const RegionsHeader = ({ regions, onAddRegion, onSearch, states, stateFilter, se
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>All Regions</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{regions?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalCount}</Badge>
                         </HStack>
                     </HStack>
 
