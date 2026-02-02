@@ -87,7 +87,7 @@ const Content = () => {
     const [sortField, setSortField] = useState<keyof User>('name')
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
     const [currentPage, setCurrentPage] = useState(1)
-    const pageSize = 4
+    const pageSize = 20;
     const [selectedUsers, setSelectedUsers] = useState<number[]>([])
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
@@ -362,6 +362,7 @@ const Content = () => {
                 {/* Header */}
                 <Suspense fallback={<HeaderLoading />}>
                     <UsersHeader
+                        totalUsers={users.length}
                         users={paginatedUsers}
                         onAddUser={() => setDialogState({ isOpen: true, mode: 'add' })}
                         onSearch={handleSearch}
@@ -481,7 +482,7 @@ const Content = () => {
                 )}
             </Box>
 
-            
+
         </>
     )
 }

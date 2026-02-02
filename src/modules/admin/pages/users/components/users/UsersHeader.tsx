@@ -23,12 +23,13 @@ import ExportButtons from "./ExportButtons"
 // import UploadUsersFromFile from "../../../components/PortingFile"
 
 interface UsersHeaderProps {
+    totalUsers: number;
     users: any[]
     onAddUser: () => void
     onSearch: (value: string) => void
 }
 
-const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
+const UsersHeader = ({ totalUsers, users, onAddUser, onSearch }: UsersHeaderProps) => {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
     const isSuperAdmin = hasRole('Super Admin');
@@ -47,6 +48,11 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
     return (
         <>
             <VStack
+                bg={"bg"}
+                border="xs"
+                borderColor={"border"}
+                rounded="xl"
+                p="4"
                 align="stretch"
                 gap={{ base: 4, md: 6 }}
                 pos="sticky"
@@ -69,7 +75,7 @@ const UsersHeader = ({ users, onAddUser, onSearch }: UsersHeaderProps) => {
                         </IconButton>
                         <HStack>
                             <Heading size={{ base: "2xl", md: "3xl" }}>Users Data</Heading>
-                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{users?.length}</Badge>
+                            <Badge colorPalette={"accent"} fontSize={{ base: "md", md: "lg" }}>{totalUsers}</Badge>
                         </HStack>
                     </HStack>
 
