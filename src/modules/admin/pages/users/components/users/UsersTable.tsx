@@ -147,7 +147,7 @@ const UsersTable = ({
             <UserRow
                 key={user.id}
                 user={user}
-                index={index}
+                index={(currentPage - 1) * pageSize + index}
                 selected={selectedUsers.includes(user.id)}
                 onSelect={handleSelect}
                 onEdit={handleEdit}
