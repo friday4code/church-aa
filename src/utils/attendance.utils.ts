@@ -8,6 +8,7 @@ import type { AttendanceFormData } from '@/modules/admin/schemas/attendance.sche
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 export interface AttendanceTotals {
     total: number;
@@ -195,7 +196,7 @@ export const exportAttendanceToCSV = (attendances: Attendance[], districts?: any
     document.body.removeChild(link);
 };
 
-export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any[]): void => {
+export const exportAttendanceToPDF = async (attendances: Attendance[], districts?: any[]): Promise<void> => {
     const getDistrictName = (districtId: number): string => {
         if (!districts) return `District ${districtId}`;
         const district = districts.find(d => d.id === districtId);
@@ -205,13 +206,8 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
     const doc = new jsPDF({ orientation: 'landscape' });
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    // Title
-    doc.setFontSize(16);
-    doc.text('Church Attendance Report', pageWidth / 2, 15, { align: 'center' });
-    
-    // Date
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 22, { align: 'center' });
+    // Add header
+    await addPdfHeader(doc, 'Church Attendance Report', `Total Records: ${attendances.length}`);
     
     // Prepare table data
     const tableData = attendances.map(attendance => [
@@ -248,13 +244,13 @@ export const exportAttendanceToPDF = (attendances: Attendance[], districts?: any
             'Total',
         ]],
         body: tableData,
-        startY: 28,
+        startY: 70,
         styles: {
             fontSize: 9,
             cellPadding: 3,
         },
         headStyles: {
-            fillColor: [22, 54, 94],
+            fillColor: TABLE_HEADER_COLOR,
             textColor: [255, 255, 255],
             fontStyle: 'bold',
         },

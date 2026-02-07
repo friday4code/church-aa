@@ -1,5 +1,6 @@
 // utils/oldgroups.utils.ts
 import { utils, writeFile } from 'xlsx'
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { OldGroup } from '@/types/oldGroups.type'
@@ -41,22 +42,23 @@ export const exportToCSV = (data: OldGroup[], filename: string = 'oldgroups') =>
     URL.revokeObjectURL(url)
 }
 
-export const exportToPDF = (data: OldGroup[], filename: string = 'oldgroups') => {
+export const exportToPDF = async (data: OldGroup[], filename: string = 'oldgroups') => {
     const doc = new jsPDF()
 
-    doc.text('Old Groups Data', 14, 15)
+    // Add header
+    await addPdfHeader(doc, 'Old Groups Data', `Total Old Groups: ${data.length}`);
 
     autoTable(doc, {
         head: [['S/N', 'Old Group Name', 'Old Group Code', 'Old Group Leader', 'Leader Email', 'Leader Phone' ,'State','Region'  ]],
         body: data.map((item, i) => [i + 1, item.name, item.code, item.leader, item.leader_email ?? '', item.leader_phone ?? '',item.state || "",item.region || ""]),
-        startY: 20,
+        startY: 70,
         styles: {
             fontSize: 8,
             cellPadding: 2,
             overflow: 'linebreak'
         },
         headStyles: {
-            fillColor: [66, 135, 245],
+            fillColor: TABLE_HEADER_COLOR,
             textColor: 255,
             fontStyle: 'bold'
         },

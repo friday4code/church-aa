@@ -13,7 +13,7 @@ interface RegionsTableLoadingProps {
 
 const RegionsTableLoading = ({ rows = 5 }: RegionsTableLoadingProps) => {
     return (
-        <Table.ScrollArea borderWidth="1px" maxW="full" w="full" rounded="xl">
+        <Table.ScrollArea borderWidth="1px" maxW={{ base: "full", lg: "calc(100vw - 18rem)" }} w="full" rounded="xl">
             <Table.Root size="sm">
                 <Table.Header>
                     <Table.Row fontSize={"md"}>

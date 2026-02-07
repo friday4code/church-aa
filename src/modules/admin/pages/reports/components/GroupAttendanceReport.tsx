@@ -131,7 +131,7 @@ export const GroupAttendanceReport = ({
             setValue('group', gid.toString(), { shouldValidate: true })
             trigger('group')
         } else {
-            toaster.error({ description: "Group ID missing. Cannot generate group report.", closable: true })
+            // toaster.error({ description: "Group ID missing. Cannot generate group report.", closable: true })
         }
 
         if (!roleVisibility.showOldGroup && (user as any)?.old_group_id) {
@@ -290,6 +290,7 @@ export const GroupAttendanceReport = ({
                                 disabled={isLoading || !isReady}
                                 aria-disabled={!isReady}
                                 rounded="xl"
+                                textWrap={"balance"}
                                 onClick={() => console.log("download:click")}
                             >
                                 <DocumentDownload size="20" />

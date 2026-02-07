@@ -2,6 +2,7 @@ import { utils, writeFile } from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { Group } from '@/types/groups.type'
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 export const exportGroupsToExcel = (data: Group[], filename: string = 'groups') => {
     const worksheet = utils.json_to_sheet(data.map(item => ({
@@ -40,22 +41,23 @@ export const exportGroupsToCSV = (data: Group[], filename: string = 'groups') =>
     URL.revokeObjectURL(url)
 }
 
-export const exportGroupsToPDF = (data: Group[], filename: string = 'groups') => {
+export const exportGroupsToPDF = async (data: Group[], filename: string = 'groups') => {
     const doc = new jsPDF()
 
-    doc.text('Groups Data', 14, 15)
+    // Add header
+    await addPdfHeader(doc, 'Groups Data', `Total Groups: ${data.length}`);
 
     autoTable(doc, {
         head: [['S/N', 'Group Name', 'Group Code', 'Group Leader', 'Leader Email', 'Leader Phone' ,'State','Region', 'Old Group']],
         body: data.map((item, i) => [i + 1, item.name, item.code, item.leader || '', item.leader_email ?? '', item.leader_phone ?? '',item.state || "",item.region || "", item.old_group || ""]),
-        startY: 20,
+        startY: 70,
         styles: {
             fontSize: 8,
             cellPadding: 2,
             overflow: 'linebreak'
         },
         headStyles: {
-            fillColor: [66, 135, 245],
+            fillColor: TABLE_HEADER_COLOR,
             textColor: 255,
             fontStyle: 'bold'
         },

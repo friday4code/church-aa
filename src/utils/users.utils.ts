@@ -3,6 +3,7 @@ import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { User } from '@/types/users.type';
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 export const copyUsersToClipboard = async (users: User[]): Promise<void> => {
     const header = 'S/N\tFull Name\tEmail\tPhone\n';
@@ -113,23 +114,15 @@ export const exportUsersToCSV = (users: User[]): void => {
     }
 };
 
-export const exportUsersToPDF = (users: User[]): void => {
+export const exportUsersToPDF = async (users: User[]): Promise<void> => {
     try {
         // Create new PDF document
         const doc = new jsPDF();
 
-        // Add title
-        doc.setFontSize(16);
-        doc.setTextColor(40, 40, 40);
-        doc.text('Users Data', 14, 15);
+        // Add header
+        await addPdfHeader(doc, 'Users Data', `Total Users: ${users.length}`);
 
-        // Add export date
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Exported on: ${new Date().toLocaleDateString()}`, 14, 22);
 
-        // Add total count
-        doc.text(`Total Users: ${users.length}`, 14, 28);
 
         // Prepare table data
         const tableData = users.map((user, index) => [
@@ -151,7 +144,7 @@ export const exportUsersToPDF = (users: User[]): void => {
         autoTable(doc, {
             head: [tableColumns],
             body: tableData,
-            startY: 35,
+            startY: 70,
             theme: 'grid',
             styles: {
                 fontSize: 8,
@@ -159,7 +152,7 @@ export const exportUsersToPDF = (users: User[]): void => {
                 overflow: 'linebreak'
             },
             headStyles: {
-                fillColor: [66, 135, 245],
+                fillColor: TABLE_HEADER_COLOR,
                 textColor: 255,
                 fontStyle: 'bold'
             },

@@ -151,6 +151,7 @@ export const StateAttendanceReport = ({
                             disabled={isLoading}
                             rounded="xl"
                             w={{ base: "100%", md: "auto" }}
+                            textWrap="balance"
                         >
                             <DocumentDownload size="20" />
                             Download Report
@@ -163,6 +164,7 @@ export const StateAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />
@@ -174,6 +176,7 @@ export const StateAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadNewComers?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />
@@ -185,6 +188,7 @@ export const StateAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadTitheOffering?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />

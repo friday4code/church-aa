@@ -157,6 +157,7 @@ export const YouthAttendanceReport = ({
                             colorPalette="accent"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                         >
                             <DocumentDownload size="20" />
                             Download Report

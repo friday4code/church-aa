@@ -3,6 +3,7 @@ import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { District } from '@/types/districts.type';
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 export const copyDistrictsToClipboard = async (districts: District[]): Promise<void> => {
     const header = 'Group Name\tDistrict Name\tDistrict Leader';
@@ -100,23 +101,15 @@ export const exportDistrictsToCSV = (districts: District[]): void => {
     }
 };
 
-export const exportDistrictsToPDF = (districts: District[]): void => {
+export const exportDistrictsToPDF = async (districts: District[]): Promise<void> => {
     try {
         // Create new PDF document
         const doc = new jsPDF();
 
-        // Add title
-        doc.setFontSize(16);
-        doc.setTextColor(40, 40, 40);
-        doc.text('Districts Data', 14, 15);
+        // Add header
+        await addPdfHeader(doc, 'Districts Data', `Total Districts: ${districts.length}`);
 
-        // Add export date
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Exported on: ${new Date().toLocaleDateString()}`, 14, 22);
 
-        // Add total count
-        doc.text(`Total Districts: ${districts.length}`, 14, 28);
 
         // Prepare table data
         const tableData = districts.map((district, index) => [
@@ -138,7 +131,7 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
         autoTable(doc, {
             head: [tableColumns],
             body: tableData,
-            startY: 35,
+            startY: 70,
             theme: 'grid',
             styles: {
                 fontSize: 8,
@@ -146,7 +139,7 @@ export const exportDistrictsToPDF = (districts: District[]): void => {
                 overflow: 'linebreak'
             },
             headStyles: {
-                fillColor: [66, 135, 245],
+                fillColor: TABLE_HEADER_COLOR,
                 textColor: 255,
                 fontStyle: 'bold'
             },

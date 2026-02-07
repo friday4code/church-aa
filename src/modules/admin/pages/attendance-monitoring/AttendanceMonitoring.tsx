@@ -48,23 +48,25 @@ const Content = () => {
     console.log(data)
 
     const pending = useMemo(() => {
+        const d = data?.data
         return {
-            states: (data?.states ?? []).filter((i) => i.status === 'red'),
-            regions: (data?.regions ?? []).filter((i) => i.status === 'red'),
-            districts: (data?.districts ?? []).filter((i) => i.status === 'red'),
-            groups: (data?.groups ?? []).filter((i) => i.status === 'red'),
-            old_groups: (data?.old_groups ?? []).filter((i) => i.status === 'red'),
+            states: (d?.states ?? []).filter((i) => i.status === 'red'),
+            regions: (d?.regions ?? []).filter((i) => i.status === 'red'),
+            districts: (d?.districts ?? []).filter((i) => i.status === 'red'),
+            groups: (d?.groups ?? []).filter((i) => i.status === 'red'),
+            old_groups: (d?.old_groups ?? []).filter((i) => i.status === 'red'),
         }
     }, [data])
 
     const submitted = useMemo(() => {
+        const d = data?.data
         const notRed = (i: { status: 'red' | 'yellow' | 'green' }) => i.status !== 'red'
         return {
-            states: (data?.states ?? []).filter(notRed),
-            regions: (data?.regions ?? []).filter(notRed),
-            districts: (data?.districts ?? []).filter(notRed),
-            groups: (data?.groups ?? []).filter(notRed),
-            old_groups: (data?.old_groups ?? []).filter(notRed),
+            states: (d?.states ?? []).filter(notRed),
+            regions: (d?.regions ?? []).filter(notRed),
+            districts: (d?.districts ?? []).filter(notRed),
+            groups: (d?.groups ?? []).filter(notRed),
+            old_groups: (d?.old_groups ?? []).filter(notRed),
         }
     }, [data])
 

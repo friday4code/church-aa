@@ -3,6 +3,7 @@ import { utils, writeFile } from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { State } from '@/types/states.type';
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 export const copyStatesToClipboard = async (states: State[]): Promise<void> => {
     const header = 'State Name\tState Code\n';
@@ -107,23 +108,15 @@ export const exportStatesToCSV = (states: State[]): void => {
     }
 };
 
-export const exportStatesToPDF = (states: State[]): void => {
+export const exportStatesToPDF = async (states: State[]): Promise<void> => {
     try {
         // Create new PDF document
         const doc = new jsPDF();
 
-        // Add title
-        doc.setFontSize(16);
-        doc.setTextColor(40, 40, 40);
-        doc.text('States Data', 14, 15);
+        // Add header
+        await addPdfHeader(doc, 'States Data', `Total States: ${states.length}`);
 
-        // Add export date
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Exported on: ${new Date().toLocaleDateString()}`, 14, 22);
 
-        // Add total count
-        doc.text(`Total States: ${states.length}`, 14, 28);
 
         // Prepare table data
         const tableData = states.map((state, index) => [
@@ -149,7 +142,7 @@ export const exportStatesToPDF = (states: State[]): void => {
         autoTable(doc, {
             head: [tableColumns],
             body: tableData,
-            startY: 35,
+            startY: 70,
             theme: 'grid',
             styles: {
                 fontSize: 8,
@@ -157,7 +150,7 @@ export const exportStatesToPDF = (states: State[]): void => {
                 overflow: 'linebreak'
             },
             headStyles: {
-                fillColor: [66, 135, 245],
+                fillColor: TABLE_HEADER_COLOR,
                 textColor: 255,
                 fontStyle: 'bold'
             },

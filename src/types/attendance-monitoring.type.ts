@@ -5,10 +5,15 @@ export interface MonitoringItem {
     status: 'red' | 'yellow' | 'green'
 }
 
-export interface AttendanceMonitoring {
+export interface AttendanceMonitoringData {
     districts: MonitoringItem[]
     groups: MonitoringItem[]
     old_groups: MonitoringItem[]
     regions: MonitoringItem[]
     states: MonitoringItem[]
+}
+
+export interface AttendanceMonitoring {
+    data: AttendanceMonitoringData
+    summary: any
 }

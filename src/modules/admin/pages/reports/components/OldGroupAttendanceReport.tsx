@@ -183,7 +183,7 @@ export const OldGroupAttendanceReport = ({
                         </GridItem>
                     </Grid>
                     <Flex justify="end">
-                        <Button w={{ base: "100%", md: "auto" }} type="submit" colorPalette="accent" disabled={isLoading} rounded="xl">
+                        <Button w={{ base: "100%", md: "auto" }} type="submit" colorPalette="accent" disabled={isLoading} rounded="xl" textWrap="balance">
                             <DocumentDownload size="20" />
                             Download Report
                         </Button>
@@ -195,6 +195,7 @@ export const OldGroupAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadConsolidated?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />
@@ -206,6 +207,7 @@ export const OldGroupAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadNewComers?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />
@@ -217,6 +219,7 @@ export const OldGroupAttendanceReport = ({
                             variant="surface"
                             disabled={isLoading}
                             rounded="xl"
+                            textWrap="balance"
                             onClick={() => onDownloadTitheOffering?.(form.getValues() as ReportFormValues)}
                         >
                             <DocumentDownload size="20" />

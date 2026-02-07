@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback, memo, useRef, useTransition } from "react"
-import { VStack, SimpleGrid, Heading, Text, Card, Button, Spinner, Center, Box } from "@chakra-ui/react"
+import { VStack, SimpleGrid, Heading, Text, Card, Button, Spinner, Center, Box, Flex } from "@chakra-ui/react"
 import { Profile2User, UserOctagon, Calendar, TrendUp, ChartSquare } from "iconsax-reactjs"
 import { useAttendance } from "@/modules/admin/hooks/useAttendance"
 import { useStates } from "@/modules/admin/hooks/useState"
@@ -1175,7 +1175,7 @@ export const ReportsContent = () => {
                     <Text color="gray.500" mt={1}>Select report type and configure parameters</Text>
                 </Card.Header>
                 <Card.Body>
-                    <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
+                    <Flex wrap="wrap" gap="4" mb="6">
                         {allowedReportTypes.map((type) => {
                             const isActive = selectedTab === type
                             const labelMap: Record<string, string> = {
@@ -1197,12 +1197,14 @@ export const ReportsContent = () => {
                                     onClick={() => handleTabChange(type)}
                                     rounded="xl"
                                     textTransform="capitalize"
+                                    textWrap={"balance"}
+                                    w="fit"
                                 >
                                     {labelMap[type] || type} Report
                                 </Button>
                             )
                         })}
-                    </SimpleGrid>
+                    </Flex>
 
                     {/* 
                        The heavy component is rendered here. 

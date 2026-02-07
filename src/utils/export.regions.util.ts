@@ -3,6 +3,7 @@ import type { Region } from "@/types/regions.type"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { utils, writeFile } from "xlsx"
+import { addPdfHeader, TABLE_HEADER_COLOR } from './pdf.utils';
 
 // Regions Export Functions (updated)
 export const exportRegionsToExcel = (data: Region[], filename: string = 'regions') => {
@@ -58,16 +59,11 @@ export const exportRegionsToCSV = (data: Region[], filename: string = 'regions')
     URL.revokeObjectURL(url)
 }
 
-export const exportRegionsToPDF = (data: Region[], filename: string = 'regions') => {
+export const exportRegionsToPDF = async (data: Region[], filename: string = 'regions') => {
     const doc = new jsPDF()
 
-    // Title
-    doc.setFontSize(16)
-    doc.text('Regions Data', 14, 15)
-
-    // Date
-    doc.setFontSize(10)
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22)
+    // Add header
+    await addPdfHeader(doc, 'Regions Data', `Total Regions: ${data.length}`);
 
     autoTable(doc, {
         head: [['S/N', 'State', 'Region Name', 'Region Code', 'Region Leader', 'Leader Email', 'Leader Phone']],
@@ -80,19 +76,11 @@ export const exportRegionsToPDF = (data: Region[], filename: string = 'regions')
             item.leader_email ?? '',
             item.leader_phone ?? ''
         ]),
-        startY: 30,
+        startY: 70,
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [66, 135, 245] }, // Blue header
-        columnStyles: {
-            0: { cellWidth: 15 }, // S/N
-            1: { cellWidth: 30 }, // State
-            2: { cellWidth: 35 }, // Region Name
-            3: { cellWidth: 25 }, // Region Code
-            4: { cellWidth: 35 },  // Region Leader
-            5: { cellWidth: 40 },  // Leader Email
-            6: { cellWidth: 25 }   // Leader Phone
-        },
-        tableWidth: 'auto'
+        headStyles: { fillColor: TABLE_HEADER_COLOR }, // Blue header
+        tableWidth: 'auto',
+        margin: { top: 70 }
     })
 
     // Footer with page numbers
