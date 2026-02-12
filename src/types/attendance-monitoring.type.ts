@@ -2,7 +2,7 @@ export interface MonitoringItem {
     id: number
     last_filled_week: number
     name: string
-    status: 'red' | 'yellow' | 'green'
+    status: 'red' | 'yellow' | 'green' | 'orange'
 }
 
 export interface AttendanceMonitoringData {

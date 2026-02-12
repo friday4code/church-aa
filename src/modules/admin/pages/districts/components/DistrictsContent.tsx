@@ -60,7 +60,9 @@ const ActionBarLoading = () => (
 )
 
 export const DistrictsContent = () => {
-    const { hasRole } = useAuth()
+    const { hasRole, user } = useAuth()
+
+    // console.log("User data:", user)
     const isSuperAdmin = hasRole('Super Admin')
     const [searchParams, setSearchParams] = useSearchParams()
     const [sortField, setSortField] = useState<keyof District>('name')
@@ -75,7 +77,7 @@ export const DistrictsContent = () => {
     const [isActionBarOpen, setIsActionBarOpen] = useState(false)
     const [isBulkEditOpen, setIsBulkEditOpen] = useState(false)
     const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false)
-
+    const userGroupId = user?.group_id 
     const {
         districts,
         isLoading,
@@ -113,9 +115,34 @@ export const DistrictsContent = () => {
         district?: District
     }>({ isOpen: false })
 
+    // Filter districts based on user role and group_id
+    const userFilteredDistricts = useMemo(() => {
+        if (!districts) return [];
+        
+        const allDistricts = districts as Districts;
+        
+        // Super Admin sees all districts
+        if (isSuperAdmin) {
+            return allDistricts;
+        }
+        
+        // Non-super admin: filter by their group_id
+        if (userGroupId) {
+            return allDistricts.filter((district: District) => 
+                district.group_id === userGroupId
+            );
+        }
+        
+        // If no group_id found, return empty array or all based on requirements
+        // Returning empty array is safer to prevent unauthorized access
+        console.warn('No group_id found for non-super admin user');
+        return [];
+    }, [districts, isSuperAdmin, userGroupId]);
+
     // Filter and sort districts
     const filteredAndSortedDistricts = useMemo(() => {
-        let filtered = (districts as Districts)?.filter((district: District) => {
+        // let filtered = (districts as Districts)?.filter((district: District) => {
+        let filtered = userFilteredDistricts.filter((district: District) => {
             const matchesSearch = (
                 district.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 district.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
