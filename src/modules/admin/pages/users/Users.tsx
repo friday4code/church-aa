@@ -292,62 +292,129 @@ const Content = ({ role }: { role?: string }) => {
             setIsActionBarOpen(false)
         }
     }
-    const handleSaveUser = (data: UserFormData) => {
-        // Transform data to match API structure
-        const apiData = {
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            password: data.password,
-            state_id: data.state_id,
-            region_id: data.region_id,
-            district_id: data.district_id,
-            group_id: data.group_id,
-            old_group_id: data.old_group_id,
-            roles: data.roles
-        }
+//     const handleSaveUser = (data: UserFormData) => {
+//         console.log("Parent received data:", data);
+//         // Transform data to match API structure
+//         const apiData = {
+//             name: data.name,
+//             email: data.email,
+//             phone: data.phone,
+//             password: data.password,
+//             state_id: data.state_id,
+//             region_id: data.region_id,
+//             district_id: data.district_id,
+//             group_id: data.group_id,
+//             old_group_id: data.old_group_id,
+//             roles: data.role_ids,
+//         }
+// console.log("Parent received apiData:", apiData);
+//         if (dialogState.mode === 'add') {
+//             createUser.mutate(apiData, {
+//                 onSuccess: () => {
+//                     toaster.create({ description: 'User added successfully', type: 'success', closable: true })
+//                     setDialogState({ isOpen: false, mode: 'add' })
+//                 },
+//                 onError: (error: any) => {
+//                     const msg = error?.message || 'Failed to add user'
+//                     toaster.create({ description: msg, type: 'error', closable: true })
+//                 }
+//             })
+//         } else if (dialogState.user) {
+//             // For update, only include password if provided
+//             const updateData = { ...apiData, state_id: null, region_id: null, district_id: null, group_id: null, old_group_id: null }
+//             if (!updateData.password) {
+//                 delete updateData.password
+//             }
 
-        if (dialogState.mode === 'add') {
-            createUser.mutate(apiData, {
-                onSuccess: () => {
-                    toaster.create({ description: 'User added successfully', type: 'success', closable: true })
-                    setDialogState({ isOpen: false, mode: 'add' })
-                },
-                onError: (error: any) => {
-                    const msg = error?.message || 'Failed to add user'
-                    toaster.create({ description: msg, type: 'error', closable: true })
-                }
-            })
-        } else if (dialogState.user) {
-            // For update, only include password if provided
-            const updateData = { ...apiData, state_id: null, region_id: null, district_id: null, group_id: null, old_group_id: null }
-            if (!updateData.password) {
-                delete updateData.password
-            }
+//             // Ensure roles are numeric IDs when possible
+//             const coercedRoles = (Array.isArray(updateData.roles) ? updateData.roles : []).map((r: any) => {
+//                 if (typeof r === 'number') return r
+//                 if (typeof r === 'string') {
+//                     const n = parseInt(r, 10)
+//                     return Number.isFinite(n) ? n : r
+//                 }
+//                 return r
+//             })
+//             updateData.roles = coercedRoles
 
-            // Ensure roles are numeric IDs when possible
-            const coercedRoles = (Array.isArray(updateData.roles) ? updateData.roles : []).map((r: any) => {
-                if (typeof r === 'number') return r
-                if (typeof r === 'string') {
-                    const n = parseInt(r, 10)
-                    return Number.isFinite(n) ? n : r
-                }
-                return r
-            })
-            updateData.roles = coercedRoles
+//             updateUser.mutate({ id: dialogState.user.id, data: updateData }, {
+//                 onSuccess: () => {
+//                     toaster.create({ description: 'User updated successfully', type: 'success', closable: true })
+//                     setDialogState({ isOpen: false, mode: 'add' })
+//                 },
+//                 onError: (error: any) => {
+//                     const msg = error?.message || 'Failed to update user'
+//                     toaster.create({ description: msg, type: 'error', closable: true })
+//                 }
+//             })
+//         }
+//     }
 
-            updateUser.mutate({ id: dialogState.user.id, data: updateData }, {
-                onSuccess: () => {
-                    toaster.create({ description: 'User updated successfully', type: 'success', closable: true })
-                    setDialogState({ isOpen: false, mode: 'add' })
-                },
-                onError: (error: any) => {
-                    const msg = error?.message || 'Failed to update user'
-                    toaster.create({ description: msg, type: 'error', closable: true })
-                }
-            })
-        }
+const handleSaveUser = (data: UserFormData) => {
+    console.log("Parent received data:", data);
+    console.log("Data keys:", Object.keys(data));
+    console.log("Does data have role_ids?", 'role_ids' in data);
+    console.log("Does data have role_id?", 'role_id' in data);
+    
+    // Check what the actual data structure is
+    let roleIdValue;
+    if (data.role_ids && Array.isArray(data.role_ids) && data.role_ids.length > 0) {
+        roleIdValue = data.role_ids[0];
+        console.log("Using role_ids[0]:", roleIdValue);
+    } else if (data.role_id) {
+        roleIdValue = data.role_id;
+        console.log("Using role_id:", roleIdValue);
+    } else {
+        console.log("No role ID found in data");
     }
+    
+    // Transform data to match API structure
+    const apiData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        role_id: roleIdValue,
+        // Only include hierarchy fields if they have values > 0
+        ...(data.state_id && data.state_id > 0 && { state_id: data.state_id }),
+        ...(data.region_id && data.region_id > 0 && { region_id: data.region_id }),
+        ...(data.district_id && data.district_id > 0 && { district_id: data.district_id }),
+        ...(data.group_id && data.group_id > 0 && { group_id: data.group_id }),
+        ...(data.old_group_id && data.old_group_id > 0 && { old_group_id: data.old_group_id }),
+    }
+
+    console.log("Parent received apiData:", apiData);
+
+    if (dialogState.mode === 'add') {
+        createUser.mutate(apiData, {
+            onSuccess: () => {
+                toaster.create({ description: 'User added successfully', type: 'success', closable: true })
+                setDialogState({ isOpen: false, mode: 'add' })
+            },
+            onError: (error: any) => {
+                const msg = error?.message || 'Failed to add user'
+                toaster.create({ description: msg, type: 'error', closable: true })
+            }
+        })
+    } else if (dialogState.user) {
+        // For update, only include password if provided
+        const updateData = { ...apiData }
+        if (!updateData.password) {
+            delete updateData.password
+        }
+
+        updateUser.mutate({ id: dialogState.user.id, data: updateData }, {
+            onSuccess: () => {
+                toaster.create({ description: 'User updated successfully', type: 'success', closable: true })
+                setDialogState({ isOpen: false, mode: 'add' })
+            },
+            onError: (error: any) => {
+                const msg = error?.message || 'Failed to update user'
+                toaster.create({ description: msg, type: 'error', closable: true })
+            }
+        })
+    }
+}
     // Close action bar when no items are selected
     useEffect(() => {
         if (selectedUsers.length === 0 && isActionBarOpen) {

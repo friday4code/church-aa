@@ -4,7 +4,35 @@ import type { AttendanceRecord } from "@/types/attendance.type";
 import type { CreateYouthAttendanceData, UpdateYouthAttendanceData, YouthAttendanceFilters, YouthAttendanceResponse, YouthAttendancesResponse } from "@/types/youthAttendance.type";
 import type { AttendanceMonitoring } from "@/types/attendance-monitoring.type";
 
+// Add Role type
+export interface Role {
+    id: number;
+    name: string;
+    description: string;
+}
+
 export const adminApi = {
+
+     // Roles API methods
+    getRoles: async (): Promise<Role[]> => {
+        const { data } = await axiosClient.get<Role[]>('/auth/available-roles'); //auth/available-roles  ///users/roles
+        return data;
+    },
+
+    // createRole: async (roleData: Omit<Role, 'id'>): Promise<Role> => {
+    //     const { data } = await axiosClient.post<Role>('/users/roles', roleData);
+    //     return data;
+    // },
+
+    // updateRole: async (id: string | number, roleData: Partial<Role>): Promise<Role> => {
+    //     const { data } = await axiosClient.put<Role>(`/users/roles/${id}`, roleData);
+    //     return data;
+    // },
+
+    // deleteRole: async (id: string | number): Promise<void> => {
+    //     await axiosClient.delete(`/users/roles/${id}`);
+    // },
+
     // Users
     getRegionsByStateId: async (stateId: number): Promise<{ id: number, name: string }[]> => {
         const { data } = await axiosClient.get<{ id: number, name: string }[]>(`/hierarchy/regions/by_state/${stateId}`);
@@ -53,10 +81,25 @@ export const adminApi = {
         return data;
     },
 
+    // createUser: async (userData: any): Promise<any> => {
+    //     const { data } = await axiosClient.post<any>("/api/users/", userData);
+    //     return data;
+    // },
+
     createUser: async (userData: any): Promise<any> => {
-        const { data } = await axiosClient.post<any>("/api/users/", userData);
-        return data;
-    },
+    console.log("=== AXIOS DEBUG ===");
+    console.log("userData received:", userData);
+    console.log("userData type:", typeof userData);
+    console.log("userData as JSON:", JSON.stringify(userData, null, 2));
+    console.log("userData keys:", Object.keys(userData));
+    console.log("role_id value:", userData.role_id);
+    console.log("role_id type:", typeof userData.role_id);
+    console.log("===================");
+    
+    const { data } = await axiosClient.post<any>("/api/users/", userData);
+    return data;
+},
+
 
     updateUser: async (userId: string | number, userData: any): Promise<any> => {
         const { data } = await axiosClient.put<any>(`/api/users/${userId}`, userData);
