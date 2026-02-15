@@ -60,7 +60,8 @@ const Content = () => {
     const monitoringData = data?.data; // This is the AttendanceMonitoringData object
 
 // Collect ALL items for PDF generation (including green)
-// Collect ALL items for PDF generation (including green)
+// In AttendanceMonitoring.tsx, update the allDefaulters memo:
+
 const allDefaulters = useMemo(() => {
     if (!monitoringData) return []
     
@@ -68,7 +69,7 @@ const allDefaulters = useMemo(() => {
     
     const addItems = (items: any[], level: 'State' | 'Region' | 'District' | 'Group' | 'Old Group') => {
         items.forEach(item => {
-            // Create the base defaulter item
+            // Create the base defaulter item with ALL hierarchy fields
             const defaulterItem: DefaulterItem = {
                 id: item.id,
                 name: item.name,
@@ -76,13 +77,17 @@ const allDefaulters = useMemo(() => {
                 status: item.status,
                 lastFilledWeek: item.last_filled_week,
                 weeksOwed: item.last_filled_week === 0 ? 4 : Math.max(0, 4 - item.last_filled_week),
+                
+                // Add ALL hierarchy fields from the backend
+                state: item.state,
+                state_id: item.state_id,
+                region: item.region,
+                region_id: item.region_id,
+                old_group: item.old_group,
+                old_group_id: item.old_group_id,
+                groupName: item.group,
+                groupId: item.group_id,
             };
-            
-            // Add group information for districts
-            if (level === 'District') {
-                defaulterItem.groupName = item.group;
-                defaulterItem.groupId = item.group_id;
-            }
             
             defaulters.push(defaulterItem);
         })
@@ -91,10 +96,9 @@ const allDefaulters = useMemo(() => {
     // Only include districts
     addItems(monitoringData.districts ?? [], 'District')
     
-    // console.log('Defaulters with group info:', defaulters); // Debug log
+    console.log('Defaulters with all hierarchy fields:', defaulters[0]); // Debug log
     return defaulters
 }, [monitoringData])
-
 // const allDefaulters = useMemo(() => {
 //     if (!monitoringData) return []
     
@@ -102,25 +106,33 @@ const allDefaulters = useMemo(() => {
     
 //     const addItems = (items: any[], level: 'State' | 'Region' | 'District' | 'Group' | 'Old Group') => {
 //         items.forEach(item => {
-//             defaulters.push({
+//             // Create the base defaulter item
+//             const defaulterItem: DefaulterItem = {
 //                 id: item.id,
 //                 name: item.name,
 //                 level,
 //                 status: item.status,
 //                 lastFilledWeek: item.last_filled_week,
 //                 weeksOwed: item.last_filled_week === 0 ? 4 : Math.max(0, 4 - item.last_filled_week),
-//                 // Add group information
-//                 groupName: item.group,
-//                 groupId: item.group_id
-//             })
+//             };
+            
+//             // Add group information for districts
+//             if (level === 'District') {
+//                 defaulterItem.groupName = item.group;
+//                 defaulterItem.groupId = item.group_id;
+//             }
+            
+//             defaulters.push(defaulterItem);
 //         })
 //     }
     
 //     // Only include districts
 //     addItems(monitoringData.districts ?? [], 'District')
     
+//     // console.log('Defaulters with group info:', defaulters); // Debug log
 //     return defaulters
 // }, [monitoringData])
+
 
 // Keep a separate variable for ONLY defaulters (non-green) for UI counts if needed
 const nonGreenCount = useMemo(() => {
@@ -196,20 +208,42 @@ const summary = useMemo(() => {
     }, [monitoringData])
 
 
-    const handleDownloadPDF = useCallback(() => {
-        setIsDownloading(true)
-        try {
-            const dataToExport = reportType === 'defaulters' 
-                ? allDefaulters.filter(d => d.status !== 'green')
-                : allDefaulters
-            
-            generateDefaultersPDF(dataToExport)
-        } catch (error) {
-            console.error('Error generating PDF:', error)
-        } finally {
-            setIsDownloading(false)
-        }
-    }, [allDefaulters, reportType])
+    // Update the handleDownloadPDF function to accept hierarchy
+// const handleDownloadPDF = useCallback((hierarchy: string, selectedReportType: 'defaulters' | 'full') => {
+//     setIsDownloading(true)
+//     try {
+//         // Filter data based on report type
+//         const dataToExport = selectedReportType === 'defaulters' 
+//             ? allDefaulters.filter(d => d.status !== 'green')
+//             : allDefaulters
+        
+//         // Pass the hierarchy to the PDF generator
+//         generateDefaultersPDF(dataToExport, hierarchy) // We'll update the PDF generator to accept hierarchy
+//     } catch (error) {
+//         console.error('Error generating PDF:', error)
+//     } finally {
+//         setIsDownloading(false)
+//     }
+// }, [allDefaulters])
+
+// In AttendanceMonitoring.tsx, add logging to see if something is interfering
+const handleDownloadPDF = useCallback((hierarchy: string, selectedReportType: 'defaulters' | 'full') => {
+    console.log('Download PDF called with:', { hierarchy, selectedReportType });
+    setIsDownloading(true)
+    try {
+        const dataToExport = selectedReportType === 'defaulters' 
+            ? allDefaulters.filter(d => d.status !== 'green')
+            : allDefaulters
+        
+        console.log('Generating PDF with hierarchy:', hierarchy);
+        generateDefaultersPDF(dataToExport, hierarchy)
+    } catch (error) {
+        console.error('Error generating PDF:', error)
+    } finally {
+        setIsDownloading(false)
+    }
+}, [allDefaulters])
+
 
     // Check if user can view categories
     const canView = useCallback((hierarchy: string) => {
@@ -222,12 +256,7 @@ const summary = useMemo(() => {
         return false
     }, [hasRole])
 
-     // Debug - log the actual data structure
-    // console.log("Backend response:", data)
-    // console.log("Monitoring data:", monitoringData)
-    // console.log("Summary:", summary)
-    // console.log("Grouped items:", groupedItems)
-
+   
     return (
         <VStack gap="8" align="stretch" pb="8">
             {/* Header - Always visible */}

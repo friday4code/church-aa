@@ -16,6 +16,7 @@ import {
 import { DocumentDownload } from 'iconsax-reactjs';
 import { getStatusBadge } from '@/lib/calendar-utils';
 import { generateDefaultersPDF } from '@/lib/pdf-generator';
+import { DownloadModal } from './DownloadModal'; 
 
 interface DefaultersTableProps {
   isLoading: boolean;
@@ -51,7 +52,8 @@ interface DefaultersTableProps {
   };
   canView: (hierarchy: string) => boolean;
   allDefaultersCount: number;
-  onDownload: () => void;
+  // onDownload: () => void;
+  onDownload: (hierarchy: string, reportType: 'defaulters' | 'full') => void; // Updated
   isDownloading: boolean;
 
   // Add these new props
@@ -76,36 +78,28 @@ const DefaultersTable: React.FC<DefaultersTableProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'red' | 'orange' | 'yellow' | 'green'>('all');
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(new Set());
+// New state for download modal
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
 
+  const handleDownloadClick = () => {
+    setIsDownloadModalOpen(true);
+  };
 
-  // Count items for each status
-  // const statusCounts = useMemo(() => {
-  //   const counts = {
-  //     all: allDefaultersCount,
-  //     red: 0,
-  //     orange: 0,
-  //     yellow: 0,
-  //     green: 0,
-  //   };
+  const handleDownloadConfirm = (hierarchy: string, selectedReportType: 'defaulters' | 'full') => {
+    // Set the report type first
+    setReportType(selectedReportType);
+    
+    // Close the modal
+    setIsDownloadModalOpen(false);
+    
+    // Call the download function with hierarchy info
+    // We need to pass the hierarchy to the parent component
+    // For now, we'll just call onDownload and later we'll update the parent
+    onDownload(hierarchy, selectedReportType);
+  };
 
-  //   const countStatus = (status: keyof typeof groupedItems) => {
-  //     return (
-  //       groupedItems[status].states.length +
-  //       groupedItems[status].regions.length +
-  //       groupedItems[status].districts.length +
-  //       groupedItems[status].groups.length +
-  //       groupedItems[status].old_groups.length
-  //     );
-  //   };
 
-  //   counts.red = countStatus('red');
-  //   counts.orange = countStatus('orange');
-  //   counts.yellow = countStatus('yellow');
-  //   counts.green = countStatus('green');
-
-  //   return counts;
-  // }, [groupedItems, allDefaultersCount]);
 
    const statusCounts = useMemo(() => {
     const counts = {
@@ -327,50 +321,10 @@ const StatusSection = ({ status, label }: { status: 'red' | 'orange' | 'yellow' 
         
       </Box>
 
-       {/* Report Type Selector and Download Button */}
-      {/* {statusCounts.all > 0 && (
-        <Box>
-          <Text fontSize="sm" fontWeight="semibold" mb="3" color={{ base: 'gray.600', _dark: 'gray.400' }}>
-            Report Options
-          </Text>
-          <HStack justify="space-between" align="center" wrap="wrap" gap="4">
-            <HStack gap="2">
-              <Button
-                size="md"
-                variant={reportType === 'defaulters' ? 'solid' : 'outline'}
-                colorPalette="red"
-                onClick={() => setReportType('defaulters')}
-              >
-                Defaulters Only ({defaultersCount})
-              </Button>
-              <Button
-                size="md"
-                variant={reportType === 'full' ? 'solid' : 'outline'}
-                colorPalette="blue"
-                onClick={() => setReportType('full')}
-              >
-                Full Report ({fullCount})
-              </Button>
-            </HStack>
-            
-            <Button
-              onClick={onDownload}
-              disabled={isDownloading}
-              colorPalette="blue"
-              size="lg"
-              display="flex"
-              gap="2"
-            >
-              {isDownloading ? <Spinner size="sm" /> : <DocumentDownload />}
-              Download {reportType === 'defaulters' ? 'Defaulters' : 'Full'} Report
-            </Button>
-          </HStack>
-        </Box>
-      )} */}
       {statusCounts.all > 0 && (
   <VStack align="stretch" gap="4">
     {/* Report Type Selector - Right Aligned */}
-    <HStack justify="flex-end" align="center" wrap="wrap" gap="4">
+    {/* <HStack justify="flex-end" align="center" wrap="wrap" gap="4">
       <HStack gap="2">
         <Text fontSize="sm" fontWeight="semibold" color={{ base: 'gray.600', _dark: 'gray.400' }}>
           Report Type:
@@ -392,12 +346,12 @@ const StatusSection = ({ status, label }: { status: 'red' | 'orange' | 'yellow' 
           Full Report ({fullCount})
         </Button>
       </HStack>
-    </HStack>
+    </HStack> */}
     
     {/* Download Button - Right Aligned */}
     <HStack justify="flex-end">
       <Button
-        onClick={onDownload}
+        onClick={handleDownloadClick}
         disabled={isDownloading}
         colorPalette="blue"
         size="lg"
@@ -405,7 +359,7 @@ const StatusSection = ({ status, label }: { status: 'red' | 'orange' | 'yellow' 
         gap="2"
       >
         {isDownloading ? <Spinner size="sm" /> : <DocumentDownload />}
-        Download {reportType === 'defaulters' ? 'Defaulters' : 'Full'} Report
+        Download Report
       </Button>
     </HStack>
   </VStack>
@@ -418,6 +372,17 @@ const StatusSection = ({ status, label }: { status: 'red' | 'orange' | 'yellow' 
         {(activeFilter === 'all' || activeFilter === 'yellow') && <StatusSection status="yellow" label="Yellow" />}
         {(activeFilter === 'all' || activeFilter === 'green') && <StatusSection status="green" label="Green" />}
       </VStack>
+
+        {/* Download Modal */}
+      <DownloadModal
+        isOpen={isDownloadModalOpen}
+        onClose={() => setIsDownloadModalOpen(false)}
+        onConfirm={handleDownloadConfirm}
+        isDownloading={isDownloading}
+        defaultersCount={defaultersCount}
+        fullCount={fullCount}
+      />
+
     </VStack>
     
   );
