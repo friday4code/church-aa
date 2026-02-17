@@ -17,8 +17,9 @@ export interface User {
     phone: string | null;
     region_id: number | null;
     // roles: ("admin" | "Super Admin" | "State Admin" | "Region Admin" | "District Admin" | "Group Admin" | "Viewer")[];
-    roles: role_id; // Changed from string array to Role array
+    roles: Role[]; // Changed from string array to Role array
     role_ids?: number[]; // Add this for form handling
+    role_id?: number; // Add this for form handling
     state_id: number | null;
 }
 
