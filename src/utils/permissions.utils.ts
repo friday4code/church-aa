@@ -7,10 +7,10 @@ export interface AuthShape {
   region_id?: number | null
   district_id?: number | null
   group_id?: number | null
-  roles?: Role[]
+  roles?: role_id
 }
 
-export const getAllowedReportTypes = (roles: Role[]) => {
+export const getAllowedReportTypes = (roles: role_id) => {
   if (roles.includes("Super Admin")) return ["state", "region", "group", "youth"] as const
   if (roles.includes("State Admin")) return ["state", "region", "group", "youth"] as const
   if (roles.includes("Region Admin")) return ["region", "group", "youth"] as const

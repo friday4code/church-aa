@@ -14,8 +14,8 @@ export interface Role {
 export const adminApi = {
 
      // Roles API methods
-    getRoles: async (): Promise<Role[]> => {
-        const { data } = await axiosClient.get<Role[]>('/auth/available-roles'); //auth/available-roles  ///users/roles
+    getRoles: async (): Promise<role_id> => {
+        const { data } = await axiosClient.get<role_id>('/auth/available-roles'); //auth/available-roles  ///users/roles
         return data;
     },
 

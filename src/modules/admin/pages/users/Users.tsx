@@ -105,7 +105,10 @@ const Content = ({ role }: { role?: string }) => {
         if (!role) return allUsers
         if (role === "Super Admin") return superAdminUsers
         return allUsers
+        
     }, [allUsers, role]);
+
+    // console.log("First user structure:", users[0]);
 
     const { createUser, updateUser, deleteUser, isCreating, isUpdating, isDeleting } = useUserMutations()
     const { user: authUser, hasRole } = useAuth()
@@ -159,6 +162,7 @@ const Content = ({ role }: { role?: string }) => {
             const fieldMatch =
                 user?.firstName?.toLowerCase()?.includes(searchLower) ||
                 user?.lastName?.toLowerCase()?.includes(searchLower) ||
+                user?.name?.toLowerCase()?.includes(searchLower) ||  // Changed from firstName
                 user?.email?.toLowerCase()?.includes(searchLower) ||
                 user?.phone?.toLowerCase()?.includes(searchLower) ||
                 `${user?.firstName} ${user?.lastName}`?.toLowerCase()?.includes(searchLower)
@@ -292,63 +296,6 @@ const Content = ({ role }: { role?: string }) => {
             setIsActionBarOpen(false)
         }
     }
-//     const handleSaveUser = (data: UserFormData) => {
-//         console.log("Parent received data:", data);
-//         // Transform data to match API structure
-//         const apiData = {
-//             name: data.name,
-//             email: data.email,
-//             phone: data.phone,
-//             password: data.password,
-//             state_id: data.state_id,
-//             region_id: data.region_id,
-//             district_id: data.district_id,
-//             group_id: data.group_id,
-//             old_group_id: data.old_group_id,
-//             roles: data.role_ids,
-//         }
-// console.log("Parent received apiData:", apiData);
-//         if (dialogState.mode === 'add') {
-//             createUser.mutate(apiData, {
-//                 onSuccess: () => {
-//                     toaster.create({ description: 'User added successfully', type: 'success', closable: true })
-//                     setDialogState({ isOpen: false, mode: 'add' })
-//                 },
-//                 onError: (error: any) => {
-//                     const msg = error?.message || 'Failed to add user'
-//                     toaster.create({ description: msg, type: 'error', closable: true })
-//                 }
-//             })
-//         } else if (dialogState.user) {
-//             // For update, only include password if provided
-//             const updateData = { ...apiData, state_id: null, region_id: null, district_id: null, group_id: null, old_group_id: null }
-//             if (!updateData.password) {
-//                 delete updateData.password
-//             }
-
-//             // Ensure roles are numeric IDs when possible
-//             const coercedRoles = (Array.isArray(updateData.roles) ? updateData.roles : []).map((r: any) => {
-//                 if (typeof r === 'number') return r
-//                 if (typeof r === 'string') {
-//                     const n = parseInt(r, 10)
-//                     return Number.isFinite(n) ? n : r
-//                 }
-//                 return r
-//             })
-//             updateData.roles = coercedRoles
-
-//             updateUser.mutate({ id: dialogState.user.id, data: updateData }, {
-//                 onSuccess: () => {
-//                     toaster.create({ description: 'User updated successfully', type: 'success', closable: true })
-//                     setDialogState({ isOpen: false, mode: 'add' })
-//                 },
-//                 onError: (error: any) => {
-//                     const msg = error?.message || 'Failed to update user'
-//                     toaster.create({ description: msg, type: 'error', closable: true })
-//                 }
-//             })
-//         }
-//     }
 
 const handleSaveUser = (data: UserFormData) => {
     console.log("Parent received data:", data);

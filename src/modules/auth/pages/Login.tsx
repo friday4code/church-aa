@@ -71,7 +71,7 @@ const Login = () => {
             console.log("Login successful:");
 
             // save data
-            console.log("user", response);
+            // console.log("user", response);
 
             setAuth({ user: response.user, tokens: { refresh_token: response.refresh_token, access_token: response.access_token } });
 
@@ -106,7 +106,7 @@ const Login = () => {
 
     const onSubmit = (data: LoginFormData) => {
         mutation.mutate(data);
-        console.log(data);
+        // console.log(data);
 
     };
 
