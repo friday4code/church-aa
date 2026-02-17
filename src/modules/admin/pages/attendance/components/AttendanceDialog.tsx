@@ -91,7 +91,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     const isStateAdmin = useMemo(() => {
         const roles = user?.roles || []
         // return roles.includes("State Admin")
-        return hasRole(user.roles, "State Admin")
+        return hasRole(user?.roles, "State Admin")
 
     }, [user?.roles])
 
@@ -99,13 +99,13 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     const isRegionAdmin = useMemo(() => {
         const roles = user?.roles || []
         // return roles.includes("Region Admin")
-        return hasRole(user.roles, "Region Admin")
+        return hasRole(user?.roles, "Region Admin")
     }, [user?.roles])
 
     const isGroupAdmin = useMemo(() => {
         const roles = user?.roles || []
         // return roles.includes("Group Admin")
-        return hasRole(user.roles, "Group Admin")
+        return hasRole(user?.roles, "Group Admin")
     }, [user?.roles])
 
     const { type } = useParams();

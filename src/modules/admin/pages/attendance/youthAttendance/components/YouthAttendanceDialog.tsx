@@ -31,6 +31,10 @@ import type { YouthAttendance } from "@/types/youthAttendance.type"
 import { useMe } from "@/hooks/useMe"
 import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
 
+import { toRoleTypes } from "@/utils/roleHierarchy";
+import { getRoleBasedVisibilityFromAny } from "@/utils/roleHierarchy";
+import { useAuth } from "@/hooks/useAuth"
+
 interface YouthAttendanceDialogProps {
     isOpen: boolean
     isLoading?: boolean
@@ -59,14 +63,27 @@ export const YouthAttendanceDialog = ({
     attendance,
 }: YouthAttendanceDialogProps) => {
     const { states } = useStates()
+    const {user: authUser} = useAuth()
     // lists no longer needed here; comboboxes fetch via adminApi
     const { user } = useMe()
+    const userRoles = useMemo(() => {
+        if (!authUser?.roles) return [];
+        // If roles are Role objects, extract names; if they're strings, use as is
+        return authUser.roles.map(role => {
+            if (typeof role === 'object' && role !== null && 'name' in role) {
+                return role.name;
+            }
+            return String(role);
+        });
+    }, [authUser]);
     
     // Get role-based visibility configuration
-    const roleVisibility = useMemo(() => {
-        if (!user?.roles) return getRoleBasedVisibility([])
-        return getRoleBasedVisibility(user.roles as RoleType[])
-    }, [user?.roles])
+    // const roleVisibility = useMemo(() => {
+    //     if (!user?.roles) return getRoleBasedVisibility([])
+    //     return getRoleBasedVisibility(user.roles as RoleType[])
+    // }, [user?.roles])
+        const roleVisibility = useMemo(() => getRoleBasedVisibilityFromAny(userRoles), [userRoles]);
+    
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset, trigger } = useForm<YouthAttendanceFormData>({
         resolver: zodResolver(youthAttendanceSchema),

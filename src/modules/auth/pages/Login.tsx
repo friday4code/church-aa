@@ -27,6 +27,7 @@ import { ENV } from "@/config/env";
 import { Eye, EyeSlash, Lock, Sms } from "iconsax-reactjs";
 import { authApi } from "@/api/auth.api";
 
+
 const loginSchema = z.object({
     // email: z.email("Invalid email address").min(1, "Email is required"),
     email: z.string("Invalid email address").min(1, "Email is required"),
@@ -47,22 +48,50 @@ const Login = () => {
         }
     }, []);
 
-    const getRedirectPath = (userRoles: string[] = []) => {
-        // Check if user has any admin roles
-        const hasAdminRole = userRoles.includes('admin') ||
-            userRoles.includes('Super Admin') ||
-            userRoles.includes('State Admin') ||
-            userRoles.includes('Region Admin') ||
-            userRoles.includes('District Admin') ||
-            userRoles.includes('Group Admin');
+    // const getRedirectPath = (userRoles: string[] = []) => {
+    //     // Check if user has any admin roles
+    //     const hasAdminRole = userRoles.includes('admin') ||
+    //         userRoles.includes('Super Admin') ||
+    //         userRoles.includes('State Admin') ||
+    //         userRoles.includes('Region Admin') ||
+    //         userRoles.includes('District Admin') ||
+    //         userRoles.includes('Group Admin');
 
-        if (hasAdminRole) {
-            return "/admin/dashboard";
+    //     if (hasAdminRole) {
+    //         return "/admin/dashboard";
+    //     }
+
+    //     // If no admin role, redirect to user dashboard
+    //     return "/admin/dashboard";
+    // };
+
+    // Update the getRedirectPath function to handle both string[] and Role[]
+const getRedirectPath = (userRoles: any[] = []) => {
+    // Convert roles to strings if they're objects
+    const roleStrings = userRoles.map(role => {
+        if (typeof role === 'object' && role !== null && 'name' in role) {
+            return role.name;
         }
+        return String(role);
+    });
+    
+    // Check if user has any admin roles
+    const hasAdminRole = roleStrings.some(role => 
+        role === 'admin' ||
+        role === 'Super Admin' ||
+        role === 'State Admin' ||
+        role === 'Region Admin' ||
+        role === 'District Admin' ||
+        role === 'Group Admin'
+    );
 
-        // If no admin role, redirect to user dashboard
+    if (hasAdminRole) {
         return "/admin/dashboard";
-    };
+    }
+
+    // If no admin role, redirect to user dashboard
+    return "/admin/dashboard";
+};
 
     const mutation = useMutation({
         mutationFn: authApi.login,
