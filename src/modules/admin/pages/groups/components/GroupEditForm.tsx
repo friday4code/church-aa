@@ -24,6 +24,7 @@ import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import type { State } from "@/types/states.type"
 import type { Region } from "@/types/regions.type"
 import type { OldGroup } from "@/types/oldGroups.type"
+import { hasRole } from "@/utils/role.utils";
 
 interface GroupEditFormProps {
     group: Group;
@@ -51,7 +52,9 @@ const GroupEditForm = ({ group, onUpdate, onCancel }: GroupEditFormProps) => {
     const { states } = useStates();
     const { regions } = useRegions();
     const { oldGroups } = useOldGroups();
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false;
+    // const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false;
+    const isSuperAdmin = hasRole(user?.roles, "Super Admin");
+
     const watchedStateId = watch('state_id');
     const watchedRegionId = watch('region_id');
     const selectedOldGroupName = watch('old_group_name');

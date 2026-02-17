@@ -20,6 +20,7 @@ import { useStates } from "@/modules/admin/hooks/useState"
 import { useRegions } from "@/modules/admin/hooks/useRegion"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import type { State } from "@/types/states.type"
+import { hasRole } from "@/utils/role.utils";
 
 interface RegionDialogProps {
     isLoading?: boolean
@@ -36,7 +37,9 @@ const RegionDialog = ({ isLoading, isOpen, region, mode, onClose, onSave }: Regi
     const { regions = [] } = useRegions()
     const [selectedStateName, setSelectedStateName] = useState('')
     const userStateId = user?.state_id ?? 0
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    // const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const isSuperAdmin = hasRole(user?.roles, "Super Admin")
+
     const generatedCodesCache = useRef<Set<string>>(new Set())
 
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<RegionFormData>({

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useEffect, useMemo } from "react"
-import { getRoleBasedVisibility } from "@/utils/roleHierarchy"
+import { getRoleBasedVisibility, getRoleBasedVisibilityFromAny } from "@/utils/roleHierarchy"
 import CustomComboboxField from "./CustomComboboxField"
 import type { ReportFormValues } from "./ReportFilters"
 import { useMe } from "@/hooks/useMe"
@@ -45,10 +45,21 @@ export const StateAttendanceReport = ({
     onDownloadTitheOffering,
     onDownloadConsolidated,
 }: StateAttendanceReportProps) => {
+    const { user: authUser } = useAuth()
     const { user } = useMe()
     const { getRoles } = useAuth()
-    const userRoles = getRoles()
-    const roleVisibility = useMemo(() => getRoleBasedVisibility(userRoles), [JSON.stringify(userRoles)])
+    // const userRoles = getRoles()
+    const userRoles = useMemo(() => {
+            if (!authUser?.roles) return [];
+            // If roles are Role objects, extract names; if they're strings, use as is
+            return authUser.roles.map(role => {
+                if (typeof role === 'object' && role !== null && 'name' in role) {
+                    return role.name;
+                }
+                return String(role);
+            });
+        }, [authUser]);
+    const roleVisibility = useMemo(() => getRoleBasedVisibilityFromAny(userRoles), [userRoles])
 
     const form = useForm<ReportFormValues>({
         resolver: zodResolver(reportFiltersSchema),

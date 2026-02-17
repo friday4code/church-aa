@@ -23,6 +23,7 @@ import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import type { State } from "@/types/states.type"
 import { useOldGroups } from "@/modules/admin/hooks/useOldGroup"
+import { hasRole } from "@/utils/role.utils";
 
 interface GroupDialogProps {
     isLoading?: boolean
@@ -38,12 +39,16 @@ const GroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: GroupD
     const { states, isLoading: isStatesLoading } = useStates()
     const [selectedStateName, setSelectedStateName] = useState('')
     const { oldGroups, isLoading: isOldGroupsLoading } = useOldGroups()
-    const isRegionAdmin = user?.roles?.some((role) => role.toLowerCase() === 'region admin') ?? false
+    // const isRegionAdmin = user?.roles?.some((role) => role.toLowerCase() === 'region admin') ?? false
+    const isRegionAdmin = hasRole(user?.roles, "Region Admin")
+
     const [apiGroups, setApiGroups] = useState<Array<{ id: number; name: string; code?: string }>>([])
     const generatedCodesCache = useRef<Set<string>>(new Set())
     const userStateId = user?.state_id ?? 0
     const userRegionId = user?.region_id ?? 0
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    // const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const isSuperAdmin = hasRole(user?.roles, "Super Admin")
+
 
     // fetch oldgeroups
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<GroupFormData>({

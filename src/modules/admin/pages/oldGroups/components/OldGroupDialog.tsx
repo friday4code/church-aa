@@ -19,7 +19,7 @@ import { adminApi } from "@/api/admin.api"
 import StateIdCombobox from "@/modules/admin/components/StateIdCombobox"
 import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import type { State } from "@/types/states.type"
-
+import { hasRole } from "@/utils/role.utils";
 
 interface OldGroupDialogProps {
     isLoading?: boolean
@@ -38,7 +38,9 @@ const OldGroupDialog = ({ isLoading, isOpen, group, mode, onClose, onSave }: Old
     const [apiOldGroups, setApiOldGroups] = useState<Array<{ id: number; name: string; code?: string }>>([])
     const userStateId = user?.state_id ?? 0
     const userRegionId = user?.region_id ?? 0
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    // const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const isSuperAdmin = hasRole(user?.roles, "Super Admin")
+
     const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<OldGroupFormData>({
         resolver: zodResolver(oldGroupSchema),
         defaultValues: {

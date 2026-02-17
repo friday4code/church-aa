@@ -31,6 +31,8 @@ import { useMe } from "@/hooks/useMe"
 import { getRoleBasedVisibility, type RoleType } from "@/utils/roleHierarchy"
 import { useLocation, useParams } from "react-router"
 import { toaster } from "@/components/ui/toaster"
+import { hasRole, asStringRoles } from "@/utils/role.utils";
+import type { Role } from "@/types/users.type";
 
 // Collections for Select components
 const monthCollection = createListCollection({
@@ -82,23 +84,28 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     // Get role-based visibility configuration
     const roleVisibility = useMemo(() => {
         if (!user?.roles) return getRoleBasedVisibility([])
-        return getRoleBasedVisibility(user.roles as RoleType[])
+            const role_ = asStringRoles(user.roles);
+        return getRoleBasedVisibility(role_ as RoleType[]);
     }, [user?.roles])
 
     const isStateAdmin = useMemo(() => {
         const roles = user?.roles || []
-        return roles.includes("State Admin")
+        // return roles.includes("State Admin")
+        return hasRole(user.roles, "State Admin")
+
     }, [user?.roles])
 
 
     const isRegionAdmin = useMemo(() => {
         const roles = user?.roles || []
-        return roles.includes("Region Admin")
+        // return roles.includes("Region Admin")
+        return hasRole(user.roles, "Region Admin")
     }, [user?.roles])
 
     const isGroupAdmin = useMemo(() => {
         const roles = user?.roles || []
-        return roles.includes("Group Admin")
+        // return roles.includes("Group Admin")
+        return hasRole(user.roles, "Group Admin")
     }, [user?.roles])
 
     const { type } = useParams();
@@ -168,7 +175,7 @@ const AttendanceDialog = ({ isOpen, attendance, mode, onClose, onSave, serviceNa
     }, [user, roleVisibility, setValue, trigger, isOpen])
 
     const onSubmit = (data: AttendanceFormData) => {
-        console.log("payload", data)
+        // console.log("payload", data)
         onSave(data)
     }
 

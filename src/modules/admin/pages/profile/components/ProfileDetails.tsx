@@ -20,6 +20,9 @@ import {
     Location,
 } from "iconsax-reactjs"
 import { useMe } from "@/hooks/useMe"
+import { rolesToString } from "@/utils/role.utils";
+
+
 
 interface ProfileDetailsProps {
     onLogout: () => void
@@ -29,7 +32,8 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
     const { user } = useMe()
 
     const getAccessLevelLabel = () => {
-        if (!user || !user.roles || user.roles.length === 0) return 'User';
+        const role_ = rolesToString(user?.roles || [])
+        if (!user || !role_ || role_.length === 0) return 'User';
 
         // Map roles to display labels
         const roleLabels: Record<string, string> = {
@@ -47,13 +51,13 @@ export const ProfileDetails = ({ onLogout }: ProfileDetailsProps) => {
         
         // Find the highest priority role the user has
         for (const role of rolePriority) {
-            if (user.roles.includes(role as any)) {
+            if (role_.includes(role as any)) {
                 return roleLabels[role] || role;
             }
         }
 
         // If no known role found, return the first role or 'User'
-        return user.roles[0] || 'User';
+        return role_[0] || 'User';
     };
 
     const getRegionInfo = () => {

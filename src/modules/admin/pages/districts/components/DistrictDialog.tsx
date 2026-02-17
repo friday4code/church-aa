@@ -24,6 +24,8 @@ import RegionIdCombobox from "@/modules/admin/components/RegionIdCombobox"
 import OldGroupIdCombobox from "@/modules/admin/components/OldGroupIdCombobox"
 import GroupIdCombobox from "@/modules/admin/components/GroupIdCombobox"
 import type { State } from "@/types/states.type"
+import { hasRole } from "@/utils/role.utils";
+
 
 interface DistrictDialogProps {
     isLoading?: boolean
@@ -39,7 +41,9 @@ const DistrictDialog = ({ isLoading, isOpen, district, mode, onClose, onSave }: 
     const { states } = useStates()
     const [existingCodes, setExistingCodes] = useState<string[]>([])
     const userStateId = user?.state_id ?? 0
-    const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    // const isSuperAdmin = user?.roles?.some((role) => role.toLowerCase() === 'super admin') ?? false
+    const isSuperAdmin = hasRole(user?.roles, "Super Admin")
+
     const generatedCodesCache = useRef<Set<string>>(new Set())
 
 
